@@ -15,6 +15,9 @@ log = logging.getLogger("store")
 VN_OFFSET_MS = 7 * 3600 * 1000  # Asia/Ho_Chi_Minh, no DST
 DAY_MS = 24 * 3600 * 1000
 LIVE_STATUSES = ("live", "edited")
+# Sessions written by pytest and the smoke run (D-016). Their spend is shown apart but still counts toward
+# the caps: a model_call is money already billed, whichever session caused it.
+TEST_SESSION_PREFIXES = ("pytest", "smoke-")
 
 
 def vn_day_bounds(ms: int) -> tuple[int, int]:
@@ -140,13 +143,16 @@ class MemoryStore:
     async def orders(self, session_id: str) -> list[dict]:
         return list(self._orders.get(session_id, {}).values())
 
-    async def cost_usd(self, start_ms: int | None = None, end_ms: int | None = None) -> float:
+    async def cost_usd(
+        self, start_ms: int | None = None, end_ms: int | None = None, test_only: bool = False
+    ) -> float:
         return sum(
             e.get("cost_usd", 0)
             for e in self._events
             if e["type"] == "model_call"
             and (start_ms is None or e["ts_ms"] >= start_ms)
             and (end_ms is None or e["ts_ms"] < end_ms)
+            and (not test_only or e["session_id"].startswith(TEST_SESSION_PREFIXES))
         )
 
 
@@ -312,11 +318,14 @@ class PgStore:
         )
         return [r["body"] for r in rows]
 
-    async def cost_usd(self, start_ms: int | None = None, end_ms: int | None = None) -> float:
+    async def cost_usd(
+        self, start_ms: int | None = None, end_ms: int | None = None, test_only: bool = False
+    ) -> float:
+        prefixes = [p + "%" for p in TEST_SESSION_PREFIXES] if test_only else ["%"]
         rows = await self._fetch(
             "SELECT COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd FROM events WHERE type = 'model_call'"
-            " AND ts_ms >= %s AND ts_ms < %s",
-            (start_ms if start_ms is not None else 0, end_ms if end_ms is not None else 2**62),
+            " AND ts_ms >= %s AND ts_ms < %s AND session_id LIKE ANY(%s)",
+            (start_ms if start_ms is not None else 0, end_ms if end_ms is not None else 2**62, prefixes),
         )
         return float(rows[0]["usd"])
 
