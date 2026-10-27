@@ -72,14 +72,16 @@ def test_cancel_request(text, kind):
     assert (got and got["kind"]) == kind
 
 
-def test_no_recorded_comment_reads_as_a_cancel():
+def test_recorded_comments_read_as_a_cancel_only_where_the_gold_says_so():
+    # a recorded comment reads as a cancel exactly when its gold asks the shop to confirm one (confirm_cancel);
+    # a "don't cancel" row (expected_action none) never does
     rows = [
         json.loads(x) for x in (ROOT / "data" / "comments" / "labels.jsonl").read_text().splitlines() if x
     ]
-    hits = {
-        r["comment_id"]: cancel_request(r.get("text"))["kind"] for r in rows if cancel_request(r.get("text"))
-    }
-    assert "cancel" not in hits.values()
+    reads = {r["comment_id"]: (cancel_request(r.get("text")) or {}).get("kind") for r in rows}
+    gold = {r["comment_id"] for r in rows if r.get("expected_action") == "confirm_cancel"}
+    assert {cid for cid, kind in reads.items() if kind == "cancel"} == gold
+    assert all(reads[r["comment_id"]] != "cancel" for r in rows if r.get("expected_action") == "none")
 
 
 @pytest.mark.parametrize(
