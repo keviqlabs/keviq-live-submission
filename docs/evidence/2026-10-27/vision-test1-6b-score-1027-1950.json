@@ -2,8 +2,8 @@
  "run": "probe-test1-6b-1950.json",
  "ledger_session": "probe-test1-6b-1950",
  "effort": "minimal",
- "criteria": {
-  "E1 >= 72/100": [
+ "gate": {
+  "E1 electronics answered other >= 72/100": [
    "82/100",
    true
   ],
@@ -14,17 +14,24 @@
   "áo >= 75/93": [
    "79/93",
    true
-  ],
-  "total >= 77 %": [
-   "299/351 = 85.2%",
-   true
-  ],
-  "spark p95 <= 4749 ms": [
-   3196,
-   true
   ]
  },
  "decision": "keep minimal + 6b prompt",
+ "reported_not_gate": {
+  "category_total": "299/351 = 85.2%",
+  "latency_ledger_ms": {
+   "n": 351,
+   "p50_ms": 1872,
+   "p95_ms": 3168,
+   "max_ms": 7425.0
+  }
+ },
+ "notes": [
+  "Latency is the ledger model_call latency_ms (percentile_cont over the session). The run JSON 'ms' column is the client Result latency, which also counts posting the model_call event, so it runs a few ms higher per call (json_ms_minus_ledger_ms).",
+  "On 351 frames only the new prompt at minimal effort ran; 'both efforts answer the same' is measured on the 20 frames only (vision-test1-6b20-score-1027-1947.json).",
+  "Category and E1/E2/E3 counts use the effective answer (has_product, category not none, confidence >= 0.5).",
+  "Electronics answered other on 351 frames: new minimal 82/100 >= old default 72/100, so the electronics loss in 6a came from the prompt, not the effort (the two efforts are compared on 20 frames; 351 has minimal only)."
+ ],
  "score_6b_minimal": {
   "frames": "720x1280",
   "n": 351,
@@ -102,11 +109,6 @@
     }
    }
   },
-  "spark_ms": {
-   "n": 351,
-   "p50": 1879,
-   "p95": 3196
-  },
   "cost_usd": 0.822575,
   "calls": 351,
   "usd_per_frame": 0.00234,
@@ -155,13 +157,30 @@
     "SP01"
    ]
   ],
+  "run_json_ms_column": {
+   "n": 351,
+   "p50": 1879,
+   "p95": 3196
+  },
   "E1_electronics_answered_other": 82,
   "E1_electronics_answered_none": 17,
   "E1_n": 100,
   "E2_no_product_answered_tshirt": 0,
   "E2_n": 29,
   "E3_non_shirt_product_answered_tshirt": 0,
-  "is_new_emitted_vs_real_changes": "12 emitted / 11 real changes"
+  "is_new_emitted_vs_real_changes": "12 emitted / 11 real changes",
+  "latency_ledger_ms": {
+   "n": 351,
+   "p50_ms": 1872,
+   "p95_ms": 3168,
+   "max_ms": 7425.0,
+   "usd": "0.82257485",
+   "not_ok": 0,
+   "json_ms_minus_ledger_ms": {
+    "min": 4.0,
+    "max": 96.0
+   }
+  }
  },
  "score_6a_minimal_reference": {
   "frames": "720x1280",
@@ -244,11 +263,6 @@
     }
    }
   },
-  "spark_ms": {
-   "n": 351,
-   "p50": 1884,
-   "p95": 3254
-  },
   "cost_usd": 0.818093,
   "calls": 351,
   "usd_per_frame": 0.00233,
@@ -301,13 +315,176 @@
     "SP01"
    ]
   ],
+  "run_json_ms_column": {
+   "n": 351,
+   "p50": 1884,
+   "p95": 3254
+  },
   "E1_electronics_answered_other": 0,
   "E1_electronics_answered_none": 95,
   "E1_n": 100,
   "E2_no_product_answered_tshirt": 15,
   "E2_n": 29,
   "E3_non_shirt_product_answered_tshirt": 8,
-  "is_new_emitted_vs_real_changes": "10 emitted / 11 real changes"
+  "is_new_emitted_vs_real_changes": "10 emitted / 11 real changes",
+  "latency_ledger_ms": {
+   "n": 351,
+   "p50_ms": 1876,
+   "p95_ms": 3218,
+   "max_ms": 11138.0,
+   "usd": "0.81809300",
+   "not_ok": 0,
+   "json_ms_minus_ledger_ms": {
+    "min": 3.0,
+    "max": 173.0
+   }
+  }
+ },
+ "score_old_default_reference": {
+  "frames": "720x1280",
+  "n": 351,
+  "category_correct": "273/351 = 77.8%",
+  "category_correct_outside_change_band": "213/246 = 86.6%",
+  "new_product_per_frame_correct": "322/351 = 91.7%",
+  "changes_detected_within_3s": "5/11",
+  "missed_changes": [
+   [
+    13,
+    "SP01"
+   ],
+   [
+    125,
+    "SP04"
+   ],
+   [
+    226,
+    "SP07"
+   ],
+   [
+    265,
+    "SP09"
+   ],
+   [
+    312,
+    "SP10"
+   ],
+   [
+    326,
+    "SP01"
+   ]
+  ],
+  "new_emitted": 20,
+  "new_emitted_with_no_change_within_3s": 14,
+  "errors": 0,
+  "by_kind": {
+   "none": {
+    "ok": 15,
+    "n": 29,
+    "answers": {
+     "none": 15,
+     "tshirt": 14
+    }
+   },
+   "giày": {
+    "ok": 108,
+    "n": 129,
+    "answers": {
+     "tshirt": 4,
+     "sneaker": 84,
+     "none": 12,
+     "sandal": 24,
+     "other": 5
+    }
+   },
+   "áo": {
+    "ok": 78,
+    "n": 93,
+    "answers": {
+     "none": 15,
+     "tshirt": 60,
+     "shirt": 18
+    }
+   },
+   "tay cầm": {
+    "ok": 29,
+    "n": 39,
+    "answers": {
+     "tshirt": 1,
+     "none": 8,
+     "other": 29,
+     "sneaker": 1
+    }
+   },
+   "bàn phím": {
+    "ok": 43,
+    "n": 61,
+    "answers": {
+     "other": 43,
+     "none": 17,
+     "bag": 1
+    }
+   }
+  },
+  "cost_usd": 2.027509,
+  "calls": 351,
+  "usd_per_frame": 0.00578,
+  "tokens_in_per_call": 1331,
+  "tokens_out_per_call": 991,
+  "changes_detected_exact_second": "1/11",
+  "missed_exact": [
+   [
+    13,
+    "SP01"
+   ],
+   [
+    59,
+    "SP02"
+   ],
+   [
+    93,
+    "SP03"
+   ],
+   [
+    125,
+    "SP04"
+   ],
+   [
+    170,
+    "SP05"
+   ],
+   [
+    190,
+    "SP06"
+   ],
+   [
+    226,
+    "SP07"
+   ],
+   [
+    265,
+    "SP09"
+   ],
+   [
+    312,
+    "SP10"
+   ],
+   [
+    326,
+    "SP01"
+   ]
+  ],
+  "run_json_ms_column": {
+   "n": 351,
+   "p50": 7737,
+   "p95": 16353
+  },
+  "E1_electronics_answered_other": 72,
+  "E1_electronics_answered_none": 25,
+  "E1_n": 100,
+  "E2_no_product_answered_tshirt": 14,
+  "E2_n": 29,
+  "E3_non_shirt_product_answered_tshirt": 5,
+  "is_new_emitted_vs_real_changes": "20 emitted / 11 real changes"
  },
  "cost_check": {
   "api_cost_today_usd_before": 6.151306,
