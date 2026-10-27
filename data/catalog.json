@@ -1,0 +1,472 @@
+[
+ {
+  "sku": "GIAY-01",
+  "name": "Sneaker trắng đế cao su",
+  "category": "sneaker",
+  "price": 450000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "38",
+    "color": "trắng",
+    "stock": 2
+   },
+   {
+    "size": "39",
+    "color": "trắng",
+    "stock": 2
+   },
+   {
+    "size": "40",
+    "color": "trắng",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "GIAY-02",
+  "name": "Sneaker đen vải canvas",
+  "category": "sneaker",
+  "price": 390000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "38",
+    "color": "đen",
+    "stock": 3
+   },
+   {
+    "size": "39",
+    "color": "đen",
+    "stock": 3
+   },
+   {
+    "size": "40",
+    "color": "đen",
+    "stock": 3
+   }
+  ]
+ },
+ {
+  "sku": "GIAY-03",
+  "name": "Giày lười da bò",
+  "category": "loafer",
+  "price": 650000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "38",
+    "color": "nâu",
+    "stock": 2
+   },
+   {
+    "size": "39",
+    "color": "nâu",
+    "stock": 2
+   },
+   {
+    "size": "40",
+    "color": "nâu",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "GIAY-04",
+  "name": "Sandal quai ngang",
+  "category": "sandal",
+  "price": 220000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "38",
+    "color": "kem",
+    "stock": 4
+   },
+   {
+    "size": "39",
+    "color": "kem",
+    "stock": 4
+   },
+   {
+    "size": "40",
+    "color": "kem",
+    "stock": 4
+   },
+   {
+    "size": "38",
+    "color": "đen",
+    "stock": 4
+   },
+   {
+    "size": "39",
+    "color": "đen",
+    "stock": 4
+   },
+   {
+    "size": "40",
+    "color": "đen",
+    "stock": 4
+   }
+  ]
+ },
+ {
+  "sku": "BOOT-02",
+  "name": "Boot da đen cổ ngắn",
+  "category": "boot",
+  "price": 890000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "38",
+    "color": "đen",
+    "stock": 1
+   },
+   {
+    "size": "39",
+    "color": "đen",
+    "stock": 1
+   },
+   {
+    "size": "40",
+    "color": "đen",
+    "stock": 1
+   }
+  ]
+ },
+ {
+  "sku": "BOOT-05",
+  "name": "Boot da nâu cổ ngắn",
+  "category": "boot",
+  "price": 920000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "38",
+    "color": "nâu",
+    "stock": 2
+   },
+   {
+    "size": "39",
+    "color": "nâu",
+    "stock": 2
+   },
+   {
+    "size": "40",
+    "color": "nâu",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "CAO-01",
+  "name": "Giày cao gót mũi nhọn",
+  "category": "heels",
+  "price": 480000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "36",
+    "color": "đỏ",
+    "stock": 2
+   },
+   {
+    "size": "37",
+    "color": "đỏ",
+    "stock": 2
+   },
+   {
+    "size": "38",
+    "color": "đỏ",
+    "stock": 2
+   },
+   {
+    "size": "36",
+    "color": "đen",
+    "stock": 2
+   },
+   {
+    "size": "37",
+    "color": "đen",
+    "stock": 2
+   },
+   {
+    "size": "38",
+    "color": "đen",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "TUI-03",
+  "name": "Túi da đỏ đeo chéo",
+  "category": "bag",
+  "price": 690000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": null,
+    "color": "đỏ",
+    "stock": 4
+   }
+  ]
+ },
+ {
+  "sku": "TUI-04",
+  "name": "Túi tote vải",
+  "category": "bag",
+  "price": 180000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": null,
+    "color": "be",
+    "stock": 6
+   }
+  ]
+ },
+ {
+  "sku": "TUI-05",
+  "name": "Balo da mini",
+  "category": "bag",
+  "price": 750000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": null,
+    "color": "đen",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "AO-07",
+  "name": "Áo khoác jean",
+  "category": "jacket",
+  "price": 550000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "M",
+    "color": "xanh",
+    "stock": 3
+   },
+   {
+    "size": "L",
+    "color": "xanh",
+    "stock": 3
+   }
+  ]
+ },
+ {
+  "sku": "AO-08",
+  "name": "Áo sơ mi linen",
+  "category": "shirt",
+  "price": 320000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "S",
+    "color": "trắng",
+    "stock": 3
+   },
+   {
+    "size": "M",
+    "color": "trắng",
+    "stock": 3
+   },
+   {
+    "size": "L",
+    "color": "trắng",
+    "stock": 3
+   },
+   {
+    "size": "S",
+    "color": "be",
+    "stock": 3
+   },
+   {
+    "size": "M",
+    "color": "be",
+    "stock": 3
+   },
+   {
+    "size": "L",
+    "color": "be",
+    "stock": 3
+   }
+  ]
+ },
+ {
+  "sku": "AO-09",
+  "name": "Áo len cổ lọ",
+  "category": "sweater",
+  "price": 410000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "M",
+    "color": "xám",
+    "stock": 2
+   },
+   {
+    "size": "L",
+    "color": "xám",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "AO-10",
+  "name": "Áo thun basic",
+  "category": "tshirt",
+  "price": 150000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "S",
+    "color": "trắng",
+    "stock": 8
+   },
+   {
+    "size": "M",
+    "color": "trắng",
+    "stock": 8
+   },
+   {
+    "size": "L",
+    "color": "trắng",
+    "stock": 8
+   },
+   {
+    "size": "S",
+    "color": "đen",
+    "stock": 8
+   },
+   {
+    "size": "M",
+    "color": "đen",
+    "stock": 8
+   },
+   {
+    "size": "L",
+    "color": "đen",
+    "stock": 8
+   }
+  ]
+ },
+ {
+  "sku": "QUAN-01",
+  "name": "Quần jean ống suông",
+  "category": "jeans",
+  "price": 480000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "28",
+    "color": "xanh",
+    "stock": 3
+   },
+   {
+    "size": "29",
+    "color": "xanh",
+    "stock": 3
+   },
+   {
+    "size": "30",
+    "color": "xanh",
+    "stock": 3
+   }
+  ]
+ },
+ {
+  "sku": "QUAN-02",
+  "name": "Quần tây ống đứng",
+  "category": "trousers",
+  "price": 420000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "28",
+    "color": "đen",
+    "stock": 2
+   },
+   {
+    "size": "29",
+    "color": "đen",
+    "stock": 2
+   },
+   {
+    "size": "30",
+    "color": "đen",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "VAY-01",
+  "name": "Váy hoa dáng xoè",
+  "category": "dress",
+  "price": 520000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "S",
+    "color": "hồng",
+    "stock": 2
+   },
+   {
+    "size": "M",
+    "color": "hồng",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "VAY-02",
+  "name": "Chân váy chữ A",
+  "category": "skirt",
+  "price": 290000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "S",
+    "color": "đen",
+    "stock": 3
+   },
+   {
+    "size": "M",
+    "color": "đen",
+    "stock": 3
+   }
+  ]
+ },
+ {
+  "sku": "PK-01",
+  "name": "Thắt lưng da",
+  "category": "belt",
+  "price": 260000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": null,
+    "color": "nâu",
+    "stock": 5
+   }
+  ]
+ },
+ {
+  "sku": "PK-02",
+  "name": "Mũ bucket",
+  "category": "hat",
+  "price": 140000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": null,
+    "color": "be",
+    "stock": 6
+   }
+  ]
+ }
+]

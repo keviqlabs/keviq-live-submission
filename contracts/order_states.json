@@ -1,0 +1,18 @@
+{
+  "v": 1,
+  "states": ["DRAFT", "CONFIRM_SENT", "CONFIRMED", "CLOSED", "NEEDS_SELLER", "CANCELLED"],
+  "initial": "DRAFT",
+  "terminal": ["CLOSED", "CANCELLED"],
+  "transitions": {
+    "DRAFT": ["CONFIRM_SENT", "NEEDS_SELLER", "CANCELLED"],
+    "CONFIRM_SENT": ["CONFIRMED", "NEEDS_SELLER", "CANCELLED"],
+    "CONFIRMED": ["CLOSED", "NEEDS_SELLER", "CANCELLED"],
+    "NEEDS_SELLER": ["DRAFT", "CONFIRM_SENT", "CONFIRMED", "CANCELLED"],
+    "CLOSED": [],
+    "CANCELLED": []
+  },
+  "guards": {
+    "CONFIRMED": "only when the customer has confirmed (actor=customer on CONFIRM_SENT→CONFIRMED; NEEDS_SELLER→CONFIRMED only if the order was already confirmed by the customer before)",
+    "NEEDS_SELLER→*": "only actor=seller leaves NEEDS_SELLER, except →CANCELLED by the customer"
+  }
+}

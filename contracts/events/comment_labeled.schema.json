@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keviq:events:comment_labeled:v1",
+  "title": "comment_labeled event",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+    },
+    "ts_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Source time (epoch ms) of what the event describes, not processing time"
+    },
+    "source": {
+      "enum": [
+        "replay",
+        "facebook",
+        "sim"
+      ]
+    },
+    "v": {
+      "const": 1
+    },
+    "caused_by": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+      },
+      "description": "event_ids this event is a consequence of (provenance, C1/C6)"
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional stage timestamps (epoch ms) for latency measurement (C8)",
+      "properties": {
+        "received_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "infer_start_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "infer_end_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "emitted_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "type": {
+      "const": "comment_labeled"
+    },
+    "comment_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+    },
+    "label": {
+      "enum": [
+        "order",
+        "price_question",
+        "stock_question",
+        "complaint",
+        "spam",
+        "scam",
+        "other"
+      ]
+    },
+    "order_draft": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sku": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "variant": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "size": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "color": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "size",
+                    "color"
+                  ]
+                }
+              ]
+            },
+            "qty": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "referenced_card_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reference_kind": {
+              "enum": [
+                "explicit_sku",
+                "current_card",
+                "previous_card",
+                "unresolved"
+              ]
+            }
+          },
+          "required": [
+            "sku",
+            "variant",
+            "qty",
+            "referenced_card_id",
+            "reference_kind"
+          ]
+        }
+      ]
+    },
+    "scam_signals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "action": {
+      "enum": [
+        "none",
+        "hide",
+        "warn"
+      ]
+    },
+    "latency_ms": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "event_id",
+    "session_id",
+    "ts_ms",
+    "source",
+    "v",
+    "type",
+    "comment_id",
+    "label",
+    "order_draft",
+    "scam_signals",
+    "action",
+    "latency_ms"
+  ]
+}

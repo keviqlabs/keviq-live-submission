@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keviq:events:speech:v1",
+  "title": "speech event",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+    },
+    "ts_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Source time (epoch ms) of what the event describes, not processing time"
+    },
+    "source": {
+      "enum": [
+        "replay",
+        "facebook",
+        "sim"
+      ]
+    },
+    "v": {
+      "const": 1
+    },
+    "caused_by": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+      },
+      "description": "event_ids this event is a consequence of (provenance, C1/C6)"
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional stage timestamps (epoch ms) for latency measurement (C8)",
+      "properties": {
+        "received_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "infer_start_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "infer_end_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "emitted_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "type": {
+      "const": "speech"
+    },
+    "text": {
+      "type": "string"
+    },
+    "final": {
+      "type": "boolean"
+    },
+    "lang": {
+      "type": "string",
+      "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
+    },
+    "start_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "end_ms": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "event_id",
+    "session_id",
+    "ts_ms",
+    "source",
+    "v",
+    "type",
+    "text",
+    "final",
+    "lang",
+    "start_ms",
+    "end_ms"
+  ]
+}

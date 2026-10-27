@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keviq:events:order:v1",
+  "title": "order event",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+    },
+    "ts_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Source time (epoch ms) of what the event describes, not processing time"
+    },
+    "source": {
+      "enum": [
+        "replay",
+        "facebook",
+        "sim"
+      ]
+    },
+    "v": {
+      "const": 1
+    },
+    "caused_by": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+      },
+      "description": "event_ids this event is a consequence of (provenance, C1/C6)"
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional stage timestamps (epoch ms) for latency measurement (C8)",
+      "properties": {
+        "received_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "infer_start_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "infer_end_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "emitted_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "type": {
+      "const": "order"
+    },
+    "order_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+    },
+    "customer_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lines": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sku": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "card_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+          },
+          "card_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "variant": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "size": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "color": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "size",
+              "color"
+            ]
+          },
+          "qty": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "unit_price": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "sku",
+          "card_id",
+          "card_version",
+          "variant",
+          "qty",
+          "unit_price"
+        ]
+      }
+    },
+    "amount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "state": {
+      "enum": [
+        "DRAFT",
+        "CONFIRM_SENT",
+        "CONFIRMED",
+        "CLOSED",
+        "NEEDS_SELLER",
+        "CANCELLED"
+      ]
+    },
+    "prev_state": {
+      "enum": [
+        "DRAFT",
+        "CONFIRM_SENT",
+        "CONFIRMED",
+        "CLOSED",
+        "NEEDS_SELLER",
+        "CANCELLED",
+        null
+      ]
+    },
+    "actor": {
+      "enum": [
+        "assistant",
+        "seller",
+        "customer",
+        "system"
+      ]
+    },
+    "approval_needed": {
+      "type": "boolean"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "receipt": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "card_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+            },
+            "card_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "image_url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "price": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "card_version",
+            "image_url",
+            "price"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "event_id",
+    "session_id",
+    "ts_ms",
+    "source",
+    "v",
+    "type",
+    "order_id",
+    "customer_ref",
+    "lines",
+    "amount",
+    "state",
+    "prev_state",
+    "actor",
+    "approval_needed",
+    "reason",
+    "receipt"
+  ]
+}

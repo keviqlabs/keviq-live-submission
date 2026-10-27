@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Live card overlay</title>
+<style>
+  html, body { margin:0; background:transparent; font:600 28px/1.25 system-ui, sans-serif; color:#fff; }
+  #card { position:fixed; left:32px; bottom:32px; display:none; gap:16px; align-items:center; padding:16px 20px; border-radius:12px; background:rgba(0,0,0,.62); max-width:640px; }
+  #card img { max-height:120px; max-width:160px; border-radius:8px; }
+  #price { font-size:36px; }
+  #meta { font-size:18px; font-weight:500; opacity:.85; }
+</style>
+</head>
+<body>
+<!-- Transparent page for an OBS browser source: shows the newest live card. -->
+<div id="card"><img id="img" alt=""><div><div id="name"></div><div id="price"></div><div id="meta"></div></div></div>
+<script>
+  const sid = decodeURIComponent(location.pathname.split("/").filter(Boolean).pop());
+  const cards = new Map();
+  const show = () => {
+    const live = [...cards.values()].filter((c) => c.status === "live" || c.status === "edited" || c.status === "draft").sort((a, b) => b.ts_ms - a.ts_ms)[0];
+    const el = document.getElementById("card");
+    if (!live) { el.style.display = "none"; return; }
+    el.style.display = "flex";
+    document.getElementById("img").style.display = live.image_url ? "" : "none";
+    if (live.image_url) document.getElementById("img").src = live.image_url;
+    document.getElementById("name").textContent = live.name;
+    document.getElementById("price").textContent = live.price == null ? "" : live.price.toLocaleString("vi-VN") + " ₫";
+    const sizes = [...new Set(live.variants.filter((v) => v.stock > 0).map((v) => v.size).filter(Boolean))];
+    document.getElementById("meta").textContent = (live.status === "draft" ? "đang cập nhật · " : "") + (sizes.length ? "size " + sizes.join(" · ") : "");
+  };
+  const es = new EventSource(`/api/sessions/${encodeURIComponent(sid)}/events?cursor=0`);
+  es.addEventListener("card", (m) => { const c = JSON.parse(m.data); const cur = cards.get(c.card_id); if (!cur || cur.version <= c.version) cards.set(c.card_id, c); show(); });
+</script>
+</body>
+</html>
