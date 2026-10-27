@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from app.contracts import ContractError, now_ms, validate_event
 from app.orders_api import router as orders_router
-from app.settings import ROOT, database_url, env_float
+from app.settings import ROOT, database_url, env_float, env_usd
 from app.store import TEST_SESSION_PREFIXES, live_cards_from, make_store, session_state, vn_day_bounds
 
 log = logging.getLogger("app")
@@ -117,7 +117,8 @@ def create_app(store=None) -> FastAPI:
     async def cost(request: Request, session: str | None = None):
         """Spend the caps check (all model_call rows; today = recorded today, VN day), plus the part caused by
         test sessions, shown apart. With `?session=<id>`, also `session_usd`: that session's spend, all time, which
-        the per-session cap checks."""
+        the per-session cap checks, and `session_cap_usd` / `session_warn_usd` from this process's environment
+        (null when unset)."""
         start, end = vn_day_bounds(now_ms())
         store = st(request)
         body = {
@@ -134,6 +135,8 @@ def create_app(store=None) -> FastAPI:
         }
         if session is not None:
             body["session_usd"] = round(await store.cost_usd(session_id=session), 6)
+            body["session_cap_usd"] = env_usd("MODEL_SESSION_CAP_USD")
+            body["session_warn_usd"] = env_usd("MODEL_SESSION_WARN_USD")
         return body
 
     @app.get("/")

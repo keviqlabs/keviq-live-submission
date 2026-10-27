@@ -4,7 +4,7 @@ calendar day the store recorded the call (ingested_ms), whatever ts_ms the event
 import logging
 from collections.abc import Awaitable, Callable
 
-from app.settings import env, env_float
+from app.settings import env_float, env_usd
 
 log = logging.getLogger("meta.meter")
 
@@ -20,7 +20,8 @@ class Meter:
 
     Per session: `session_spend(session_id)` returns that session's spend, all time. It is read only when a session
     cap or warning is set (MODEL_SESSION_CAP_USD, MODEL_SESSION_WARN_USD; unset or empty means off) and the call
-    names its session. At the cap, `BudgetExceeded("session_cap")`; the warning is logged once per session.
+    names its session. At the cap, `BudgetExceeded("session_cap")`, whose text ("session_cap: spent 8.0000 USD, cap
+    8.0 USD") is the refused model_call's `error`; the warning is logged once per session.
 
     Limit: the spend is read before each call and there is no reserve, so the calls already in flight when the cap
     is crossed still finish and can take the session over it. A voice stream is checked once, when it opens, and
@@ -43,9 +44,9 @@ class Meter:
         self.warn_at = env_float("MODEL_DAILY_WARN_USD", 20) if warn_at is None else warn_at
         self.warned = False
         self.session_spend = session_spend
-        self.session_cap = _env_usd("MODEL_SESSION_CAP_USD") if session_cap is None else session_cap
+        self.session_cap = env_usd("MODEL_SESSION_CAP_USD") if session_cap is None else session_cap
         self.session_warn_at = (
-            _env_usd("MODEL_SESSION_WARN_USD") if session_warn_at is None else session_warn_at
+            env_usd("MODEL_SESSION_WARN_USD") if session_warn_at is None else session_warn_at
         )
         self.session_warned: set[str] = set()
 
@@ -82,11 +83,6 @@ class Meter:
                 self.session_warn_at,
                 self.session_cap,
             )
-
-
-def _env_usd(name: str) -> float | None:
-    raw = env(name)
-    return None if raw is None or raw.strip() == "" else float(raw)
 
 
 def memory_spend(ledger: list[float]) -> Callable[[], Awaitable[tuple[float, float]]]:

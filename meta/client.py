@@ -174,7 +174,9 @@ class MetaClient:
             await self.meter.check(self.session_id)
         except BudgetExceeded as exc:
             log.error("model call blocked (%s): %s", purpose, exc)
-            await self._log(model, purpose, _ms(), ok=False, error=exc.reason)
+            # daily_cap / total_cap stay bare (the console matches them); the session cap names the spend
+            error = str(exc) if exc.reason == "session_cap" else exc.reason
+            await self._log(model, purpose, _ms(), ok=False, error=error)
             raise
 
     async def _post(self, model: str, purpose: str, path: str, body: dict, units=None):

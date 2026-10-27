@@ -29,6 +29,12 @@ def env_float(name: str, default: float) -> float:
     return float(os.environ.get(name, default))
 
 
+def env_usd(name: str) -> float | None:
+    """An optional USD amount: unset or empty is None (off)."""
+    raw = env(name)
+    return None if raw is None or raw.strip() == "" else float(raw)
+
+
 def env_int(name: str, default: int) -> int:
     return int(os.environ.get(name, default))
 
