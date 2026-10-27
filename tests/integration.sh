@@ -32,10 +32,14 @@ docker compose -f deploy/compose.yml up -d --wait postgres >"$LOG_DIR/infra.log"
 uv run python -m app.migrate --test >>"$LOG_DIR/infra.log" 2>&1 || { cat "$LOG_DIR/infra.log" >&2; fail "migrate"; }
 
 echo "2/4 app on :$PORT"
+# Another app on the port would answer healthz and take this run's events (set SMOKE_PORT to a free port).
+curl -sf "$BASE/healthz" >/dev/null 2>&1 && fail "port $PORT already answers healthz"
 uv run uvicorn app.main:app --host 127.0.0.1 --port "$PORT" >"$LOG_DIR/app.log" 2>&1 &
-PIDS+=($!)
+APP=$!
+PIDS+=($APP)
 for _ in $(seq 1 50); do curl -sf "$BASE/healthz" >/dev/null 2>&1 && break; sleep 0.2; done
 health="$(curl -sf "$BASE/healthz")" || fail "healthz did not answer"
+kill -0 "$APP" 2>/dev/null || fail "app exited (port $PORT taken?)"
 echo "    healthz: $health"
 echo "$health" | grep -q '"store":"pg"' || fail "app is not on PostgreSQL"
 
