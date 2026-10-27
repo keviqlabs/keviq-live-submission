@@ -53,12 +53,31 @@ One real run on 27 October: 200 synthetic comments from `data/comments/` posted 
 - 33 of the 34 hides come from the shield on receipt. The spelled-out phone number (c146) has no digits for the regex, so the model label hides it, at 3.7 s.
 - Spend: $0.2578 for 199 calls.
 - Earlier run, for comparison: sim speed 20, default effort, batches of 6–9 comments, label p95 21.4 s.
+- A later run with the same code and settings was slower: label p95 5.6 s, model call p95 4.7 s (next section).
+
+## Labels against the approved gold
+
+The Founder confirmed the review sample c001–c030 on 27 October (all 30, none changed). Three template rows were replaced by seller cases, and five orders carry the action the shop should take next (`data/README.md`). One run on that set at live speed, same settings as above, session `comments200-s1-1027-135456`: 197 calls, $0.2596, 0 errors. Evidence: `docs/evidence/2026-10-27/labels-comments200-s1-1027-135456.json` (`python -m measure.labels`), command output in the PR.
+
+| | result |
+|---|---|
+| micro-F1, Founder-approved sample c001–c030 | 1.000, n=30 |
+| micro-F1, template gold c031–c200 | 0.976, n=170 |
+| order fields all exact | 73/74 |
+| `ask_customer` (c019, c022, c106): no size or item guessed | 3/3 |
+| `needs_seller` (c034 over the threshold, c092 discount): order filled in right | 2/2 |
+| scams with contact hidden | 26/26 |
+| label end to end p50 / p95 | 3966 / 5616 ms |
+| model_call latency_ms p50 / p95 | 2959 / 4689 ms |
+
+- The one order-field miss is c106 "size như bạn trên": the model left the item unresolved instead of taking the live card, so the shop asks which item rather than which size. No size was guessed.
+- These rows score the model's labels only. Whether the shop then asks the customer or waits for the seller is up to the orders and Messenger streams.
 
 ## Honest limits
 
 - In `data/sessions/demo1` no model is called: the cards, labels and orders are hand-written stand-ins (`fx-` events), so the demo1 numbers check the measuring code, not the models. `uv run python -m connectors.sim.replay --session demo1 --no-fixtures` drops them.
 - C8 label latency misses the 1 s target (table above). The display stage counts worker emit to app store; console render time is not measured.
-- The 200-comment labeled set is in `data/comments/` (how the gold is set: `data/README.md`); its Founder review sample, c001–c030, is not confirmed yet. The 500-comment set is not built yet.
+- The 200-comment labeled set is in `data/comments/` (how the gold is set: `data/README.md`); the Founder confirmed its review sample, c001–c030, on 27 October. No cancel row yet. The 500-comment set is not built yet.
 - Facebook is an interface only and Messenger is simulated: nothing is sent to real people and no real comment is hidden.
 - The request and response shapes for the Model API (structured output, SAM, voice stream) come from the docs and are not yet checked against live calls.
 
