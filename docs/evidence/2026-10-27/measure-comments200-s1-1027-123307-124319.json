@@ -1,0 +1,201 @@
+{
+ "events": 648,
+ "fixtures": 0,
+ "cost": [
+  {
+   "day": "2026-10-27",
+   "model": "muse-spark-1.3",
+   "calls": 199,
+   "errors": 0,
+   "cost_usd": 0.257843
+  }
+ ],
+ "c8_latency": {
+  "model_call": {
+   "receive": {
+    "n": 199,
+    "p50": 3001,
+    "p95": 3983
+   },
+   "wait": {
+    "n": 199,
+    "p50": 0,
+    "p95": 0
+   },
+   "display": {
+    "n": 199,
+    "p50": 4,
+    "p95": 8
+   }
+  },
+  "comment_labeled": {
+   "receive": {
+    "n": 233,
+    "p50": 7,
+    "p95": 13
+   },
+   "wait": {
+    "n": 233,
+    "p50": 1016,
+    "p95": 1026
+   },
+   "infer": {
+    "n": 200,
+    "p50": 1989,
+    "p95": 2879
+   },
+   "display": {
+    "n": 233,
+    "p50": 3,
+    "p95": 4
+   }
+  },
+  "message_out": {
+   "receive": {
+    "n": 7,
+    "p50": 10,
+    "p95": 14
+   },
+   "wait": {
+    "n": 7,
+    "p50": 2907,
+    "p95": 3808
+   },
+   "display": {
+    "n": 7,
+    "p50": 7,
+    "p95": 8
+   }
+  }
+ },
+ "c1": {
+  "n": 130,
+  "covered": 7,
+  "missing": [
+   "comment_labeled_eee9c0516f0146879039",
+   "comment_labeled_5b27c0c820d24f5f83b1",
+   "comment_labeled_cee6ac57ebc444e190e5",
+   "comment_labeled_fc85ffd500d14aeebf82",
+   "comment_labeled_5dd14fe797094c62b0e4",
+   "comment_labeled_2f04fda7966049318ba3",
+   "comment_labeled_ab0c3140258246bf9e40",
+   "comment_labeled_97ab925dbd12478bbfeb",
+   "comment_labeled_baa6a2b7081c465ea9c9",
+   "comment_labeled_ed3b447b441e45f584ee",
+   "comment_labeled_9c02f623b6d9487093c3",
+   "comment_labeled_ba6ee68a536d4bc397d3",
+   "comment_labeled_19ba7327989f40289776",
+   "comment_labeled_b696b67ccd6c40e58cb5",
+   "comment_labeled_71b31615a77340a081bc",
+   "comment_labeled_76c6a0eb790b49dfbf8f",
+   "comment_labeled_d3a9b3543dbe433d9ca7",
+   "comment_labeled_524eda51d6e345c68e30",
+   "comment_labeled_7f0f4130659e47ec9458",
+   "comment_labeled_ca689ae13af841a79f15",
+   "comment_labeled_e420abb4ea06405b8f8c",
+   "comment_labeled_c977193f77794d7bb9e7",
+   "comment_labeled_6980efc372c74bf4a1e5",
+   "comment_labeled_f31cb645cc994780935c",
+   "comment_labeled_4c72bf8d680f4ff79e77",
+   "comment_labeled_cb7f03e8d6734a198faf",
+   "comment_labeled_5c3ccb2e09514e18a9af",
+   "comment_labeled_081071ef4c424035904c",
+   "comment_labeled_0052bb397bf04d59a193",
+   "comment_labeled_f83fd04fae3040088bc2",
+   "comment_labeled_c75e91f6ed774ed49244",
+   "comment_labeled_4fc833dfef9a4b678b52",
+   "comment_labeled_6a53cb28d0864a10854a",
+   "comment_labeled_303c53b269c04cd3b18b",
+   "comment_labeled_922244a3efd54f8ba241",
+   "comment_labeled_3bbc809f1f3c4b1f922b",
+   "comment_labeled_c725c438f50f4ff0be6d",
+   "comment_labeled_679c3da2e0ff497090ea",
+   "comment_labeled_468534e555034b30994f",
+   "comment_labeled_f7e6eac8a79346a199a4",
+   "comment_labeled_40dd3f38a4dd47e7b494",
+   "comment_labeled_264d00b5367b4e4db90a",
+   "comment_labeled_37bb923d0984435b9124",
+   "comment_labeled_c5db482de6ac431d9439",
+   "comment_labeled_878578c13858491faec6",
+   "comment_labeled_632802931076449a9ded",
+   "comment_labeled_cdb1091a39264cbbb338",
+   "comment_labeled_f7b2422ac2014b189dab",
+   "comment_labeled_3c4dfb7904fd48129b7d",
+   "comment_labeled_2d30a2f4962c4bc58d50",
+   "comment_labeled_beb5ce87b8a24acbad33",
+   "comment_labeled_bd7cc9d5525f47419f40",
+   "comment_labeled_9b76dbdfa1ef429e83a0",
+   "comment_labeled_2737cc8d980d4e119d6f",
+   "comment_labeled_a42348d45d03476892d1",
+   "comment_labeled_b8adb2aed3c54c86916d",
+   "comment_labeled_40f2773bffe548f28771",
+   "comment_labeled_52332113ad1b4f39bd05",
+   "comment_labeled_49efff58399745ccaf82",
+   "comment_labeled_eaf76cac9f274288900c",
+   "comment_labeled_e6726a4328f64d49bb0e",
+   "comment_labeled_b424d88e6a534942ab01",
+   "comment_labeled_d2f790e57b00413db74f",
+   "comment_labeled_97363839815a4f4c97af",
+   "comment_labeled_488d354d2dc3458c9298",
+   "comment_labeled_9c66c022cb6145da8b26",
+   "comment_labeled_a1b8626c1daa445b8d4c",
+   "comment_labeled_34ddccffa156495ea0fa",
+   "comment_labeled_ab6f2c2636054015b129",
+   "comment_labeled_f106e0decc17489a943b",
+   "comment_labeled_1624a9b223a346689e65",
+   "comment_labeled_3529093f148142b3a119",
+   "comment_labeled_fa5a5e8518ee4e7a9370",
+   "comment_labeled_a77949defb984aa89e34",
+   "comment_labeled_dcc37bf9fbd74b488db2",
+   "comment_labeled_cb1198c96c3046acb139",
+   "comment_labeled_f8c3f401c83143968914",
+   "comment_labeled_e51e7787f0db461fa0c0",
+   "comment_labeled_cab8da3b183c414f8b82",
+   "comment_labeled_bc48b5af1d2145538ceb",
+   "comment_labeled_20d145dda861462db947",
+   "comment_labeled_c3ac91f211934e21a5b7",
+   "comment_labeled_1e8d4da1630c44bd9666",
+   "comment_labeled_60d603c7579b457e9a45",
+   "comment_labeled_7eddb08d87054982ba4c",
+   "comment_labeled_8bbaf69ebe54413c984d",
+   "comment_labeled_51152f7ac21949898405",
+   "comment_labeled_2ae3451f2c224229b6e1",
+   "comment_labeled_cb97b159dad541c7b27d",
+   "comment_labeled_2413a980d1284251ab00",
+   "comment_labeled_165b3bc53f9248ca8756",
+   "comment_labeled_514b7c3ae8454ce3a402",
+   "comment_labeled_faa59f66e708424dac71",
+   "comment_labeled_7a0a72afe39f4999b341",
+   "comment_labeled_f28356e7e9d644b8875f",
+   "comment_labeled_6d53e316d79d4af8b39a",
+   "comment_labeled_0db572d02c924a228506",
+   "comment_labeled_c02d87d21f924451888c",
+   "comment_labeled_55a7758e7a684217bdbc",
+   "comment_labeled_2c136d9bd9e444598b5b",
+   "comment_labeled_ef3e2c06eb6049ad9c83",
+   "comment_labeled_e6d0dd6fd6294beebe4d",
+   "comment_labeled_cb575e09650942469ccf",
+   "comment_labeled_fdf1c7eec7b54f618cbd",
+   "comment_labeled_f9f1cafc5f61477da77d",
+   "comment_labeled_38bdfc9d1b3a49ffac6f",
+   "comment_labeled_5917918c81ce49a9bddd",
+   "comment_labeled_e2061505ee30444daedf",
+   "comment_labeled_de64a367e8604fe6848d",
+   "comment_labeled_9aa545c65c07483d84ea",
+   "comment_labeled_ab44344bdeba43a4b5a2",
+   "comment_labeled_69781a4aaa9b49249c2a",
+   "comment_labeled_5b37a8c52c744fd6821c",
+   "comment_labeled_a43d0f170a884ee1a339",
+   "comment_labeled_ef032635d3a6481f810d",
+   "comment_labeled_0689535fa7ef421fad2f",
+   "comment_labeled_db1344a9b90a48efac87",
+   "comment_labeled_035ba320cc4044f791aa",
+   "comment_labeled_79f2d0f713174b728f0a",
+   "comment_labeled_26a7317b150945cfadf1",
+   "comment_labeled_19d9561acb0c4137bed4",
+   "comment_labeled_588c0468154d49e1bb9a",
+   "comment_labeled_5fd5bb02ee234716af08"
+  ],
+  "cycle_ms": 5000
+ }
+}
