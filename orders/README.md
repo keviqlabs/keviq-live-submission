@@ -17,7 +17,11 @@ Order state machine (`states.py`), permission rules (`rules.py`), the order flow
    (`rules.price_change`), or reject (`CANCELLED` by the seller). Approve → `CONFIRM_SENT` by the seller.
 4. The customer's `message_in` (quick reply `CONFIRM:<order_id>` / `CANCEL:<order_id>`, or a plain yes in the
    thread) → `CONFIRMED` with a receipt `{card_id, card_version, image_url, price}` from that card version, and a
-   receipt message; or `CANCELLED` by the customer.
+   receipt message; or `CANCELLED` by the customer. If the card got a new version after the confirmation was sent
+   (after `CONFIRM_SENT`'s `ts_ms`) and that version has another price or no longer lists the line's variant, the
+   yes goes to `NEEDS_SELLER` instead (`flow.card_change`). The order keeps its pinned version and price. The
+   reason names the version at the send and the version at the yes, and `caused_by` adds the newer card event. A
+   card change between the comment and the send does not count: the order keeps the comment-time price.
 
 ## Cancel
 
