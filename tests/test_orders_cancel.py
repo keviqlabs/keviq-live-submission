@@ -189,7 +189,8 @@ async def test_keep_changes_nothing(played):
 
 
 @pytest.mark.parametrize(
-    "text", ["đừng huỷ đơn nha shop", "không huỷ đâu", "khỏi huỷ", "có nên huỷ không ta"]
+    "text",
+    ["đừng huỷ đơn nha shop", "không huỷ đâu", "khỏi huỷ", "ko huỷ nha", "k huỷ nha", "có nên huỷ không ta"],
 )
 async def test_negation_or_ambiguous_text_sends_nothing(text):
     label, view = comment_scene(text, [order("o-1", "CONFIRM_SENT")])
@@ -276,6 +277,19 @@ async def test_order_label_with_cancel_text_makes_no_draft():
     label, view = comment_scene("huỷ đơn đôi 39", [order("o-1", "CONFIRM_SENT")], label="order")
     [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
     assert ask["template"] == "ask_cancel" and quick_replies(ask) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Chốt 1 đôi size 39, ko huỷ nha", "chốt đôi 39 k huỷ nha", "không huỷ đâu", "lần trước bị huỷ đơn rồi"],
+)
+async def test_order_label_with_negated_or_unclear_cancel_words_still_drafts(text):
+    label, view = comment_scene(text, [], label="order")
+    rec = Recorder()
+    out = await flow.on_labeled(label, view, rec, now=6000)
+    states = [e["state"] for e in out if e["type"] == "order"]
+    assert states == ["DRAFT", "CONFIRM_SENT"] and "CANCELLED" not in states
+    assert [template for _, template, _ in rec.sent] == ["confirm_order"]
 
 
 # --- around the cases --------------------------------------------------------------------------------------
