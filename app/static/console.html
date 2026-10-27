@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seller console</title>
+<link rel="stylesheet" href="/static/console.css">
+</head>
+<body>
+<header>
+  <h1>Console · <span id="sid"></span></h1>
+  <span class="muted">stream: <span id="conn">connecting</span> · seq <span id="seq">0</span></span>
+  <span class="muted">model cost today: <b id="cost">–</b> / <span id="cap">–</span> USD</span>
+  <a href="" id="overlay-link" target="_blank">overlay</a>
+</header>
+<div id="banner"></div>
+<main>
+  <section><h2>Live cards</h2><div id="cards"></div></section>
+  <section><h2>Comments</h2><div id="comments"></div></section>
+  <section><h2>Approval queue</h2><div id="queue"></div><h2>Orders</h2><div id="orders"></div></section>
+</main>
+<script src="/static/console.js"></script>
+</body>
+</html>
