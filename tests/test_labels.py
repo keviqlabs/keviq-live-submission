@@ -135,8 +135,26 @@ def test_gold_is_what_the_authoring_rows_fix():
         "c034": "needs_seller",
         "c092": "needs_seller",
         "c106": "ask_customer",
+        "c169": "none",
+        "c192": "confirm_cancel",
     }
-    assert all(GOLD[cid]["label"] == "order" for cid in actions)
+    assert {GOLD[cid]["label"] for cid, a in actions.items() if a in ("ask_customer", "needs_seller")} == {
+        "order"
+    }
+    assert GOLD["c169"]["label"] == GOLD["c192"]["label"] == "other"
+
+    # The cancel comes from a customer with exactly one earlier order, the size 39 it names;
+    # the "don't cancel" comment from another customer who has an order.
+    def earlier_orders(cid):
+        g = GOLD[cid]
+        return [
+            o
+            for o in GOLD.values()
+            if o["user_ref"] == g["user_ref"] and o["label"] == "order" and o["ts_ms"] < g["ts_ms"]
+        ]
+
+    assert [o["order"]["size"] for o in earlier_orders("c192")] == ["39"]
+    assert earlier_orders("c169") and GOLD["c169"]["user_ref"] != GOLD["c192"]["user_ref"]
 
 
 # --- timeline resolution
@@ -221,6 +239,8 @@ async def test_two_hundred_comments_through_the_stream(mem_app, monkeypatch):
     assert r["expected_action"] == {
         "ask_customer": {"n": 3, "ok": 3, "misses": []},
         "needs_seller": {"n": 2, "ok": 2, "misses": []},
+        "confirm_cancel": {"n": 1, "ok": 1, "misses": []},
+        "none": {"n": 1, "ok": 1, "misses": []},
     }
     assert r["core"]["c3"]["accuracy"] == 1.0 and r["core"]["c3"]["n"] == 74
     sh = r["shield"]
@@ -353,7 +373,8 @@ def test_measure_splits_f1_by_label_source():
 
 
 def test_measure_expected_action_counts_guesses():
-    """ask_customer misses when the model fills in what the comment left open; needs_seller needs the whole order."""
+    """ask_customer misses when the model fills in what the comment left open; needs_seller needs the whole order;
+    confirm_cancel and none need the label other."""
 
     def draft(cid, **change):
         o = {**GOLD[cid]["order"], **change}
@@ -365,7 +386,7 @@ def test_measure_expected_action_counts_guesses():
             "reference_kind": o["reference_kind"],
         }
 
-    gold = {cid: GOLD[cid] for cid in ["c019", "c022", "c106", "c034", "c092", "c031"]}
+    gold = {cid: GOLD[cid] for cid in ["c019", "c022", "c106", "c034", "c092", "c031", "c169", "c192"]}
     evs = [comment(c) for c in gold]
     evs += [labeled("c019", "order", draft("c019", size="40"))]
     evs += [
@@ -373,6 +394,7 @@ def test_measure_expected_action_counts_guesses():
     ]
     evs += [labeled("c106", "other"), labeled("c034", "order", draft("c034"))]
     evs += [labeled("c092", "order", draft("c092", qty=2)), labeled("c031", GOLD["c031"]["label"])]
+    evs += [labeled("c169", "other"), labeled("c192", "order", draft("c032"))]
     r = measure_labels.report(evs, gold)
     assert r["expected_action"] == {
         "ask_customer": {
@@ -385,7 +407,13 @@ def test_measure_expected_action_counts_guesses():
             ],
         },
         "needs_seller": {"n": 2, "ok": 1, "misses": [{"comment_id": "c092", "why": "wrong qty"}]},
+        "none": {"n": 1, "ok": 1, "misses": []},
+        "confirm_cancel": {"n": 1, "ok": 0, "misses": [{"comment_id": "c192", "why": "label order"}]},
     }
+    assert (
+        "expected_action confirm_cancel: model part right 0/1 misses: c192 label order"
+        in measure_labels.table(r)
+    )
     assert (
         "expected_action needs_seller: model part right 1/2 misses: c092 wrong qty" in measure_labels.table(r)
     )
