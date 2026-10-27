@@ -36,14 +36,17 @@ Every event has `event_id`, `session_id`, `ts_ms`, `source` (`replay` · `facebo
 ## Card versions
 
 - Every edit (person or model) emits a new `card` event with `version + 1`; versions are never overwritten.
+- `(card_id, version)` is unique in a session. The store refuses a `card` whose version that card already has under another `event_id`; `POST /api/sessions/{id}/events` answers 409 (the same `event_id` again is still `duplicate: true`). After a 409 a writer never reuses the number: it reads the card's latest version (the highest `version`) and applies its change on top of it, or drops it. In these two rules and in the price route below, "latest version" means the highest `version`.
+- `POST /api/sessions/{id}/events` also refuses (409) a `card` whose `price` differs from the card's latest non-null price. A card without a price yet can get one there (D-023); a priced card changes price only through the console route below, which writes through the store.
 - An order always pins `card_id + card_version` at the moment it is drafted.
 - The order price is the price of the card **live at the comment's `ts_ms`** — never a price taken from the customer's words.
 - "Live at t" = the latest version with `ts_ms ≤ t` of each card, if that version's status is `live` or `edited`. `GET /api/sessions/{id}/cards/live?ts_ms=t` returns them, newest first.
-- Speech never changes the price of a card that already has one (D-023). A different spoken price emits `price_proposal` instead. A proposal is open while the card is not `retired` and the card's latest price equals its `current_price`; there is no dismiss event. Proposals are shown in the console only, never on the overlay or to customers.
-- A seller price comes only from the console route `POST /api/sessions/{id}/cards/{card_id}/price`, body `{"price": int, "card_version": int, "proposal_event_id": str | null}`:
-  - writes a `card` with the latest `version + 1`, the new `price`, status `edited`, `provenance.edited_by: "seller"` (other fields copied from the latest version), `caused_by: [proposal_event_id]` when one is given, `ts_ms` = time of the request; 200 `{"changed": true, "version": n}`;
-  - `price` equal to the latest price → 200 `{"changed": false}`, no event;
-  - 404 unknown card; 409 card `retired`, or `card_version` is not the latest version (the console reloads); 422 `price` not an integer in 1000…100 000 000 (booleans refused), or `proposal_event_id` is not a `price_proposal` of this card.
+- Speech never changes the price of a card that already has one (D-023). A spoken price that differs from the card's price emits `price_proposal` instead; the worker emits none when they are equal. A proposal's `ts_ms` is the time of the speech. A proposal is open while the card is not `retired`, the card's latest price equals its `current_price`, and no `edited_by: "seller"` version of the card is newer than its `card_version`; there is no dismiss event. Proposals are shown in the console only, never on the overlay or to customers.
+- A seller price comes only from the console route `POST /api/sessions/{id}/cards/{card_id}/price`, body `{"price": int, "card_version": int, "proposal_event_id": str | null}`. Checks, in this order:
+  - 422 `price` not an integer in 1000…100 000 000 (booleans refused); 404 unknown card; 422 `proposal_event_id` is not a `price_proposal` of this card; 409 card `retired`;
+  - `price` equal to the latest price → 200 `{"changed": false}`, no event, whatever `card_version` says (a repeated tap after a 200 is safe);
+  - 409 `card_version` is not the latest version (the console reloads);
+  - otherwise writes a `card` with the latest `version + 1`, the new `price`, status `edited`, `provenance.edited_by: "seller"` (other fields copied from the latest version), `caused_by: [proposal_event_id]` when one is given, `ts_ms` = time of the request; 200 `{"changed": true, "version": n}`. If the store refuses that version because another writer took it first, 409 as above.
 
 ## Money
 
