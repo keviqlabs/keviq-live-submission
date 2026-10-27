@@ -1,0 +1,23 @@
+# secrets — never commit
+.env
+.env.*
+!deploy/.env.example
+*.pem
+*.key
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# local media and scratch (never in the repo)
+data/local/
+*.mp4
+*.mov
+*.wav
+*.m4a
+.scratch/
+.DS_Store
