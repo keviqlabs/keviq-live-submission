@@ -1,7 +1,9 @@
 """Key empty: the live runner posts the 6b replay rows as product_seen caused by the run's own frames."""
 
 import asyncio
+import inspect
 import json
+import time
 
 from app.contracts import make_event
 from measure import c5_dry, c5_live
@@ -87,3 +89,19 @@ def test_the_poster_uses_this_loops_frames_and_waits_for_the_labels_own_frame():
     assert summary == {"posted": 2, "no_frame": ["run.ps-1-09"]}
     assert [(p["event_id"], p["caused_by"]) for p in posted] == [("run.ps-1-12", ["run.f12"]),
                                                                  ("run.ps-1-14", ["run.f14"])]  # fmt: skip
+
+
+def test_a_frame_that_never_comes_is_waited_for_at_most_wait_s():
+    assert inspect.signature(c5_live.post_seen).parameters["wait_s"].default == 2.0
+
+    async def scenario():
+        http, frames = Http(), [frame(i) for i in range(5)]
+        t = time.monotonic()
+        summary = await asyncio.wait_for(
+            c5_live.post_seen(http, "run", [(0, seen(7))], frames, 0, wait_s=0.3), 2
+        )
+        return summary, http.posted, time.monotonic() - t
+
+    summary, posted, took = asyncio.run(scenario())
+    assert summary == {"posted": 1, "no_frame": []} and [p["caused_by"] for p in posted] == [["run.f4"]]
+    assert 0.3 <= took < 1.0
