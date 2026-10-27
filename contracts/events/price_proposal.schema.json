@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keviq:events:price_proposal:v1",
+  "title": "price_proposal event",
+  "description": "A spoken price that differs from the price of a priced card. Shown to the seller in the console only; it never changes the card (D-023, D-024).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+    },
+    "ts_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Source time (epoch ms) of what the event describes, not processing time"
+    },
+    "source": {
+      "enum": [
+        "replay",
+        "facebook",
+        "sim"
+      ]
+    },
+    "v": {
+      "const": 1
+    },
+    "caused_by": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+      },
+      "description": "event_ids this event is a consequence of (provenance, C1/C6)",
+      "minItems": 1
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional stage timestamps (epoch ms) for latency measurement (C8)",
+      "properties": {
+        "received_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "infer_start_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "infer_end_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "emitted_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "type": {
+      "const": "price_proposal"
+    },
+    "card_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+    },
+    "card_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version of the card when the price was heard"
+    },
+    "current_price": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Price on that version (integer VND); a card whose price is null takes the spoken price directly (D-023), so it never gets a proposal"
+    },
+    "heard_price": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 100000000,
+      "description": "Price heard in the speech (integer VND)"
+    },
+    "speech_event_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$",
+      "description": "The speech event that carried the price; also listed in caused_by"
+    }
+  },
+  "required": [
+    "event_id",
+    "session_id",
+    "ts_ms",
+    "source",
+    "v",
+    "caused_by",
+    "type",
+    "card_id",
+    "card_version",
+    "current_price",
+    "heard_price",
+    "speech_event_id"
+  ]
+}

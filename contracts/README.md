@@ -26,6 +26,7 @@ Every event has `event_id`, `session_id`, `ts_ms`, `source` (`replay` · `facebo
 | `speech` | `text`, `final`, `lang`, `start_ms`, `end_ms` | worker/voice |
 | `product_seen` | `category`, `attributes{color,size,material…}`, `confidence`, `is_new`, `frame_ts_ms` | worker/vision |
 | `card` | `card_id`, `version`, `sku`, `name`, `price`, `currency`, `variants[]`, `stock`, `image_url`, `status`, `provenance{frame_ts_ms, speech_event_ids[], edited_by}` | worker/brain; console edit → version+1 |
+| `price_proposal` | `card_id`, `card_version`, `current_price`, `heard_price`, `speech_event_id`; `caused_by` lists the speech | worker/brain, when speech names a different price for a priced card (console only) |
 | `comment` | `comment_id`, `user_ref` (pseudonym), `text`, `reply_to` | connectors |
 | `comment_labeled` | `comment_id`, `label`, `order_draft{sku, variant, qty, referenced_card_id, reference_kind}`, `scam_signals[]`, `action`, `latency_ms` | worker/brain |
 | `order` | `order_id`, `customer_ref`, `lines[]`, `amount`, `state`, `prev_state`, `actor`, `approval_needed`, `reason`, `receipt{card_version, image_url, price}` | orders |
@@ -38,6 +39,11 @@ Every event has `event_id`, `session_id`, `ts_ms`, `source` (`replay` · `facebo
 - An order always pins `card_id + card_version` at the moment it is drafted.
 - The order price is the price of the card **live at the comment's `ts_ms`** — never a price taken from the customer's words.
 - "Live at t" = the latest version with `ts_ms ≤ t` of each card, if that version's status is `live` or `edited`. `GET /api/sessions/{id}/cards/live?ts_ms=t` returns them, newest first.
+- Speech never changes the price of a card that already has one (D-023). A different spoken price emits `price_proposal` instead. A proposal is open while the card is not `retired` and the card's latest price equals its `current_price`; there is no dismiss event. Proposals are shown in the console only, never on the overlay or to customers.
+- A seller price comes only from the console route `POST /api/sessions/{id}/cards/{card_id}/price`, body `{"price": int, "card_version": int, "proposal_event_id": str | null}`:
+  - writes a `card` with the latest `version + 1`, the new `price`, status `edited`, `provenance.edited_by: "seller"` (other fields copied from the latest version), `caused_by: [proposal_event_id]` when one is given, `ts_ms` = time of the request; 200 `{"changed": true, "version": n}`;
+  - `price` equal to the latest price → 200 `{"changed": false}`, no event;
+  - 404 unknown card; 409 card `retired`, or `card_version` is not the latest version (the console reloads); 422 `price` not an integer in 1000…100 000 000 (booleans refused), or `proposal_event_id` is not a `price_proposal` of this card.
 
 ## Money
 
