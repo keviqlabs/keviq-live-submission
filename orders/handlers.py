@@ -1,5 +1,6 @@
 """Worker handlers for the orders stream: comment_labeled(order|other) -> draft + rules, or ask_cancel for a
-cancel request; message_in -> confirm / cancel / keep.
+cancel request, or ask_variant when the size/color is missing; message_in -> confirm / cancel / keep / the
+customer's size or color answer.
 
 Each handler reads the session so far from the app (`GET /api/sessions/{sid}/events?follow=false`) and hands it
 to orders/flow.py; the runner posts what comes back (D-003: the app is the only writer). Fixture triggers and
@@ -33,8 +34,8 @@ async def on_labeled(event: dict, ctx) -> list[dict]:
 
 async def on_message(event: dict, ctx) -> list[dict]:
     kind, _ = flow.customer_reply(event.get("template"), event.get("payload") or {})
-    if kind in (None, "keep"):
-        return []
+    if kind == "keep" or flow.is_fixture(event["event_id"]):
+        return []  # other text may answer an open ask_variant question, so it reaches the flow
     view = await load_view(ctx, event["session_id"])
     return await flow.on_reply(event, view, MESSENGER, ctx.received_ms)
 

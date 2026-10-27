@@ -1,12 +1,14 @@
 # orders/
 
 Order state machine (`states.py`), permission rules (`rules.py`), the order flow (`flow.py`), worker handlers
-(`handlers.py`) and the reading of customer text (`intent.py`).
+(`handlers.py`), the reading of customer text (`intent.py`) and which card variant a comment means (`variants.py`).
 
 ## Flow
 
 1. `comment_labeled` with `label == order` → `DRAFT`, priced from the card version that was live at the comment's
-   `ts_ms`, stock checked per variant (orders in `CONFIRM_SENT`, `CONFIRMED`, `CLOSED` hold stock).
+   `ts_ms`, stock checked per variant (orders in `CONFIRM_SENT`, `CONFIRMED`, `CLOSED` hold stock). If the comment
+   matches several variants and does not say the size or color that tells them apart, the customer is asked first
+   (see below) and the draft waits for the answer.
 2. `rules.evaluate_draft` decides. Allowed → `CONFIRM_SENT` and a `confirm_order` message (private reply to the
    comment) with size, color, qty, unit price, amount, address request and payment method (COD).
    Discount request, amount over the threshold or short stock → `NEEDS_SELLER` and a
@@ -34,8 +36,28 @@ Order state machine (`states.py`), permission rules (`rules.py`), the order flow
    nothing. An order in `NEEDS_SELLER` may be cancelled by the customer; the approval queue and prices are not
    touched.
 
+## Ask for the missing size or color (`variants.py`)
+
+1. "lấy đôi này" on a card with sizes 38/39/40 names no size. No order event is made. The same customer
+   (`user_ref` → thread, `rules.can_message` 24 h) gets an `ask_variant` message (private reply to the comment)
+   listing the variants of the card version the comment was priced from that still have stock, with quick replies
+   `PICK:<order_id>#<i>` (`i` indexes that version's variants; order ids never contain `#`). Only the missing part
+   is asked (size, color, or both). Nothing is taken from a model, from "như bạn trên" or from another customer's
+   order.
+2. A `PICK` from that thread, or text that plainly names exactly one of the listed variants by its missing part,
+   drafts the order at that version's price. Plain means whole words, the value right after its word ("size 39",
+   "cỡ 40", "màu đen") or a reply that is little more than the value ("Lấy 40 nha", "38"), no refusal
+   ("không lấy size 40", "ko lấy 39") and no second listed value. Then the usual rules apply:
+   stock held by other orders, approval gates, `CONFIRM_SENT` + `confirm_order` (sent by PSID, since the comment
+   already had its private reply) or `NEEDS_SELLER` + `waiting_for_shop`.
+3. A size not on the card, a bogus pick, "ok", a refusal, a number that is an address or a question ("giao 40
+   Lê Lợi", "39 còn không") or other unclear text asks again, by PSID, up to 3 questions in all; no order is made. Text never picks when the thread has two open questions. A cancel phrase ("thôi không lấy
+   nữa") ends it with no message. Another customer's reply is ignored.
+4. If the customer cannot be messaged (24 h) or no listed variant has stock left, nothing is asked: the order goes
+   to the seller (`NEEDS_SELLER`) as before.
+
 Every step is an `order` event whose `caused_by` points at the comment, the card version, the previous order event
-and the customer message. `GET /api/sessions/{sid}/orders/{order_id}/log` returns that chain for the console (C6).
+and the customer message (and the `ask_variant` question when there was one). `GET /api/sessions/{sid}/orders/{order_id}/log` returns that chain for the console (C6).
 
 ## Console API (`app/orders_api.py`)
 

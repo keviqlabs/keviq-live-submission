@@ -5,6 +5,7 @@
     seller approve / reject (console)       -> CONFIRM_SENT + confirm_order | CANCELLED
     customer yes / no (Messenger)           -> CONFIRMED + receipt           | CANCELLED
     cancel request (comment, plain "huỷ")   -> ask_cancel naming the order(s); CANCEL:<order_id> -> CANCELLED
+    several variants, size/color not said   -> ask_variant (no order yet); the customer's pick -> DRAFT -> rules
 
 Functions take a View of the session, a Messenger and `now`, and return partial events (type + fields with
 event_id, ts_ms and caused_by) for the caller to post. Every decision comes from orders/rules.py and every state
@@ -17,15 +18,17 @@ import hashlib
 import re
 from dataclasses import dataclass, field
 
-from orders import rules
-from orders.intent import cancel_request, customer_reply, discount_request, fold
+from orders import rules, variants
+from orders.intent import cancel_request, customer_reply, discount_request
 from orders.states import can_transition, machine
+from orders.variants import same, variant_of
 
 LIVE = {"live", "edited"}
 HOLDS_STOCK = {"CONFIRM_SENT", "CONFIRMED", "CLOSED"}
 TERMINAL = set(machine()["terminal"])
 TRIGGER_LABELS = {"order", "other"}  # comment labels the orders stream reads; scam and spam never reach it
 MAX_ASK = 12  # Meta allows 13 quick replies; the last one is "Giữ tất cả"
+MAX_VARIANT_ASKS = 3  # ask_variant per order, first question included; after that the customer is left alone
 PAYMENT_METHOD = "cod"  # what the confirmation states; no code path here takes money (AGENTS.md rule 6)
 FIXTURE = re.compile(r"(^|\.)fx-")
 UNSAFE = re.compile(r"[^A-Za-z0-9.:-]")
@@ -128,10 +131,6 @@ def card_at(cards: list[dict], card_id: str, ts: int) -> dict | None:
             if best is None or (c["ts_ms"], c["version"]) >= (best["ts_ms"], best["version"]):
                 best = c
     return best
-
-
-def same(a, b) -> bool:
-    return (fold(a) if isinstance(a, str) else a) == (fold(b) if isinstance(b, str) else b)
 
 
 def held(view: View, card_id: str, variant: dict, except_order: str) -> int:
@@ -317,32 +316,74 @@ async def on_labeled(trigger: dict, view: View, messenger, now: int) -> list[dic
         blocking.append(f"{card_id} had no version when the comment was written")
     elif card["status"] not in LIVE:
         blocking.append(f"{card_id} v{card['version']} was {card['status']} when the comment was written")
-    qty = draft_in.get("qty")
-    if not isinstance(qty, int) or isinstance(qty, bool) or qty < 1:
-        qty = 1
-        notes.append("qty not given, drafted 1")
-    want = draft_in.get("variant") or {}
-    variant = {"size": want.get("size"), "color": want.get("color")}
-    hits = [
-        v
-        for v in card.get("variants") or []
-        if (variant["size"] is None or same(v.get("size"), variant["size"]))
-        and (variant["color"] is None or same(v.get("color"), variant["color"]))
-    ]
+    qty, notes = draft_qty(draft_in, notes)
+    want = variants.want_of(draft_in)
+    variant = dict(want)
+    hits = variants.hit_indexes(card, want)
     if len(hits) == 1:
-        variant, stock = (
-            {"size": hits[0].get("size"), "color": hits[0].get("color")},
-            hits[0].get("stock") or 0,
-        )
+        variant, stock = variant_of(card["variants"][hits[0]]), card["variants"][hits[0]].get("stock") or 0
     elif not card.get("variants"):
         stock = card.get("stock") or 0
     else:
+        missing = variants.missing_fields(card, hits, want)
+        if missing and not blocking:
+            causes = [trigger["event_id"], comment["event_id"], card["event_id"]]
+            asked = await ask_variant(
+                trigger["event_id"], view, messenger, now, comment, card, order_id, hits, missing, causes
+            )
+            if asked is not None:
+                return asked
         stock = 0
         how = "not on" if not hits else "ambiguous on"
         blocking.append(f"variant {variant_text(variant)} {how} {card_id} v{card['version']}")
+    return await draft_order(
+        trigger["event_id"],
+        view,
+        messenger,
+        now,
+        comment,
+        card,
+        order_id,
+        variant,
+        stock,
+        qty,
+        notes,
+        blocking,
+        [comment["event_id"], card["event_id"]],
+        reply_to=trigger["comment_id"],
+    )
+
+
+def draft_qty(draft_in: dict, notes: list[str]) -> tuple[int, list[str]]:
+    qty = draft_in.get("qty")
+    if not isinstance(qty, int) or isinstance(qty, bool) or qty < 1:
+        return 1, [*notes, "qty not given, drafted 1"]
+    return qty, notes
+
+
+async def draft_order(
+    base: str,
+    view: View,
+    messenger,
+    now: int,
+    comment: dict,
+    card: dict,
+    order_id: str,
+    variant: dict,
+    stock: int,
+    qty: int,
+    notes: list[str],
+    blocking: list[str],
+    causes: list[str],
+    reply_to: str | None,
+) -> list[dict]:
+    """DRAFT priced from `card` (the version current at the comment), then the rules: CONFIRM_SENT +
+    confirm_order, or NEEDS_SELLER + waiting_for_shop. `reply_to` is the comment for a private reply; None
+    sends by PSID (Meta allows one private reply per comment)."""
+    card_id = card["card_id"]
     hold = held(view, card_id, variant, order_id)
     if hold:
-        notes.append(f"{hold} already held by other orders")
+        notes = [*notes, f"{hold} already held by other orders"]
     price = card.get("price")
     line = {
         "sku": card.get("sku"),
@@ -360,14 +401,13 @@ async def on_labeled(trigger: dict, view: View, messenger, now: int) -> list[dic
     )
     window = rules.can_message(view.last_contact.get(thread, comment["ts_ms"]), now)
 
-    source = f"comment {trigger['comment_id']} on {card_id} v{card['version']} ({vnd(price)})"
+    source = f"comment {comment['comment_id']} on {card_id} v{card['version']} ({vnd(price)})"
     draft = new_order(order_id, customer_ref, [line], "; ".join([f"drafted from {source}", *notes]))
-    tid = trigger["event_id"]
-    out = [stamp(draft, step_id(tid, order_id, "draft"), now, [comment["event_id"], card["event_id"]])]
+    out = [stamp(draft, step_id(base, order_id, "draft"), now, causes)]
     sources = [out[0]["event_id"], comment["event_id"], card["event_id"]]
     if decision.allowed and not blocking and window.allowed:
         nxt = transition(draft, "CONFIRM_SENT", "assistant", f"draft checks passed: {decision.reason}")
-        msg = await messenger.send(thread, "confirm_order", confirm_payload(nxt, card, trigger["comment_id"]))
+        msg = await messenger.send(thread, "confirm_order", confirm_payload(nxt, card, reply_to))
     else:
         why = blocking or [decision.reason]
         if discount:
@@ -377,13 +417,128 @@ async def on_labeled(trigger: dict, view: View, messenger, now: int) -> list[dic
         nxt = transition(draft, "NEEDS_SELLER", "assistant", "; ".join(why))
         msg = None
         if window.allowed:
-            msg = await messenger.send(
-                thread, "waiting_for_shop", waiting_payload(nxt, card, trigger["comment_id"])
-            )
-    out.append(stamp(nxt, step_id(tid, order_id, "decide"), now + 1, sources))
+            msg = await messenger.send(thread, "waiting_for_shop", waiting_payload(nxt, card, reply_to))
+    out.append(stamp(nxt, step_id(base, order_id, "decide"), now + 1, sources))
     if msg:
-        out.append(stamp(msg, step_id(tid, order_id, "msg"), now + 2, [out[1]["event_id"]]))
+        out.append(stamp(msg, step_id(base, order_id, "msg"), now + 2, [out[1]["event_id"]]))
     return out
+
+
+async def ask_variant(
+    base: str,
+    view: View,
+    messenger,
+    now: int,
+    comment: dict,
+    card: dict,
+    order_id: str,
+    hits: list[int],
+    missing: list[str],
+    causes: list[str],
+    again: bool = False,
+) -> list[dict] | None:
+    """Ask the commenter to choose the missing size/color among the variants of `card` (the version the comment
+    was priced from) that still have stock. Nothing is guessed and no order event is made until the customer
+    answers. None when it cannot ask (no 24h window, no variant left): the caller falls back to the seller."""
+    thread = thread_for(comment["user_ref"])
+    window = rules.can_message(view.last_contact.get(thread, comment["ts_ms"]), now)
+    vs = card["variants"]
+    free = [
+        i for i in hits if (vs[i].get("stock") or 0) - held(view, card["card_id"], variant_of(vs[i]), "") > 0
+    ]
+    if not window.allowed or not free:
+        return None
+    event_id = step_id(base, order_id, "ask-variant")
+    if any(m["event_id"] == event_id for m in view.messages):
+        return []
+    payload = variants.question(
+        card, order_id, comment["comment_id"], free, missing, again=again, price=vnd(card.get("price"))
+    )
+    if not again:
+        payload["comment_id"] = comment["comment_id"]  # the first reply to a commenter is a private reply
+    msg = await messenger.send(thread, "ask_variant", payload)
+    return [stamp(msg, event_id, now, causes)]
+
+
+def pending_asks(view: View, thread: str) -> dict[str, list[dict]]:
+    """order_id -> ask_variant messages sent to this thread for an order that was not drafted yet."""
+    out: dict[str, list[dict]] = {}
+    for m in view.messages:
+        oid = (m.get("payload") or {}).get("order_id")
+        if (
+            m["type"] == "message_out"
+            and m.get("template") == "ask_variant"
+            and m["thread_ref"] == thread
+            and oid
+            and view.order(oid) is None
+        ):
+            out.setdefault(oid, []).append(m)
+    return out
+
+
+async def on_variant_reply(trigger: dict, view: View, messenger, now: int, kind, order_id) -> list[dict]:
+    """The customer's answer to ask_variant: a PICK:<order_id>#<i> quick reply, or text naming the missing
+    size/color ("39", "size M"). Exactly one variant of the asked card version -> the usual draft (card price of
+    that version, stock, rules, 24h window), sent by PSID. Unclear, not on the card or a bogus index -> ask again,
+    MAX_VARIANT_ASKS in all; no order is made. Only the thread that was asked can answer; with two open
+    questions in the thread, text never picks one."""
+    thread = trigger["thread_ref"]
+    pending = pending_asks(view, thread)
+    payload = trigger.get("payload") or {}
+    if order_id is None and pending:
+        order_id = max(pending, key=lambda o: (pending[o][-1]["ts_ms"], o))
+    asks = pending.get(order_id or "")
+    if not asks:
+        return []  # nothing asked in this thread, another customer's order, or already drafted
+    cancel = cancel_request(payload.get("text"))
+    if kind is None and cancel and cancel["kind"] == "cancel":
+        return []  # "thôi không lấy nữa": no order exists, nothing to ask again
+    ask = asks[-1]
+    q = ask["payload"]
+    card = view.card(q["card_id"], q["card_version"])
+    row = view.comments.get(q["source_comment_id"]) or {}
+    comment, labeled = row.get("comment"), row.get("labeled")
+    if card is None or comment is None or labeled is None:
+        return []
+    draft_in = labeled.get("order_draft") or {}
+    want = variants.want_of(draft_in)
+    hits = variants.hit_indexes(card, want)
+    missing = variants.missing_fields(card, hits, want)
+    if kind == "pick":
+        i = variants.picked(payload, hits)
+        choice = [] if i is None else [i]
+    elif len(pending) > 1:
+        choice = []
+    else:
+        choice = variants.named(payload.get("text"), card, hits, missing)
+    tid = trigger["event_id"]
+    if len(choice) == 1:
+        v = card["variants"][choice[0]]
+        qty, notes = draft_qty(draft_in, [])
+        notes = [*notes, f"{variants.choice_text(v, missing)} chosen by the customer in Messenger"]
+        causes = [comment["event_id"], card["event_id"], ask["event_id"], tid]
+        return await draft_order(
+            tid,
+            view,
+            messenger,
+            now,
+            comment,
+            card,
+            order_id,
+            variant_of(v),
+            v.get("stock") or 0,
+            qty,
+            notes,
+            [],
+            causes,
+            reply_to=None,
+        )
+    if len(asks) >= MAX_VARIANT_ASKS:
+        return []
+    again = await ask_variant(
+        tid, view, messenger, now, comment, card, order_id, hits, missing, [tid, ask["event_id"]], again=True
+    )
+    return again or []
 
 
 def receipt_payload(order: dict, card: dict | None, receipt: dict, address: str | None) -> dict:
@@ -407,13 +562,18 @@ def receipt_payload(order: dict, card: dict | None, receipt: dict, address: str 
 
 
 async def on_reply(trigger: dict, view: View, messenger, now: int) -> list[dict]:
-    """The customer's yes / no / keep in Messenger. Only the customer's own thread can confirm or cancel its
-    order, and only a reply naming the order (CANCEL:<order_id>) cancels; a plain "huỷ" gets ask_cancel."""
+    """The customer's yes / no / keep / variant pick in Messenger. Only the customer's own thread can confirm or
+    cancel its order, and only a reply naming the order (CANCEL:<order_id>) cancels; a plain "huỷ" gets
+    ask_cancel. Other text may answer an open ask_variant question (on_variant_reply)."""
     payload = trigger.get("payload") or {}
     kind, order_id = customer_reply(trigger.get("template"), payload)
     thread = trigger["thread_ref"]
-    if kind in (None, "keep") or is_fixture(trigger["event_id"]):
+    if kind == "keep" or is_fixture(trigger["event_id"]):
         return []
+    if kind == "yes" and not order_id and view.open_order(thread) is None and pending_asks(view, thread):
+        kind = None  # "ok" to "which size?" names no size: it is asked again
+    if kind in (None, "pick"):
+        return await on_variant_reply(trigger, view, messenger, now, kind, order_id)
     if kind == "no" and not order_id:
         return await ask_cancel(trigger, view, messenger, now, thread)
     order = view.order(order_id) if order_id else view.open_order(thread)
@@ -524,6 +684,7 @@ def order_log(view: View, order_id: str) -> dict | None:
         if (m["type"] == "message_out" and (m.get("payload") or {}).get("order_id") == order_id)
         or (m["type"] == "message_in" and m["thread_ref"] == thread and m["ts_ms"] >= first["ts_ms"])
         or ids & set(m.get("caused_by") or [])
+        or m["event_id"] in first.get("caused_by", [])
     ]
     pick = (
         "event_id",
