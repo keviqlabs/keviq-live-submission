@@ -2,8 +2,9 @@
 
 - a card stands for the gold item whose span holds the frame that opened it, not the item its live span overlaps
   most: a card that took a price stays live to the loop end;
-- references keep core.c3's definition: the latest label's referenced_card_id, n is every gold order comment that
-  names an item and a current or previous card, and a comment with no card is wrong, never out of n;
+- references adapt core.c3's field: the latest label's referenced_card_id; n (the A2 denominator) is every gold
+  order comment that names an item and a current or previous card, and a comment with no card is wrong, never out
+  of n; unresolved comments are scored in order_ids;
 - order_ids names every posted gold order comment, with what the system made of it and why a wrong one is wrong;
 - waits count one per (loop, reason, line event id) and sum the loops (HQ419).
 """
