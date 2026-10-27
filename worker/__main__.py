@@ -4,13 +4,14 @@ import argparse
 import asyncio
 import logging
 
+from orders import handlers as orders
 from worker import brain, media, vision, voice
 from worker.runner import Runner
 
 
 def handlers() -> dict:
     merged: dict[str, list] = {}
-    for module in (media, vision, voice, brain):
+    for module in (media, vision, voice, brain, orders):
         for etype, fns in module.HANDLERS.items():
             merged.setdefault(etype, []).extend(fns)
     return merged

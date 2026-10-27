@@ -2,6 +2,19 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-27 — label latency at live speed
+
+**D-022 Labels at minimal effort miss C8 (label p95 ≤ 1 s); the target stays.** `label_comments` now calls Spark with `reasoning.effort=minimal`, the lowest Spark accepts (`none` is refused), and a shorter output schema: 8 required fields, with contact signals as one enum (`none`, `phone_number`, `link`) instead of an optional list. On 200 synthetic comments posted at live speed (`connectors.sim.comments --speed 1`, session `comments200-s1-1027-123307`, 199 calls, $0.2578, 0 errors):
+- End to end, comment stored → model label stored: p50 3007 ms, p95 3895 ms (max 10210, one slow call).
+- About 1.0 s of that is the batch window. At live arrival rates a batch holds one comment (198 of 199 calls), so `BATCH_WAIT_S` is pure wait.
+- About 2.0 s (p95 2.9 s) is the model call itself.
+- Template-gold F1 0.976 on n=170 (0.982 at default effort); order fields 71/71 exact; scams with contact hidden 26/26.
+- Before: sim speed 20, default effort, batches of 6–9, label p95 21.4 s.
+
+The target in `contracts/acceptance.md` is not changed. Contact comments are still hidden on receipt by the shield, at p95 22 ms. Not done, open for the Founder: send a batch at once when the worker's queue is idle instead of waiting 1 s. That removes about 1 s and still leaves p95 near 2.9 s, above the target.
+
+This supersedes D-011 for the 200-comment set (built in `data/comments/`); the 500-comment set is still not built.
+
 ## 2026-10-27 — live product cards (worker/media, vision, voice, brain/card)
 
 Numbers continue after D-014/D-015 (PR #4) and D-016 (PR #6).

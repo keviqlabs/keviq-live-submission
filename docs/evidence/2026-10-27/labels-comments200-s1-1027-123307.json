@@ -1,0 +1,201 @@
+{
+ "comments": 200,
+ "labels": {
+  "n": 200,
+  "labeled": 200,
+  "micro_precision": 0.98,
+  "micro_recall": 0.98,
+  "micro_f1": 0.98,
+  "per_label": {
+   "order": {
+    "n": 71,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "price_question": {
+    "n": 25,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "stock_question": {
+    "n": 25,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "complaint": {
+    "n": 16,
+    "precision": 0.9411764705882353,
+    "recall": 1.0,
+    "f1": 0.9696969696969697
+   },
+   "spam": {
+    "n": 16,
+    "precision": 0.8823529411764706,
+    "recall": 0.9375,
+    "f1": 0.9090909090909091
+   },
+   "scam": {
+    "n": 30,
+    "precision": 0.9655172413793104,
+    "recall": 0.9333333333333333,
+    "f1": 0.9491525423728815
+   },
+   "other": {
+    "n": 17,
+    "precision": 1.0,
+    "recall": 0.9411764705882353,
+    "f1": 0.9696969696969697
+   }
+  },
+  "confusions": [
+   {
+    "want": "scam",
+    "got": "spam",
+    "n": 2
+   },
+   {
+    "want": "spam",
+    "got": "scam",
+    "n": 1
+   },
+   {
+    "want": "other",
+    "got": "complaint",
+    "n": 1
+   }
+  ]
+ },
+ "labels_by_source": {
+  "founder_pending": {
+   "n": 30,
+   "labeled": 30,
+   "micro_f1": 1.0
+  },
+  "template": {
+   "n": 170,
+   "labeled": 170,
+   "micro_f1": 0.9764705882352941
+  }
+ },
+ "order_fields": {
+  "n": 71,
+  "fields": {
+   "sku": 1.0,
+   "size": 1.0,
+   "color": 1.0,
+   "qty": 1.0,
+   "referenced_card_id": 1.0,
+   "reference_kind": 1.0
+  },
+  "all_exact": 1.0,
+  "by_reference_kind": {
+   "current_card": {
+    "exact": 34,
+    "n": 34
+   },
+   "explicit_sku": {
+    "exact": 10,
+    "n": 10
+   },
+   "previous_card": {
+    "exact": 20,
+    "n": 20
+   },
+   "unresolved": {
+    "exact": 7,
+    "n": 7
+   }
+  },
+  "wrong": []
+ },
+ "latency": {
+  "first_label_ms": {
+   "n": 200,
+   "p50": 2866,
+   "p95": 3884,
+   "max": 10210
+  },
+  "final_label_ms": {
+   "n": 200,
+   "p50": 3007,
+   "p95": 3895,
+   "max": 10210
+  },
+  "first_hide_ms": {
+   "n": 34,
+   "p50": 11,
+   "p95": 22,
+   "max": 3698
+  },
+  "batch_infer_ms": {
+   "n": 200,
+   "p50": 1989,
+   "p95": 2879,
+   "max": 9175
+  },
+  "model_call_ms": {
+   "n": 199,
+   "p50": 1983,
+   "p95": 2958,
+   "max": 9165
+  }
+ },
+ "shield": {
+  "scam_n": 30,
+  "scam_with_contact_n": 26,
+  "scam_contact_hide_rate": 1.0,
+  "scam_hide_or_warn_rate": 1.0,
+  "phone_n": 22,
+  "phone_hidden_rate": 1.0,
+  "orders_hidden": [
+   "c015",
+   "c040",
+   "c073",
+   "c099",
+   "c123",
+   "c148",
+   "c173",
+   "c198"
+  ],
+  "orders_warned": [],
+  "scams_missed": []
+ },
+ "cost": {
+  "calls": 199,
+  "errors": 0,
+  "models": [
+   "muse-spark-1.3"
+  ],
+  "tokens_in": 320672,
+  "tokens_out": 40627,
+  "cost_usd": 0.257843
+ },
+ "core": {
+  "c3": {
+   "n": 71,
+   "accuracy": 1.0,
+   "target": 0.9,
+   "target_n": 50,
+   "wrong": []
+  },
+  "c5": {
+   "order_recall": 1.0,
+   "order_n": 71,
+   "interventions": 0,
+   "interventions_per_hour": 0.0,
+   "session_minutes": 9.26,
+   "phone_visible_max_s": 4.096,
+   "phone_n": 22,
+   "receipts": 0,
+   "receipts_ok": 0
+  },
+  "labels": {
+   "n": 200,
+   "labeled": 200,
+   "micro_f1": 0.98
+  }
+ }
+}
