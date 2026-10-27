@@ -1,0 +1,164 @@
+{
+ "events": 842,
+ "fixtures": 0,
+ "cost": [
+  {
+   "day": "2026-10-27",
+   "model": "muse-spark-1.3",
+   "calls": 198,
+   "errors": 0,
+   "cost_usd": 0.258912
+  }
+ ],
+ "c8_latency": {
+  "model_call": {
+   "receive": {
+    "n": 198,
+    "p50": 3830,
+    "p95": 5355
+   },
+   "wait": {
+    "n": 198,
+    "p50": 0,
+    "p95": 0
+   },
+   "display": {
+    "n": 198,
+    "p50": 3,
+    "p95": 7
+   }
+  },
+  "comment_labeled": {
+   "receive": {
+    "n": 233,
+    "p50": 7,
+    "p95": 14
+   },
+   "wait": {
+    "n": 233,
+    "p50": 1018,
+    "p95": 1025
+   },
+   "infer": {
+    "n": 200,
+    "p50": 2817,
+    "p95": 4289
+   },
+   "display": {
+    "n": 233,
+    "p50": 2,
+    "p95": 4
+   }
+  },
+  "order": {
+   "receive": {
+    "n": 130,
+    "p50": 4,
+    "p95": 8
+   },
+   "wait": {
+    "n": 130,
+    "p50": 18,
+    "p95": 31
+   },
+   "display": {
+    "n": 130,
+    "p50": 4,
+    "p95": 8
+   }
+  },
+  "message_out": {
+   "receive": {
+    "n": 72,
+    "p50": 4,
+    "p95": 10
+   },
+   "wait": {
+    "n": 72,
+    "p50": 19,
+    "p95": 3775
+   },
+   "display": {
+    "n": 72,
+    "p50": 8,
+    "p95": 15
+   }
+  }
+ },
+ "c1": {
+  "n": 133,
+  "covered": 64,
+  "missing": [
+   "comment_labeled_2dcd490093f745e7bb3c",
+   "comment_labeled_7dc44098fea641eb8d9b",
+   "comment_labeled_9def41d00c534d779d2a",
+   "comment_labeled_9155692c11ff4c46a671",
+   "comment_labeled_85f3510c02bc42c491cd",
+   "comment_labeled_b8a5a22a9d624775b1b4",
+   "comment_labeled_7917510f855247208760",
+   "comment_labeled_26ee4e539a0b45169d06",
+   "comment_labeled_726fe4746a9a4ac4916a",
+   "comment_labeled_49fbbca760da4e498009",
+   "comment_labeled_239c570f6ccb47eca04b",
+   "comment_labeled_f1d8dbfdf1514395a100",
+   "comment_labeled_c4584a0a5c5f49c9aebe",
+   "comment_labeled_0c962c864e3841bcad23",
+   "comment_labeled_b75cec8614294569b350",
+   "comment_labeled_29b519f0d9b44f87969f",
+   "comment_labeled_a64e5d210c2b467ea6bb",
+   "comment_labeled_5303f262fa0e46bfb97b",
+   "comment_labeled_472bb5c3d68c4c8ca7d5",
+   "comment_labeled_e2f4369e8e9f4342a99d",
+   "comment_labeled_874395e44b9941bd95b9",
+   "comment_labeled_d1fd7800a44c4366b61c",
+   "comment_labeled_653c0449193f41539175",
+   "comment_labeled_77fc8d313e5049348440",
+   "comment_labeled_6ed6c29237cf4647bae0",
+   "comment_labeled_70bdb09fd9ab448c8945",
+   "comment_labeled_a06f0c0cc5c347899c3a",
+   "comment_labeled_222a3fc15dd84ba2810e",
+   "comment_labeled_1aa335e97732448181d0",
+   "comment_labeled_3026a028cdb248dc8afb",
+   "comment_labeled_f987abb4c93e4e40af3b",
+   "comment_labeled_53b2015f07164e4dbd4d",
+   "comment_labeled_cff9ed0610bb4effa5cd",
+   "comment_labeled_739307bee6734274b785",
+   "comment_labeled_3193d54b7ca2452094d6",
+   "comment_labeled_27d29210bcc5422d80cf",
+   "comment_labeled_199593c283ca47ae8bb9",
+   "comment_labeled_14cacb93469342979f95",
+   "comment_labeled_3eeb840ac8b44cd8abbb",
+   "comment_labeled_cc4eab5d22a545af8240",
+   "comment_labeled_775a6e57c8184290a83d",
+   "comment_labeled_ed69437173784b1aab2f",
+   "comment_labeled_f8d305005f00471b8519",
+   "comment_labeled_484d2672a38c4b4d8aed",
+   "comment_labeled_4f89ff615b504b82b4d1",
+   "comment_labeled_f1f3e1135f4542b7812f",
+   "comment_labeled_6dea00368a1540e1a5f9",
+   "comment_labeled_90b185ea2f04439cae22",
+   "comment_labeled_6f7fc7572d6249488041",
+   "comment_labeled_04590662fbd2428083e6",
+   "comment_labeled_1f8d7b65b85447b48d13",
+   "comment_labeled_ccf56cfad92b4c2eb01e",
+   "comment_labeled_fc1293f437cc4173930d",
+   "comment_labeled_15837f9ff9b2404ab792",
+   "comment_labeled_fbeb510e50bf45729076",
+   "comment_labeled_ac2a17dda0c34bf183c9",
+   "comment_labeled_9a41e8c6684c4120a0a6",
+   "comment_labeled_a8c50179b78f430499f0",
+   "comment_labeled_9d9dabc5d39c46f2bafd",
+   "comment_labeled_a1914674ac384f338cf8",
+   "comment_labeled_33d7330d7a0e486f9151",
+   "comment_labeled_23238958375941ec957d",
+   "comment_labeled_9c14e0191f9246768d3f",
+   "comment_labeled_29cb88b400784c1ea844",
+   "comment_labeled_1c230f2cae694f55a104",
+   "comment_labeled_ee6e09659ebb4e84b6ac",
+   "comment_labeled_ca71806264f84342b5b7",
+   "comment_labeled_58db026a77ca4fba9a80",
+   "comment_labeled_ef8ceead998e4b6d9afa"
+  ],
+  "cycle_ms": 5000
+ }
+}

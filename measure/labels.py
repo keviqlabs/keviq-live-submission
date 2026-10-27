@@ -2,8 +2,9 @@
 
 Labels-stream metrics against the hand-labeled comments of data/comments/: micro-F1 over the 7 labels (with
 per-label P/R/F1, and split by the gold's `label_source`: template gold vs Founder samples, approved or not),
-order-field accuracy, label latency (first and final label, first hide), the scam shield (hide rate, legit
-orders hidden) and the cost of `label_comments` model calls. measure.core's C3/C5/labels are reported on the
+order-field accuracy, gold orders with an `expected_action` (did the model leave open what the comment leaves
+open, did it fill in the order the seller must decide on), label latency (first and final label, first hide),
+the scam shield (hide rate, legit orders hidden) and the cost of `label_comments` model calls. measure.core's C3/C5/labels are reported on the
 same gold. A comment with several comment_labeled events counts by its latest one.
 """
 
@@ -127,6 +128,43 @@ def order_fields(events: list[dict], gold: dict[str, dict]) -> dict:
     }
 
 
+def expected_action(events: list[dict], gold: dict[str, dict]) -> dict:
+    """The model's part of each gold `expected_action`. ask_customer: an order whose size or item the comment
+    leaves open; a size where gold has none, or another reference_kind where gold is unresolved, is a guess.
+    needs_seller: an order the seller must decide on (discount, amount over the threshold); every order field
+    must be right. confirm_cancel and none: `other` comments (contract v1 has no cancel label); the label is the
+    model's whole part. Whether the ask, the NEEDS_SELLER order or the cancel then happens is measured on the
+    orders side."""
+    labels = latest_labels(events)
+    out = {}
+    for cid, g in sorted(gold.items()):
+        action = g.get("expected_action")
+        if not action:
+            continue
+        lab = labels.get(cid) or {}
+        want, got = g["order"], draft_fields(lab.get("order_draft"))
+        if lab.get("label") != g["label"]:
+            why = f"label {lab.get('label') or 'missing'}"
+        elif action == "ask_customer":
+            guesses = []
+            if want["size"] is None and got["size"] is not None:
+                guesses.append(f"size {got['size']}")
+            if want["reference_kind"] == "unresolved" and got["reference_kind"] != "unresolved":
+                guesses.append(f"reference_kind {got['reference_kind']}")
+            why = "guessed " + ", ".join(guesses) if guesses else None
+        elif action == "needs_seller":
+            bad = [f for f in FIELDS if got[f] != want[f]]
+            why = "wrong " + ", ".join(bad) if bad else None
+        else:
+            why = None
+        v = out.setdefault(action, {"n": 0, "ok": 0, "misses": []})
+        v["n"] += 1
+        v["ok"] += why is None
+        if why:
+            v["misses"].append({"comment_id": cid, "why": why})
+    return out
+
+
 def stats(values: list[float]) -> dict:
     return {
         "n": len(values),
@@ -214,6 +252,7 @@ def report(events: list[dict], gold: dict[str, dict]) -> dict:
         "labels": label_f1(events, gold),
         "labels_by_source": by_source(events, gold),
         "order_fields": order_fields(events, gold),
+        "expected_action": expected_action(events, gold),
         "latency": latency(events),
         "shield": shield(events, gold),
         "cost": model_cost(events),
@@ -257,6 +296,15 @@ def table(r: dict) -> str:
         "  exact by reference_kind: "
         + ", ".join(f"{k} {v['exact']}/{v['n']}" for k, v in of["by_reference_kind"].items())
     )
+    for name, v in r["expected_action"].items():
+        lines.append(
+            f"expected_action {name}: model part right {v['ok']}/{v['n']}"
+            + (
+                " misses: " + ", ".join(f"{m['comment_id']} {m['why']}" for m in v["misses"])
+                if v["misses"]
+                else ""
+            )
+        )
     lines.append("latency ms (p50 / p95 / max, n), comment arrival -> label arrival:")
     for name, v in lat.items():
         lines.append(f"  {name:<15} {fmt(v['p50'])} / {fmt(v['p95'])} / {fmt(v['max'])}  n={v['n']}")
