@@ -12,6 +12,7 @@ TEST_DATABASE_URL = settings.testing_database_url()
 if TEST_DATABASE_URL:
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["MODEL_API_KEY"] = ""
+os.environ["CATALOG_PATH"] = ""  # data/catalog.json; test_catalog_path.py sets its own (D-026)
 
 from app.main import create_app  # noqa: E402
 from app.settings import ROOT  # noqa: E402

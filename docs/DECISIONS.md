@@ -2,6 +2,25 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-28 — CATALOG_PATH and category lists
+
+**D-026 `CATALOG_PATH` changes only the items on sale; the vision and speech prompts keep the words of `data/catalog.json`. An item may list `categories`, and a label plus colour that names exactly one SKU opens that SKU's card.** No contract change: no new field or event, no API change, `v` stays 1. HQ417, HQ423.
+
+HQ, verbatim:
+
+> "D-026 đêm nay thu hẹp: (1) CATALOG_PATH chỉ đổi dữ liệu món/size/tồn/giá/tên và mục catalog trong prompt nhãn; từ vựng vision và màu bộ đọc giá giữ từ catalog demo; test hash prompt vision và prompt giá không đổi so với main. (2) Category list theo membership, tương thích ngược. (3) Khớp SKU: nhãn+màu ra đúng một SKU → gán; còn lại → NEEDS_SELLER như hiện tại. Không thêm trường nào vào event/API, không contracts. (4) Trong measure/NOTE: phân rã đơn NEEDS_SELLER theo 'giá thẻ khớp đúng một giá catalog' (would-be candidate) / không, tính ngoại tuyến từ event. Agent 2 viết, Agent 1 review, vào main trước 13:00. Candidate UI/contract để Founder quyết ban ngày."
+
+- `CATALOG_PATH` (`app/settings.py` `catalog_path()`): a path relative to the repo root, or absolute; unset or empty means `data/catalog.json`. It is read once, when `worker/brain/card.py` is imported and when a `Labeler` is built.
+- From `CATALOG_PATH`: `card.CATALOG` (`match`, `item_by_sku`, `variants_of`, so the SKU, name, sizes, stock and price on a card) and the catalog in the label prompt (`labels.load_catalog`).
+- From `data/catalog.json` whatever `CATALOG_PATH` says: `card.CATEGORIES` (the vision category enum), `card.COLORS` (vision prompt, speech prompt, colour filter, `vn.parse`) and `card.keywords()` (the transcriber's keyword list). `tests/test_catalog_path.py` holds the sha256 of the vision prompt and schema, the speech prompt for a fixed sentence and the keywords as on main 86264ba, and checks them with `CATALOG_PATH` unset and pointing at another catalog.
+- Membership: an item with `categories: [..]` is of each category in the list; an item without it is of its `category`, as before. `match` keeps its rule: the items of the seen category, then those with the seen colour when one is seen; exactly one → that item, else none.
+- No SKU or two or more: the path stays as before. The card is a draft with no SKU, a name from the category and colour, no variants and stock 0; an order on it goes to NEEDS_SELLER (no price yet, or qty above stock 0).
+- (4), the offline split of NEEDS_SELLER orders in `measure/`, is not in this change.
+
+Why: HQ417 chose one catalog file per run, with category lists. The C5 catalog gives its items a `categories` list; matching on `category` alone leaves an item seen under another of its categories without a SKU. Keeping the prompt words fixed keeps the vision and speech prompts the earlier runs were measured with.
+
+Known limits: the vision enum and the speech colours do not grow with `CATALOG_PATH`, so a category or colour only in that catalog is never seen or heard. A spoken price is not matched to a SKU (HQ420 open). Restart the app and worker after changing `CATALOG_PATH`.
+
 ## 2026-10-28 — which card a spoken price goes to
 
 **D-025 A final speech line goes to a card by media time; when several cards are in view, the kind of item it names picks one. Any other heard price waits for the seller.** No contract change: no new field or event, `v` stays 1.
