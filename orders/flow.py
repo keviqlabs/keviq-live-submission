@@ -289,14 +289,14 @@ async def ask_cancel(
 
 async def on_labeled(trigger: dict, view: View, messenger, now: int) -> list[dict]:
     """comment_labeled(order) -> DRAFT priced from the card version current at the comment, then the rules.
-    A cancel request in the comment (label order or other) never drafts: it may only lead to ask_cancel."""
+    A cancel request in the comment (label order or other) never drafts: it may only lead to ask_cancel. Negated
+    or unclear cancel words ("chốt 1 đôi, ko huỷ nha") are not a cancel: label order drafts, label other sends
+    nothing."""
     comment = (view.comments.get(trigger["comment_id"]) or {}).get("comment")
     if trigger.get("label") not in TRIGGER_LABELS or is_fixture(trigger["event_id"]) or comment is None:
         return []
     cancel = cancel_request(comment.get("text"))
-    if cancel:
-        if cancel["kind"] != "cancel":
-            return []  # negated or unclear: nothing is sent, the label stays for the seller
+    if cancel and cancel["kind"] == "cancel":
         thread = thread_for(comment["user_ref"])
         return await ask_cancel(
             trigger, view, messenger, now, thread, [comment["event_id"]], trigger["comment_id"]
