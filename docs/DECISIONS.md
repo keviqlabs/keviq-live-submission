@@ -13,6 +13,8 @@ Newest on top. Contract changes must have an entry here.
 - `POST /api/sessions/{id}/events` refuses (409) a `card` whose price differs from the card's latest non-null price. A priced card changes price only through the route, which writes through the store.
 - A proposal is open while the card is not retired, its latest price equals the proposal's `current_price`, and no seller version of the card is newer than the proposal's `card_version`. There is no dismiss event; a new seller price closes older proposals, also when the price later returns to the old value.
 - Proposals appear in the console only. The overlay and every customer message stay as they are.
+- The console treats "a seller version newer than `card_version`" as any newer version whose price differs from `current_price`. The two are the same here. Only the route changes a priced card's price, worker versions copy `edited_by` from the version before, and a same-price seller tap writes nothing.
+- Replay of test1 at 0 USD (rule reader, no key; `docs/evidence/2026-10-27/price-proposal-replay-NOTE.md`): 11 proposals in total. The 3 real changes give 2 proposals each. SP01 and SP04 land on the card that holds their first price, and SP09 lands on SP06's card. 7 proposals carry a later product's price on an earlier card. There is no threshold.
 
 Why: after D-023 the shop's real price changes (3 in the test1 transcript) stay at the old price, with no way to apply them. This gives the seller one tap to apply a heard price (C4), while speech still never changes a priced card.
 
