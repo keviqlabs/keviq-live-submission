@@ -7,10 +7,19 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 
+from app.cards_api import card_lock, refuse_price_change
+from app.cards_api import router as cards_router
 from app.contracts import ContractError, now_ms, validate_event
 from app.orders_api import router as orders_router
 from app.settings import ROOT, database_url, env_float
-from app.store import TEST_SESSION_PREFIXES, live_cards_from, make_store, session_state, vn_day_bounds
+from app.store import (
+    TEST_SESSION_PREFIXES,
+    VersionTaken,
+    live_cards_from,
+    make_store,
+    session_state,
+    vn_day_bounds,
+)
 
 log = logging.getLogger("app")
 STATIC = ROOT / "app" / "static"
@@ -30,6 +39,7 @@ def create_app(store=None) -> FastAPI:
 
     app = FastAPI(title="keviq-live-event", lifespan=lifespan)
     app.include_router(orders_router)
+    app.include_router(cards_router)
 
     def st(request: Request):
         return request.app.state.store
@@ -40,6 +50,8 @@ def create_app(store=None) -> FastAPI:
 
     @app.post("/api/sessions/{session_id}/events")
     async def ingest(session_id: str, request: Request):
+        """Events are stored one at a time. A 400/409/422 stops the batch there: earlier events stay stored, later
+        ones are not stored."""
         payload = await request.json()
         events = payload if isinstance(payload, list) else [payload]
         out = []
@@ -52,7 +64,15 @@ def create_app(store=None) -> FastAPI:
                 raise HTTPException(
                     400, f"event {event['event_id']} belongs to session {event['session_id']}"
                 )
-            seq, inserted = await st(request).append(event)
+            try:
+                if event["type"] == "card":
+                    async with card_lock(request.app):
+                        await refuse_price_change(st(request), event)
+                        seq, inserted = await st(request).append(event)
+                else:
+                    seq, inserted = await st(request).append(event)
+            except VersionTaken as exc:
+                raise HTTPException(409, f"card {exc} already exists under another event_id") from exc
             out.append({"event_id": event["event_id"], "seq": seq, "duplicate": not inserted})
         return {"accepted": out}
 

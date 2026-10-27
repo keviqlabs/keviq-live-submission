@@ -5,9 +5,11 @@
   as a new version of that card instead of a second card.
 - A final `speech` applies to the card that is current when it arrives. Spark reads price, sizes and colours
   in the background (D-018; the rule reader in worker/voice/vn.py when there is no key or the call fails).
-  A price makes the card live. A card that already has a price keeps it: a different spoken price is only
-  logged as a proposal for the shop (D-023). Each change is a new version whose provenance lists the speech
-  event ids (C4).
+  A price makes the card live. A card that already has a price keeps it (D-023): a different spoken price
+  becomes a `price_proposal` for the seller, once per heard price while the card's price stays the same
+  (D-024). Each change is a new version whose provenance lists the speech event ids (C4).
+- A version another writer already took (409, D-024: the seller's price route) is applied on top of the card's
+  highest version once, or dropped; the number is never reused.
 - When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background; the frame
   cut to SAM's box with SAM's mask as alpha (real pixels, nothing retouched, D-020) arrives as the next version's
   image_url.
@@ -22,10 +24,13 @@ import logging
 import re
 from dataclasses import dataclass, field
 
+import httpx
+
 from app.contracts import now_ms
 from app.settings import ROOT, env
 from meta.client import ModelError, SchemaError
 from meta.meter import BudgetExceeded
+from worker.brain.refused import latest_card, on_top
 from worker.runner import build
 from worker.voice import vn
 
@@ -112,12 +117,22 @@ class Session:
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     tasks: set = field(default_factory=set)
     reading: dict[str, int] = field(default_factory=dict)  # card_id -> speech reads in flight
+    proposed: dict[str, set[int]] = field(
+        default_factory=dict
+    )  # card_id -> heard prices proposed at its price
 
     def bump(self, card_id: str, **changes) -> dict:
         card = {**copy.deepcopy(self.cards[card_id]), **changes}
         card["version"] += 1
         self.cards[card_id] = card
         return copy.deepcopy(card)
+
+    def follow(self, card: dict) -> None:
+        """Take a version written elsewhere; a new price reopens proposals for every heard price."""
+        cid = card["card_id"]
+        if card["price"] != self.cards[cid]["price"]:
+            self.proposed.pop(cid, None)
+        self.cards[cid] = {k: copy.deepcopy(card[k]) for k in CARD_FIELDS}
 
     def spawn(self, coro) -> None:
         task = asyncio.create_task(coro)
@@ -250,6 +265,7 @@ async def apply_speech(event: dict, ctx, s: Session, cid: str) -> None:
         spoken, infer = vn.Spoken(None, [], []), (now_ms(), now_ms())
     finally:
         s.reading[cid] -= 1
+    proposal, new = None, None
     async with s.lock:
         card, meta = s.cards[cid], s.meta[cid]
         if card["status"] == "retired":
@@ -258,7 +274,7 @@ async def apply_speech(event: dict, ctx, s: Session, cid: str) -> None:
         if spoken.price is not None and card["price"] is None:
             changes["price"] = spoken.price
         elif spoken.price is not None and spoken.price != card["price"]:
-            # a priced card keeps its price; a different spoken price is only a proposal for the shop
+            # a priced card keeps its price; a different spoken price is a proposal for the seller (D-024)
             log.info(
                 "price proposal: card %s v%s price %s heard %s from %s",
                 cid,
@@ -267,6 +283,18 @@ async def apply_speech(event: dict, ctx, s: Session, cid: str) -> None:
                 spoken.price,
                 event["event_id"],
             )
+            heard = s.proposed.setdefault(cid, set())
+            if spoken.price not in heard:
+                heard.add(spoken.price)
+                proposal = {
+                    "type": "price_proposal",
+                    "card_id": cid,
+                    "card_version": card["version"],
+                    "current_price": card["price"],
+                    "heard_price": spoken.price,
+                    "speech_event_id": event["event_id"],
+                    "_infer": infer,
+                }  # ts_ms and caused_by: the speech's
         if spoken.sizes and card["sku"]:
             color = spoken.colors[0] if len(spoken.colors) == 1 else meta["color"]
             variants = variants_of(item_by_sku(card["sku"]), color, spoken.sizes)
@@ -277,13 +305,16 @@ async def apply_speech(event: dict, ctx, s: Session, cid: str) -> None:
             changes["status"] = "live"
         elif card["status"] == "draft" and s.current != cid and not s.reading[cid]:
             changes["status"] = "retired"  # switched away while this was read and still no price
-        if not changes:
-            return
-        ids = [*card["provenance"]["speech_event_ids"], event["event_id"]]
-        changes["provenance"] = {**card["provenance"], "speech_event_ids": ids}
-        new = s.bump(cid, **changes)
-    await ctx.runner.post([build(event, partial(new, infer), ctx.received_ms)])
-    if went_live and not new["image_url"]:
+        if changes:
+            ids = [*card["provenance"]["speech_event_ids"], event["event_id"]]
+            changes["provenance"] = {**card["provenance"], "speech_event_ids": ids}
+            new = s.bump(cid, **changes)
+    if proposal:
+        await ctx.runner.post([build(event, proposal, ctx.received_ms)])
+    if new is None:
+        return
+    new = await post_version(event, ctx, s, new, changes, infer)
+    if went_live and new and not new["image_url"]:
         await attach_cutout(event, ctx, s, cid)
 
 
@@ -308,7 +339,36 @@ async def attach_cutout(event: dict, ctx, s: Session, cid: str) -> None:
             return
         new = s.bump(cid, image_url=url)
     extra = [meta["frame_event_id"]] if meta["frame_event_id"] else []
-    await ctx.runner.post([build(event, partial(new, infer, extra), ctx.received_ms)])
+    await post_version(event, ctx, s, new, {"image_url": url}, infer, extra)
+
+
+async def post_version(event, ctx, s: Session, new: dict, changes: dict, infer, extra=None) -> dict | None:
+    """Post a bumped version. On 409 another writer has the number (D-024): read the card's highest version,
+    apply `changes` on top of it once, or drop them. Returns the version stored, or None."""
+    cid = new["card_id"]
+    for attempt in (1, 2):
+        try:
+            await ctx.runner.post([build(event, partial(new, infer, extra), ctx.received_ms)])
+            return new
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code != 409:
+                raise
+            log.info(
+                "card %s v%s refused (409, attempt %s): %s", cid, new["version"], attempt, exc.response.text
+            )
+        if attempt == 2:
+            break
+        latest = await latest_card(ctx, event["session_id"], cid)
+        async with s.lock:
+            if latest and latest["version"] >= s.cards[cid]["version"]:
+                s.follow(latest)
+            rest = on_top(s.cards[cid], changes)
+            if not rest:
+                log.info("card %s: nothing left to apply on v%s, dropped", cid, s.cards[cid]["version"])
+                return None
+            new = s.bump(cid, **rest)
+    log.warning("card %s v%s refused twice, dropped", cid, new["version"])
+    return None
 
 
 async def on_card(event: dict, ctx) -> list[dict]:
@@ -316,7 +376,7 @@ async def on_card(event: dict, ctx) -> list[dict]:
     s = SESSIONS.get(event["session_id"])
     cid = event["card_id"]
     if s and cid in s.cards and event["version"] > s.cards[cid]["version"]:
-        s.cards[cid] = {k: copy.deepcopy(event[k]) for k in CARD_FIELDS}
+        s.follow(event)
     return []
 
 

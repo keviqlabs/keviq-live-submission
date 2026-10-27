@@ -1,8 +1,9 @@
 """worker/brain/card.py: which card a spoken price lands on when products change. Synthetic events only.
 
 Authority: a price is attached only when the card is certain; when it is not, nothing is written; a card that
-already has a price is not repriced by speech (a new price is a proposal for the shop, D-023). A speech still
-applies to whatever card is current when it is handled, so the price-keeping rule is what protects a priced card:
+already has a price is not repriced by speech (a new price is a price_proposal for the seller, D-023, D-024). A
+speech still applies to whatever card is current when it is handled, so the price-keeping rule is what protects a
+priced card:
 - the next product's price arrives before its product_seen, while the previous live card is current;
 - a clear new price for a live or seller-edited card waits for the shop; sizes from the same speech still apply.
 Speech goes through the rule reader (the model reply is an error), so the wording is what the card reads.
@@ -121,6 +122,9 @@ async def test_seller_edited_price_is_not_repriced_by_speech(mem_app, caplog):
     assert await prices(store, "card-a") == [399000]
     [line] = [r.getMessage() for r in caplog.records if "price proposal" in r.getMessage()]
     assert line == "price proposal: card card-a v2 price 399000 heard 450000 from sp-1"
+    [p] = [e for e in await store.read(SID, 0, 500) if e["type"] == "price_proposal"]
+    assert (p["card_version"], p["current_price"], p["heard_price"]) == (2, 399000, 450000)
+    assert (p["speech_event_id"], p["caused_by"], p["ts_ms"]) == ("sp-1", ["sp-1"], ts + 200)
 
 
 async def test_speech_with_size_and_a_new_price_changes_only_the_sizes(mem_app):
