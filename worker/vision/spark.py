@@ -14,7 +14,8 @@ from worker.vision import frames
 
 log = logging.getLogger("worker.vision")
 MIN_CONFIDENCE = 0.5
-# Lowest effort Muse Spark accepts, as for the comment labels (worker/brain/labels.py); not measured here.
+# Lowest effort Muse Spark accepts. Measured with this prompt on the 351 test1 frames
+# (85.2 % category, p95 3.2 s): docs/evidence/2026-10-27/vision-test1-6b-score-1027-1950.json.
 EFFORT = "minimal"
 SCHEMA = {
     "type": "object",
@@ -44,10 +45,13 @@ _WARNED: set[tuple[str, str]] = set()
 def frame_input(jpeg: bytes, last: Seen | None) -> list[dict]:
     before = f"{last.category} màu {last.color or 'không rõ'}" if last else "chưa có"
     prompt = (
-        "Đây là một khung hình từ livestream bán quần áo, giày, túi. Món người bán đang cầm hoặc giới thiệu "
-        f"là gì? category chọn trong danh sách; 'none' nếu không có món nào được giới thiệu. color: tiếng Việt "
-        f"thường, chọn trong {COLORS} nếu khớp. size/material: chỉ khi nhìn thấy rõ, không thì null. "
-        f"Món thấy ở khung trước: {before}. confidence: mức chắc chắn 0..1."
+        "Đây là một khung hình từ livestream bán hàng. Món người bán đang cầm hoặc giới thiệu là gì? "
+        "category chọn trong danh sách; danh sách không đầy đủ: món không có trong danh sách (ví dụ đồ điện "
+        "tử, đồ gia dụng, phụ kiện) thì chọn 'other'; chỉ chọn 'none' khi người bán không cầm và không giới "
+        "thiệu món nào. Quần áo người bán đang mặc trên người không phải sản phẩm đang giới thiệu. "
+        f"color: tiếng Việt thường, chọn trong {COLORS} nếu khớp. size/material: chỉ khi nhìn thấy rõ, "
+        f"không thì null. Món thấy ở khung trước: {before}. Nếu món đang cầm vẫn là món ở khung trước thì "
+        "giữ đúng category và color của khung trước. confidence: mức chắc chắn 0..1."
     )
     return [
         {
