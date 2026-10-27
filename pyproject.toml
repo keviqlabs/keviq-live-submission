@@ -11,6 +11,7 @@ dependencies = [
   "jsonschema>=4.23",
   "httpx>=0.27",
   "websockets>=13",
+  "meta-sam-parser==0.1.0",
 ]
 
 [dependency-groups]

@@ -13,7 +13,7 @@
 </head>
 <body>
 <!-- Transparent page for an OBS browser source: shows the newest live card. -->
-<div id="card"><img id="img" alt=""><div><div id="name"></div><div id="price"></div><div id="meta"></div></div></div>
+<div id="card"><img id="img" alt="" onerror="this.style.display='none'"><div><div id="name"></div><div id="price"></div><div id="meta"></div></div></div>
 <script>
   const sid = decodeURIComponent(location.pathname.split("/").filter(Boolean).pop());
   const cards = new Map();
@@ -22,8 +22,11 @@
     const el = document.getElementById("card");
     if (!live) { el.style.display = "none"; return; }
     el.style.display = "flex";
-    document.getElementById("img").style.display = live.image_url ? "" : "none";
-    if (live.image_url) document.getElementById("img").src = live.image_url;
+    // SAM crops arrive as data: URLs; fixture placeholders (sim://) and broken images stay hidden.
+    const img = document.getElementById("img");
+    const url = /^(data:image\/|https?:|\/)/.test(live.image_url || "") ? live.image_url : "";
+    img.style.display = url ? "" : "none";
+    if (url && img.getAttribute("src") !== url) img.src = url;
     document.getElementById("name").textContent = live.name;
     document.getElementById("price").textContent = live.price == null ? "" : live.price.toLocaleString("vi-VN") + " ₫";
     const sizes = [...new Set(live.variants.filter((v) => v.stock > 0).map((v) => v.size).filter(Boolean))];

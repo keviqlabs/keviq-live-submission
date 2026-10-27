@@ -15,6 +15,26 @@ The target in `contracts/acceptance.md` is not changed. Contact comments are sti
 
 This supersedes D-011 for the 200-comment set (built in `data/comments/`); the 500-comment set is still not built.
 
+## 2026-10-27 — live product cards (worker/media, vision, voice, brain/card)
+
+Numbers continue after D-014/D-015 (PR #4) and D-016 (PR #6).
+
+**D-021 Frames, Spark latency, stream wiring.** Frames are cut at 1 fps with the long side at most 640 px (D-015: phone portrait 1080×1920 → 360×640). Spark frame reads with the current `meta/client.py`, measured on synthetic frames: p50 4782 ms / p95 6233 ms (n=20); card_from_speech 5–8 s. `worker/brain/__init__.py` merges each stream's HANDLERS per event type with one extend-safe line, so other streams append without editing card code. Events from `worker/media` (frame, speech) use `source: "replay"` because they come from a recording, and carry the four C8 timing keys on the session clock.
+
+**D-020 The card image is the frame cut to SAM's box with SAM's mask as alpha.** SAM's reply shape is in D-014; `meta.client.parse_segmentation` reads it. The mask is decoded with `meta_sam_parser.decode_mask_to_raster` (Meta's package, pinned at 0.1.0, no runtime dependencies; added on the Founder's order of 27 October). What we found:
+- The decoder returns one byte per pixel, 0 or 1 (lossless coverage ≥ 129 counts as 1), row-major with the top row first. `parse_segmentation` drops the payload's `~`/`!` marker, so `worker/vision/sam.py` puts it back before decoding.
+- The mask is box-local: `x=0;y=0` and H×W equal the box size (corners inclusive). Meta's own parser accepts only `x=0;y=0`, so we do the same; a mask that is not box-sized, has other x/y, or does not decode leaves the plain box crop (background kept) and a log line.
+- The real reply for `meta.probe.test_image()` (200×160 red box on grey 640×480) decodes to 160×200 with 99.9 % foreground in 87 ms; its output text is `tests/fixtures/sam_red_box.txt`.
+- One real call on a synthetic portrait frame (1080×1920 scaled to 360×640, a red right triangle with the right angle bottom-left): a 158×158 cut-out, 50.9 % opaque, top row 1/158 opaque and bottom row 156/158, left column 158/158 and right column 3/158. This confirms the row and column order on a real mask. 1151 ms, 0.0025 USD.
+
+The cut-out is the frame's own pixels: the tests check that every RGB value equals the plain box crop's. Only the alpha channel is added, as a PNG data URL at most 360 px wide (the PNG is never upscaled). No box → `image_url` stays null.
+
+**D-019 Voice runs in ENDPOINTING mode; one `speech` event per completed turn.** The handshake and message types are in D-014 (`meta/client.py`, PR #4; this branch does not change the client). `worker/voice` sends `mode: "ENDPOINTING"`, the catalog as `keywords` and `languageBias: ["Vietnamese"]`. Only `speechComplete` becomes a `speech` event; its span is the turn's `speechStart` → `speechComplete` `audioProcessedMs` (processing progress, not word times). An `error` message ends the stream. Real run on 300 s of synthetic Vietnamese speech (macOS TTS, 15 seller lines looped): 67 final turns, final-after-turn-end p50 1422 ms / p95 1504 ms (n=67), 0.015 USD. The 5 turns printed match the script except one doubled word, and one turn joins two lines; word error rate was not measured.
+
+**D-018 Speech is read in the background.** card_from_speech takes 5–8 s on Spark, and the worker handles events one at a time, so an inline read delayed the next `product_seen` card by up to 2.4 s on demo1. `on_speech` now pins the card that is current when the speech arrives and returns at once; the read finishes as a background task and posts its version then. A card with a read in flight is not retired by a product switch; if the read brings no price after the switch, the card is retired then. Cost: a card goes live about 5 s after the price is spoken, against ~0 ms for the rule reader alone.
+
+**D-017 Replayed product_seen needs a flag to open cards.** A `product_seen` without `caused_by` comes from a replay file, not from the vision worker. It opens cards only with `CARDS_FROM_REPLAY=1`, so a replay that still carries fixture cards does not get a second set. With `--no-fixtures` the vision worker makes `product_seen` from frames and sets `caused_by`.
+
 ## 2026-10-27 — first real calls, input format
 
 **D-016 Tests and smoke use a separate `_test` database; the test rows already written stay.** Until now `test_pg_store_append_only` and `make smoke` wrote to the project database, and a labels worker running live on that database labeled one test comment for real: one billed Spark call, 0.003589 USD, session `pytest-pg`, 27 October. At 12:34 the project database held 566 rows from test sessions (`pytest-pg` 14, eight `smoke-*` 69 each); the log is append-only, so they stay, and branches without this change keep adding to them until they merge it. From now on:
