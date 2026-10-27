@@ -1,0 +1,994 @@
+{
+ "rule": "on the gold lines among the pairs reached: DROP card line if nocard correct >= card correct and nocard misread <= card misread",
+ "pairs_reached": 64,
+ "lines_total": 64,
+ "stopped": null,
+ "stopped_parts": [
+  "cap: total 0.181810 + 2 x 0.011700 > 0.2 before line 31",
+  null
+ ],
+ "gold_lines_reached": [
+  "u3",
+  "u4",
+  "u7",
+  "u8",
+  "u9",
+  "u11",
+  "u18",
+  "u20",
+  "u26",
+  "u30",
+  "u31",
+  "u34",
+  "u38",
+  "u39",
+  "u42",
+  "u44",
+  "u46",
+  "u49",
+  "u54",
+  "u55",
+  "u58",
+  "u62"
+ ],
+ "decision": "drop the card line",
+ "card": {
+  "priced": {
+   "correct": 19,
+   "misread": 0,
+   "missed": 0,
+   "n": 19
+  },
+  "null": {
+   "correct": 3,
+   "misread": 0,
+   "missed": 0,
+   "n": 3
+  },
+  "gold_correct": 22,
+  "gold_misread": 0,
+  "fallback_lines": 0
+ },
+ "nocard": {
+  "priced": {
+   "correct": 19,
+   "misread": 0,
+   "missed": 0,
+   "n": 19
+  },
+  "null": {
+   "correct": 3,
+   "misread": 0,
+   "missed": 0,
+   "n": 3
+  },
+  "gold_correct": 22,
+  "gold_misread": 0,
+  "fallback_lines": 0
+ },
+ "per_gold_line": {
+  "u3": {
+   "gold": 250000,
+   "card": 250000,
+   "nocard": 250000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u4": {
+   "gold": null,
+   "card": null,
+   "nocard": null,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u7": {
+   "gold": null,
+   "card": null,
+   "nocard": null,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u8": {
+   "gold": 220000,
+   "card": 220000,
+   "nocard": 220000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u9": {
+   "gold": 220000,
+   "card": 220000,
+   "nocard": 220000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u11": {
+   "gold": 320000,
+   "card": 320000,
+   "nocard": 320000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u18": {
+   "gold": 280000,
+   "card": 280000,
+   "nocard": 280000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u20": {
+   "gold": null,
+   "card": null,
+   "nocard": null,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u26": {
+   "gold": 180000,
+   "card": 180000,
+   "nocard": 180000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u30": {
+   "gold": 160000,
+   "card": 160000,
+   "nocard": 160000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u31": {
+   "gold": 160000,
+   "card": 160000,
+   "nocard": 160000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u34": {
+   "gold": 150000,
+   "card": 150000,
+   "nocard": 150000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u38": {
+   "gold": 210000,
+   "card": 210000,
+   "nocard": 210000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u39": {
+   "gold": 210000,
+   "card": 210000,
+   "nocard": 210000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u42": {
+   "gold": 450000,
+   "card": 450000,
+   "nocard": 450000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u44": {
+   "gold": 450000,
+   "card": 450000,
+   "nocard": 450000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u46": {
+   "gold": 550000,
+   "card": 550000,
+   "nocard": 550000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u49": {
+   "gold": 650000,
+   "card": 650000,
+   "nocard": 650000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u54": {
+   "gold": 600000,
+   "card": 600000,
+   "nocard": 600000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u55": {
+   "gold": 600000,
+   "card": 600000,
+   "nocard": 600000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u58": {
+   "gold": 850000,
+   "card": 850000,
+   "nocard": 850000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  },
+  "u62": {
+   "gold": 250000,
+   "card": 250000,
+   "nocard": 250000,
+   "card_grade": "correct",
+   "nocard_grade": "correct"
+  }
+ },
+ "extra_report_only": {
+  "u15": {
+   "gold": 320000,
+   "card": 320000,
+   "nocard": 320000
+  },
+  "u36": {
+   "gold": 150000,
+   "card": 150000,
+   "nocard": 150000
+  }
+ },
+ "outside_gold_report_only": {
+  "n": 40,
+  "both_null": 39,
+  "same_price": 0,
+  "different_price": 0,
+  "card_only": 1,
+  "nocard_only": 0,
+  "per_line": {
+   "u0": [
+    null,
+    null
+   ],
+   "u1": [
+    null,
+    null
+   ],
+   "u2": [
+    null,
+    null
+   ],
+   "u5": [
+    null,
+    null
+   ],
+   "u6": [
+    null,
+    null
+   ],
+   "u10": [
+    null,
+    null
+   ],
+   "u12": [
+    null,
+    null
+   ],
+   "u13": [
+    null,
+    null
+   ],
+   "u14": [
+    null,
+    null
+   ],
+   "u16": [
+    null,
+    null
+   ],
+   "u17": [
+    null,
+    null
+   ],
+   "u19": [
+    null,
+    null
+   ],
+   "u21": [
+    null,
+    null
+   ],
+   "u22": [
+    null,
+    null
+   ],
+   "u23": [
+    null,
+    null
+   ],
+   "u24": [
+    null,
+    null
+   ],
+   "u25": [
+    null,
+    null
+   ],
+   "u27": [
+    null,
+    null
+   ],
+   "u28": [
+    null,
+    null
+   ],
+   "u29": [
+    null,
+    null
+   ],
+   "u32": [
+    null,
+    null
+   ],
+   "u33": [
+    null,
+    null
+   ],
+   "u35": [
+    null,
+    null
+   ],
+   "u37": [
+    null,
+    null
+   ],
+   "u40": [
+    null,
+    null
+   ],
+   "u41": [
+    null,
+    null
+   ],
+   "u43": [
+    null,
+    null
+   ],
+   "u45": [
+    null,
+    null
+   ],
+   "u47": [
+    null,
+    null
+   ],
+   "u48": [
+    null,
+    null
+   ],
+   "u50": [
+    null,
+    null
+   ],
+   "u51": [
+    null,
+    null
+   ],
+   "u52": [
+    null,
+    null
+   ],
+   "u53": [
+    null,
+    null
+   ],
+   "u56": [
+    null,
+    null
+   ],
+   "u57": [
+    null,
+    null
+   ],
+   "u59": [
+    850000,
+    null
+   ],
+   "u60": [
+    null,
+    null
+   ],
+   "u61": [
+    null,
+    null
+   ],
+   "u63": [
+    null,
+    null
+   ]
+  }
+ },
+ "card_variant_read_equals_card_price": {
+  "n": 6,
+  "lines": [
+   "u15",
+   "u36",
+   "u39",
+   "u44",
+   "u59",
+   "u62"
+  ],
+  "nocard_read_on_those": [
+   320000,
+   150000,
+   210000,
+   450000,
+   null,
+   250000
+  ]
+ },
+ "size_color_report_only": {
+  "u2": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u4": {
+   "card": [
+    [
+     "40"
+    ],
+    []
+   ],
+   "nocard": [
+    [
+     "40"
+    ],
+    []
+   ]
+  },
+  "u5": {
+   "card": [
+    [
+     "41"
+    ],
+    []
+   ],
+   "nocard": [
+    [
+     "41"
+    ],
+    []
+   ]
+  },
+  "u7": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u10": {
+   "card": [
+    [],
+    [
+     "trắng"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "trắng"
+    ]
+   ]
+  },
+  "u11": {
+   "card": [
+    [
+     "39"
+    ],
+    []
+   ],
+   "nocard": [
+    [
+     "39"
+    ],
+    []
+   ]
+  },
+  "u13": {
+   "card": [
+    [
+     "40"
+    ],
+    []
+   ],
+   "nocard": [
+    [
+     "40"
+    ],
+    []
+   ]
+  },
+  "u14": {
+   "card": [
+    [],
+    [
+     "trắng"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "trắng"
+    ]
+   ]
+  },
+  "u15": {
+   "card": [
+    [],
+    [
+     "trắng"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "trắng"
+    ]
+   ]
+  },
+  "u17": {
+   "card": [
+    [],
+    [
+     "xám"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "xám"
+    ]
+   ]
+  },
+  "u18": {
+   "card": [
+    [],
+    [
+     "xám"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "xám"
+    ]
+   ]
+  },
+  "u19": {
+   "card": [
+    [
+     "41"
+    ],
+    []
+   ],
+   "nocard": [
+    [
+     "41"
+    ],
+    []
+   ]
+  },
+  "u21": {
+   "card": [
+    [
+     "42"
+    ],
+    []
+   ],
+   "nocard": [
+    [
+     "42"
+    ],
+    []
+   ]
+  },
+  "u24": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u25": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u26": {
+   "card": [
+    [
+     "M"
+    ],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [
+     "M"
+    ],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u28": {
+   "card": [
+    [
+     "L"
+    ],
+    []
+   ],
+   "nocard": [
+    [
+     "L"
+    ],
+    []
+   ]
+  },
+  "u30": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u33": {
+   "card": [
+    [],
+    [
+     "trắng"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "trắng"
+    ]
+   ]
+  },
+  "u34": {
+   "card": [
+    [],
+    [
+     "trắng"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "trắng"
+    ]
+   ]
+  },
+  "u35": {
+   "card": [
+    [
+     "M",
+     "L"
+    ],
+    []
+   ],
+   "nocard": [
+    [
+     "M",
+     "L"
+    ],
+    []
+   ]
+  },
+  "u37": {
+   "card": [
+    [],
+    [
+     "xanh"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "xanh"
+    ]
+   ]
+  },
+  "u38": {
+   "card": [
+    [
+     "L",
+     "XL"
+    ],
+    [
+     "xanh"
+    ]
+   ],
+   "nocard": [
+    [
+     "L",
+     "XL"
+    ],
+    [
+     "xanh"
+    ]
+   ]
+  },
+  "u39": {
+   "card": [
+    [],
+    [
+     "xanh"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "xanh"
+    ]
+   ]
+  },
+  "u41": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u42": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u44": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u45": {
+   "card": [
+    [],
+    [
+     "trắng"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "trắng"
+    ]
+   ]
+  },
+  "u46": {
+   "card": [
+    [],
+    [
+     "trắng"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "trắng"
+    ]
+   ]
+  },
+  "u47": {
+   "card": [
+    [],
+    [
+     "trắng"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "trắng"
+    ]
+   ]
+  },
+  "u49": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u54": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u57": {
+   "card": [
+    [],
+    [
+     "trắng"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "trắng"
+    ]
+   ]
+  },
+  "u58": {
+   "card": [
+    [],
+    [
+     "trắng"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "trắng"
+    ]
+   ]
+  },
+  "u61": {
+   "card": [
+    [],
+    [
+     "đen"
+    ]
+   ],
+   "nocard": [
+    [],
+    [
+     "đen"
+    ]
+   ]
+  },
+  "u62": {
+   "card": [
+    [
+     "40",
+     "41"
+    ],
+    []
+   ],
+   "nocard": [
+    [
+     "40",
+     "41"
+    ],
+    []
+   ]
+  }
+ },
+ "run": {
+  "card": {
+   "ledger_session": "probe-test1-speech64-2141-card",
+   "calls": 64,
+   "calls_ok": 64,
+   "errors": 0,
+   "cost_usd": 0.208595,
+   "tokens_in": 10130,
+   "tokens_out": 46401,
+   "wall_s_both": 545.5
+  },
+  "nocard": {
+   "ledger_session": "probe-test1-speech64-2141-nocard",
+   "calls": 64,
+   "calls_ok": 64,
+   "errors": 0,
+   "cost_usd": 0.170288,
+   "tokens_in": 8856,
+   "tokens_out": 37463,
+   "wall_s_both": 545.5
+  }
+ },
+ "latency_ledger_ms": {
+  "card": {
+   "n": 64,
+   "p50_ms": 4372,
+   "p95_ms": 6292,
+   "max_ms": 8639.0,
+   "usd": "0.20859515",
+   "not_ok": 0,
+   "json_ms_minus_ledger_ms": {
+    "min": 5.0,
+    "max": 59.0
+   }
+  },
+  "nocard": {
+   "n": 64,
+   "p50_ms": 3690,
+   "p95_ms": 5351,
+   "max_ms": 6500.0,
+   "usd": "0.17028775",
+   "not_ok": 0,
+   "json_ms_minus_ledger_ms": {
+    "min": 6.0,
+    "max": 61.0
+   }
+  }
+ }
+}
