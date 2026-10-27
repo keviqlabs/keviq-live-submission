@@ -4,9 +4,18 @@ import os
 import httpx
 import pytest
 
-from app.main import create_app
-from app.settings import ROOT
-from app.store import MemoryStore
+from app import settings  # loads .env first, so the overrides below win over it
+
+# Tests never touch the project database or the paid Model API (D-016): DATABASE_URL points at
+# <name>_test (or TEST_DATABASE_URL), and the key is blanked so no test can make a billed call.
+TEST_DATABASE_URL = settings.testing_database_url()
+if TEST_DATABASE_URL:
+    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+os.environ["MODEL_API_KEY"] = ""
+
+from app.main import create_app  # noqa: E402
+from app.settings import ROOT  # noqa: E402
+from app.store import MemoryStore  # noqa: E402
 
 DEMO = ROOT / "data" / "sessions" / "demo1"
 
@@ -32,15 +41,26 @@ async def mem_app():
         yield app, store, client
 
 
-@pytest.fixture
+def pytest_configure(config):
+    url = os.environ.get("DATABASE_URL")
+    if url and not settings.is_test_database(url):
+        pytest.exit("refusing to run: DATABASE_URL is not a test database (name must end in _test)", 1)
+
+
+@pytest.fixture(scope="session")
 def pg_url():
+    """The test database, created and migrated on first use; skips (never falls back) if PostgreSQL is down."""
     url = os.environ.get("DATABASE_URL")
     if not url:
         pytest.skip("DATABASE_URL not set (run make infra-up)")
-    try:
-        import psycopg
+    assert settings.is_test_database(url)
+    import psycopg
 
-        psycopg.connect(url, connect_timeout=2).close()
-    except Exception as exc:
+    from app.migrate import ensure_database, migrate
+
+    try:
+        ensure_database(url)
+    except psycopg.OperationalError as exc:
         pytest.skip(f"PostgreSQL not reachable ({type(exc).__name__}); run make infra-up")
+    migrate(url)
     return url

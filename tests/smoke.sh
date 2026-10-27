@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # L3 smoke: real PostgreSQL, real app process, replay over HTTP, SSE read back, worker boots, measure from the DB.
 # Usage: make smoke   (needs Docker; leaves the postgres container running, stops the app and worker it started)
+# Runs on the test database (<name>_test, D-016) with the Model API key blanked: no project rows, no billed calls.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -15,8 +16,14 @@ cleanup() {
 trap cleanup EXIT
 fail() { echo "SMOKE FAIL: $*" >&2; echo "--- app log" >&2; tail -20 "$LOG_DIR/app.log" >&2 || true; exit 1; }
 
-echo "1/7 infra-up + migrate"
-make -s infra-up >"$LOG_DIR/infra.log" 2>&1 || { cat "$LOG_DIR/infra.log" >&2; fail "infra-up"; }
+echo "1/7 postgres + test database"
+DATABASE_URL="$(uv run python -c 'from app.settings import testing_database_url as t; print(t() or "")')"
+[ -n "$DATABASE_URL" ] || fail "DATABASE_URL is not set (run through make smoke)"
+export DATABASE_URL
+export MODEL_API_KEY=""  # set but empty, so .env cannot fill it in for the app or the worker
+docker compose -f deploy/compose.yml up -d --wait postgres >"$LOG_DIR/infra.log" 2>&1 \
+  || { cat "$LOG_DIR/infra.log" >&2; fail "postgres"; }
+uv run python -m app.migrate --test >>"$LOG_DIR/infra.log" 2>&1 || { cat "$LOG_DIR/infra.log" >&2; fail "migrate"; }
 
 echo "2/7 app on :$PORT"
 uv run uvicorn app.main:app --host 127.0.0.1 --port "$PORT" >"$LOG_DIR/app.log" 2>&1 &
