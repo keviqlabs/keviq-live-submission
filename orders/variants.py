@@ -5,6 +5,10 @@ customer to choose the part that is missing (size, color, or both) instead of gu
 `PICK:<order_id>#<i>` quick reply (i indexes the variants of the card version the comment was priced from) or
 free text naming the missing part ("39", "size M", "màu đen"). Nothing here reads a model, another customer's
 order or "như bạn trên": only the card and the customer's own words.
+
+Free text picks only when it is plain: the value follows its word ("size 39", "cỡ 40", "màu đen") or the reply
+is little more than the value ("Lấy 40 nha", "38"). A refusal ("không lấy 40"), an address ("giao 40 Lê Lợi"),
+a question ("39 còn không") or two listed values ("size 39, giao 40 Lê Lợi") is asked again.
 """
 
 import re
@@ -15,6 +19,22 @@ from orders.intent import fold
 WHAT = {"size": "size", "color": "màu"}
 MAX_OPTIONS = 12  # quick replies per question (Meta allows 13)
 TITLE_MAX = 20  # Send API quick reply title limit
+
+# Read on the folded text (no diacritics), so "ko lay 39" and "không lấy 39" are the same refusal.
+REFUSAL = re.compile(
+    r"\b(?:khong|ko|k|hong|hok|khg|dung|chua|chang|khoi)\s+(?:(?:can|muon|phai|co)\s+)?"
+    r"(?:lay|mua|dat|chon|chot|size|sz|co|mau|\d)"
+)
+FIELD_WORDS = {
+    "size": ("size", "sz", "size so"),
+    "color": ("mau",),
+}  # folded; "cỡ" is read with its diacritics
+# Folded words that may stand around the value in a plain answer. Not "co" (có: "có 39?" is a question) and not
+# "so" (số: an address).
+FILLER = set(
+    "lay mua dat chon chot cho minh em e anh chi shop sh oi nha nhe nghen a da vang ok oke okie "
+    "doi cai chiec size sz mau di luon thi voi 1 mot".split()
+)
 
 
 def want_of(draft_in: dict) -> dict:
@@ -75,10 +95,45 @@ def says(text: str, value) -> bool:
     return exact == plain and f" {fold(str(value))} " in plain
 
 
+def refuses(text: str) -> bool:
+    """A negation before lấy/mua/size/cỡ/màu or a number: "không lấy size 40", "ko lấy 39", "đừng 40"."""
+    return bool(REFUSAL.search(fold(text or "")))
+
+
+def after_field_word(text: str, value, field: str) -> bool:
+    plain, v = " " + fold(text or "") + " ", fold(str(value))
+    if any(f" {w} {v} " in plain for w in FIELD_WORDS[field]):
+        return True
+    return field == "size" and f" cỡ {words(str(value)).strip()} " in words(text)
+
+
+def bare(text: str, values: list) -> bool:
+    """The reply is little more than one of `values`: "Lấy 40 nha", "38", "mình lấy đôi 39 nha shop"."""
+    plain = " " + fold(text or "") + " "
+    for v in sorted({fold(str(v)) for v in values if v is not None}, key=len, reverse=True):
+        plain = plain.replace(f" {v} ", " ")
+    return all(w in FILLER for w in plain.split())
+
+
 def named(text: str, card: dict, hits: list[int], missing: list[str]) -> list[int]:
-    """Variants among `hits` whose every missing part is named in the text."""
+    """Variants among `hits` whose every missing part the text plainly chooses: one listed value per missing part,
+    said right after its word or in a reply that is little more than the value, and no refusal."""
     variants = card.get("variants") or []
-    return [i for i in hits if missing and all(says(text, variants[i].get(f)) for f in missing)]
+    if not missing or refuses(text):
+        return []
+    short = bare(text, [variants[i].get(f) for i in hits for f in missing])
+    chosen = {}
+    for f in missing:
+        said = {
+            fold(str(variants[i].get(f))): variants[i].get(f) for i in hits if says(text, variants[i].get(f))
+        }
+        if len(said) != 1:
+            return []  # none, or two listed values ("38 hay 39", "size 39, giao 40 Lê Lợi")
+        [value] = said.values()
+        if not (short or after_field_word(text, value, f)):
+            return []  # "giao 40 Lê Lợi", "mình ở số 39 Trần Phú", "39 còn không"
+        chosen[f] = value
+    return [i for i in hits if all(same(variants[i].get(f), chosen[f]) for f in missing)]
 
 
 def picked(payload: dict, hits: list[int]) -> int | None:
