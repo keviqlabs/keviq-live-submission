@@ -77,7 +77,7 @@ async def play_voice(
     video: Path, poster: Poster, base_url: str, t0: int, speed: float, seconds: float | None, lang: str
 ) -> int:
     from meta.client import MetaClient
-    from meta.meter import Meter, http_spend
+    from meta.meter import Meter, http_session_spend, http_spend
     from meta.transport import HttpTransport
 
     try:
@@ -89,7 +89,8 @@ async def play_voice(
     async def emit(fields: dict) -> None:
         await poster.post({"type": "model_call", "ts_ms": now_ms(), **fields})
 
-    client = MetaClient(transport, Meter(http_spend(base_url)), emit)
+    meter = Meter(http_spend(base_url), session_spend=http_session_spend(base_url))
+    client = MetaClient(transport, meter, emit, session_id=poster.target)
     pcm = extract.pcm_chunks(video, speed=speed, seconds=seconds)
     return await transcribe(client, pcm, keywords(), lang, lambda pos: t0 + int(pos / speed), poster.post)
 

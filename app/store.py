@@ -154,7 +154,11 @@ class MemoryStore:
         return list(self._orders.get(session_id, {}).values())
 
     async def cost_usd(
-        self, start_ms: int | None = None, end_ms: int | None = None, test_only: bool = False
+        self,
+        start_ms: int | None = None,
+        end_ms: int | None = None,
+        test_only: bool = False,
+        session_id: str | None = None,
     ) -> float:
         return sum(
             e.get("cost_usd", 0)
@@ -163,6 +167,7 @@ class MemoryStore:
             and (start_ms is None or e["ingested_ms"] >= start_ms)
             and (end_ms is None or e["ingested_ms"] < end_ms)
             and (not test_only or e["session_id"].startswith(TEST_SESSION_PREFIXES))
+            and (session_id is None or e["session_id"] == session_id)
         )
 
 
@@ -331,15 +336,26 @@ class PgStore:
         return [r["body"] for r in rows]
 
     async def cost_usd(
-        self, start_ms: int | None = None, end_ms: int | None = None, test_only: bool = False
+        self,
+        start_ms: int | None = None,
+        end_ms: int | None = None,
+        test_only: bool = False,
+        session_id: str | None = None,
     ) -> float:
         # The window is on ingested_ms (when the store recorded the call), not ts_ms: a worker's model_call takes its
         # trigger's ts_ms, which may be any day (ts_ms=1 in a test, an old replay), but the money is spent now.
         prefixes = [p + "%" for p in TEST_SESSION_PREFIXES] if test_only else ["%"]
+        one = session_id is not None
         rows = await self._fetch(
             "SELECT COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd FROM events WHERE type = 'model_call'"
-            " AND ingested_ms >= %s AND ingested_ms < %s AND session_id LIKE ANY(%s)",
-            (start_ms if start_ms is not None else 0, end_ms if end_ms is not None else 2**62, prefixes),
+            " AND ingested_ms >= %s AND ingested_ms < %s AND session_id LIKE ANY(%s)"
+            + (" AND session_id = %s" if one else ""),
+            (
+                start_ms if start_ms is not None else 0,
+                end_ms if end_ms is not None else 2**62,
+                prefixes,
+                *([session_id] if one else []),
+            ),
         )
         return float(rows[0]["usd"])
 
