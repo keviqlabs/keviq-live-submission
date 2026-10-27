@@ -50,7 +50,7 @@ class OracleTransport:
                     "size": o.get("size"),
                     "color": o.get("color"),
                     "qty": o.get("qty"),
-                    "scam_signals": ["phone_number"] if g["has_phone"] else [],
+                    "contact": "phone_number" if g["has_phone"] else "none",
                 }
             )
         return responses_reply(json.dumps({"items": items}, ensure_ascii=False), 900, 300)
@@ -197,6 +197,7 @@ async def test_two_hundred_comments_through_the_stream(mem_app, monkeypatch):
 
     assert all(len(json.loads(r["input"][1]["content"])["comments"]) <= 20 for r in transport.requests)
     assert len(transport.requests) >= 10
+    assert all(r["reasoning"] == {"effort": "minimal"} for r in transport.requests)
     calls = [e for e in out if e["type"] == "model_call"]
     assert len(calls) == len(transport.requests) and {c["purpose"] for c in calls} == {"label_comments"}
 
