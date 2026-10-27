@@ -4,7 +4,7 @@ Live-commerce assistant for small sellers who sell on Facebook livestreams: it t
 
 ## Built during the hackathon
 
-Everything in this repository was written during the event (from 2026-10-26 23:24 ICT).
+Everything in this repository was made during the event, from 26 October 2026 23:24 ICT; what existed before was two earlier private repositories, planning notes, the Meta Model API account and the shop's Facebook Page, and nothing from those repositories is in this one.
 
 | Feature | Meta model | Commits | Measurement |
 |---|---|---|---|
@@ -13,7 +13,14 @@ Everything in this repository was written during the event (from 2026-10-26 23:2
 | Product read from the camera (`worker/vision/spark.py` → `product_seen`), prompt 6b | muse-spark-1.3, `reasoning.effort=minimal` | PR #15, #18, #20 | 351 frames of one test video (test1, 720×1280), one run: category right 299/351 (electronics 82/100, shoes 109/129, tops 79/93, no product 29/29), product change seen within 3 s 6/11, model_call p50/p95 1872/3168 ms, $0.8226. The prompt was tuned on 20 frames of the same video (limits below) |
 | _filled in daily_ | | | |
 
-**Prior work.** Before the event the author built an earlier prototype (a replay console) in a separate private repository. None of its code is in this repository.
+**Before the event** (before 26 October 23:24 ICT; none of it is in this repository):
+- Two private repositories by the author: the earlier product repository, with a prototype replay console (worked on until the week of 25 October), and a pre-event baseline repository (one commit, pushed 26 October 20:01 ICT). No code, data or images from either were copied, retyped or consulted here.
+- Planning notes written on the afternoon of 26 October: a plan that separates existing work from event work, and a baseline task note. They are documents, not code.
+- Accounts and know-how: the Meta Model API account and its credit, the shop's Facebook Page, and the author's experience of selling on livestreams and of the order flow.
+
+**During the event** (from 26 October 23:24 ICT):
+- All code, contracts, tests, data and docs in this repository. The first commit is dated 27 October 10:22 ICT, and no commit is older than the event start: `git log --format=%aI%n%cI | sort | head -1`.
+- Outside this repository: the test1 recording (27 October, kept local and out of Git), the project brief with criteria C1–C11 and the day-1 prompt (27 October morning), and a private UI mock-up (27 October) that is kept apart; nothing from the mock-up was copied here.
 
 AI coding assistants were used as tools. The entrant is the Founder, working alone. Branches the assistant created were named with its default `claude/` prefix, so some merge commits in the history carry that prefix; branches opened after PR #20 was merged (27 October, 20:16 ICT) carry no tool name, and merges use a written title.
 
@@ -85,6 +92,7 @@ The Founder confirmed the review sample c001–c030 on 27 October (all 30, none 
 - Product read from the camera: the 6b prompt was tuned on 20 frames of test1, and the 351-frame gate (electronics ≥ 72/100, shoes ≥ 105/129, tops ≥ 75/93, all met) was measured on the same video, in one run (`probe-test1-6b-1950`). No second video has been measured, so 85.2 % says nothing yet about other streams. Evidence: `docs/evidence/2026-10-27/vision-test1-6b-score-1027-1950.json` (351 frames) and `vision-test1-6b20-score-1027-1947.json` (20 frames, both efforts).
 - Facebook is an interface only and Messenger is simulated: nothing is sent to real people and no real comment is hidden.
 - The request and response shapes for the Model API (structured output, SAM, voice stream) come from the docs and are not yet checked against live calls.
+- A Voice Transcribe realtime session lasts at most 60 minutes, and a follow-on session has to start on audio that overlaps the end of the previous one (Meta's answer, 27 October). This build opens one voice session per play of a recording and has no session stitching. The planned C5 run plays the 5 min 51 s test1 recording five times in one app session (about 30 minutes), so each voice session stays far under the limit. A live stream longer than 60 minutes is not handled yet.
 
 ## Next steps
 
