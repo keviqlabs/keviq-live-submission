@@ -1,9 +1,13 @@
-"""orders/intent.py (discount requests, yes/no) and connectors/sim/messenger.py (Send API / webhook shapes)."""
+"""orders/intent.py (discount and cancel requests, yes/no/keep) and connectors/sim/messenger.py (Send API /
+webhook shapes)."""
+
+import json
 
 import pytest
 
+from app.settings import ROOT
 from connectors.sim.messenger import SimMessenger, parse_webhook, send_api_body, webhook_body
-from orders.intent import customer_reply, discount_request
+from orders.intent import cancel_request, customer_reply, discount_request
 
 
 @pytest.mark.parametrize(
@@ -35,10 +39,53 @@ def test_discount_phrase_keeps_the_discount_word():
 
 
 @pytest.mark.parametrize(
+    "text, kind",
+    [
+        ("huỷ đơn đôi 39", "cancel"),
+        ("Hủy đơn giúp em", "cancel"),
+        ("Huỷ", "cancel"),
+        ("huy don nha shop", "cancel"),
+        ("không, huỷ đi", "cancel"),
+        ("không lấy nữa", "cancel"),
+        ("thôi không lấy đâu", "cancel"),
+        ("bỏ đơn nha", "cancel"),
+        ("cancel giúp mình", "cancel"),
+        ("đừng huỷ nha", "negated"),
+        ("không huỷ đâu", "negated"),
+        ("khỏi huỷ", "negated"),
+        ("ko cần huỷ", "negated"),
+        ("Xác nhận đơn hàng tại http://shop-xac-nhan.example để không bị huỷ", "unclear"),
+        ("có nên huỷ không ta", "unclear"),
+        ("lấy hay huỷ đây", "unclear"),
+        ("sao chưa huỷ cho em", "unclear"),
+        ("anh Huy ơi còn size 39 không", None),  # a name, not a cancel
+        ("chuyển khoản trước được không", None),
+        ("chốt đôi 39", None),
+        ("", None),
+    ],
+)
+def test_cancel_request(text, kind):
+    got = cancel_request(text)
+    assert (got and got["kind"]) == kind
+
+
+def test_no_recorded_comment_reads_as_a_cancel():
+    rows = [
+        json.loads(x) for x in (ROOT / "data" / "comments" / "labels.jsonl").read_text().splitlines() if x
+    ]
+    hits = {
+        r["comment_id"]: cancel_request(r.get("text"))["kind"] for r in rows if cancel_request(r.get("text"))
+    }
+    assert "cancel" not in hits.values()
+
+
+@pytest.mark.parametrize(
     "template, payload, want",
     [
         ("confirm_yes", {"order_id": "o-06"}, ("yes", "o-06")),
         ("confirm_no", {"order_id": "o-06"}, ("no", "o-06")),
+        ("keep_order", {"order_id": "o-06"}, ("keep", "o-06")),
+        (None, {"text": "Giữ đơn", "quick_reply": "KEEP:o-05"}, ("keep", "o-05")),
         (None, {"text": "Đồng ý", "quick_reply": "CONFIRM:o-05"}, ("yes", "o-05")),
         (None, {"text": "Huỷ", "quick_reply": "CANCEL:o-05"}, ("no", "o-05")),
         (None, {"text": "Đồng ý!"}, ("yes", None)),
@@ -70,6 +117,11 @@ def test_webhook_round_trip_and_echoes_skipped():
     body["entry"][0]["messaging"][0]["message"]["is_echo"] = True
     assert parse_webhook(body) == []
     assert parse_webhook({"object": "instagram", "entry": []}) == []
+
+
+def test_webhook_keep_quick_reply():
+    [m] = parse_webhook(webhook_body("th-u05", 1000, text="Giữ đơn", quick_reply="KEEP:o-05"))
+    assert (m["template"], m["payload"]["order_id"]) == ("keep_order", "o-05")
 
 
 async def test_sim_messenger_send_carries_the_send_api_body():
