@@ -2,6 +2,24 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-27 — price proposals and the console price route
+
+**D-024 A different spoken price on a priced card becomes a `price_proposal` for the seller; a seller price reaches the card only through a console route.** Contract change, additive: one new event type, `v` stays 1.
+
+- New event `price_proposal` (`contracts/events/price_proposal.schema.json`): `card_id`, `card_version`, `current_price`, `heard_price` (1000…100 000 000, the bounds of the speech price reader), `speech_event_id`. `caused_by` is required and lists the speech. Added to the envelope `type` enum.
+- Who said it: `speech` carries no speaker identity, so the proposal names the speech event; there is no speaker field. When: the envelope `ts_ms` is the time of the speech.
+- New console route `POST /api/sessions/{id}/cards/{card_id}/price` (`contracts/README.md`, "Card versions"): writes `card` `version + 1` with status `edited` and `edited_by: "seller"`; the same price writes nothing; 404, 409 and 422 as listed there.
+- A proposal is open while the card is not retired and its latest price equals the proposal's `current_price`. There is no dismiss event; a new seller price closes older proposals.
+- Proposals appear in the console only. The overlay and every customer message stay as they are.
+
+Why: after D-023 the shop's real price changes (3 in the test1 transcript) stay at the old price, with no way to apply them. This gives the seller one tap to apply a heard price (C4), while speech still never changes a priced card.
+
+Permissions: `contracts/permissions.json` does not change. The route is a seller action in the console, like the card edit in C4; a separate permission row for it is not part of this change. As with the order routes, anyone with console access decides; there is no seller identity.
+
+Not in this change: the worker that emits the event, the route code and the console UI (they follow in separate PRs with tests); a dismiss button.
+
+Known limit: a worker version bump and a route write at the same moment can produce the same version number. The route lock and the `card_version` check only stop a click on an older version.
+
 ## 2026-10-27 — spoken price on a priced card
 
 **D-023 Speech never changes the price of a card that already has one.** A spoken price sets the price only on a card whose price is null, as before: the draft goes live. On a card with a price (live or edited), a different spoken price changes nothing on the card. `worker/brain/card.py` logs one `price proposal` line with the card id, version, current price, heard price and speech event id; the spoken text is not logged. Sizes and colours from the same speech still apply.
