@@ -325,7 +325,7 @@ def table(r: dict) -> str:
     lines.append(
         f"core: C3 {fmt(c3_['accuracy'])} on n={c3_['n']}; C5 order recall {fmt(c5_['order_recall'])} on"
         f" n={c5_['order_n']}; phone visible max {fmt(c5_['phone_visible_max_s'], 1)} s on n={c5_['phone_n']}"
-        f" (measured at the latest label)"
+        f" (measured at the first hide)"
     )
     return "\n".join(lines)
 

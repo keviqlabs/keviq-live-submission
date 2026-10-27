@@ -38,6 +38,15 @@ def test_c5_phone_never_hidden_is_infinite(demo_events, gold):
     assert math.isinf(c5(events, gold)["phone_visible_max_s"])
 
 
+def test_c5_phone_visible_ends_at_the_first_hide(demo_events, gold):
+    # cm-04 at 12000 ms is hidden at 13500 ms; a second hide label for it arriving at 20000 ms does not make the
+    # phone visible for 8 s
+    events = copy.deepcopy(demo_events)
+    first = next(e for e in events if e["event_id"] == "fx-lb-04")
+    events.append(first | {"event_id": "fx-lb-04-model", "_replay_at_ms": 20000})
+    assert c5(events, gold)["phone_visible_max_s"] == 1.5
+
+
 def test_c5_receipt_with_a_different_price_is_not_ok(demo_events, gold):
     events = copy.deepcopy(demo_events)
     next(e for e in events if e["event_id"] == "fx-o11-3")["receipt"]["price"] = 900000

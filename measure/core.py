@@ -132,12 +132,14 @@ def c5(events: list[dict], gold: dict) -> dict:
         or (e["type"] == "order" and e["actor"] == "seller")
         for e in events
     )
+    hidden_at = {}  # a phone stops being visible at its first hide (shield or model), not at the latest label
+    for e in events:
+        if e["type"] == "comment_labeled" and e["action"] == "hide":
+            hidden_at[e["comment_id"]] = min(when(e), hidden_at.get(e["comment_id"], when(e)))
     phone_s = []
     for cid, g in gold["comments"].items():
         if g.get("has_phone") and cid in comments:
-            lab = labels.get(cid)
-            hidden = lab and lab["action"] == "hide"
-            phone_s.append((when(lab) - when(comments[cid])) / 1000 if hidden else math.inf)
+            phone_s.append((hidden_at[cid] - when(comments[cid])) / 1000 if cid in hidden_at else math.inf)
     cards = {(e["card_id"], e["version"]): e for e in events if e["type"] == "card"}
     receipts = [e for e in events if e["type"] == "order" and e["state"] == "CONFIRMED"]
     good = 0
