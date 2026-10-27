@@ -1,0 +1,18 @@
+{
+  "v": 1,
+  "seller_threshold_vnd_default": 2000000,
+  "actions": {
+    "create_draft_card":          {"decision": "auto",      "check": "none"},
+    "answer_product_question":    {"decision": "auto",      "check": "answer from live card data only"},
+    "draft_order":                {"decision": "auto",      "check": "unit price = live card price at comment ts_ms; qty <= stock"},
+    "send_confirmation":          {"decision": "auto",      "check": "order passed draft checks; within 24h of the customer's last message"},
+    "hide_comment_contact_or_link": {"decision": "auto",    "check": "logged; seller can unhide in one tap"},
+    "discount":                   {"decision": "seller",    "check": "order -> NEEDS_SELLER; customer only hears 'waiting for the shop to confirm'"},
+    "order_over_threshold":       {"decision": "seller",    "check": "amount > seller threshold -> NEEDS_SELLER"},
+    "refund":                     {"decision": "seller",    "check": "-> NEEDS_SELLER"},
+    "change_address_after_confirm": {"decision": "seller",  "check": "-> NEEDS_SELLER"},
+    "collect_payment":            {"decision": "forbidden", "check": "no code path; test blocks"},
+    "promise_delivery_outside_policy": {"decision": "forbidden", "check": "no code path; test blocks"},
+    "message_outside_24h":        {"decision": "forbidden", "check": "no send after 24h since the customer's last message"}
+  }
+}
