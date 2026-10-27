@@ -5,7 +5,9 @@
   as a new version of that card instead of a second card.
 - A final `speech` applies to the card that is current when it arrives. Spark reads price, sizes and colours
   in the background (D-018; the rule reader in worker/voice/vn.py when there is no key or the call fails).
-  A price makes the card live. Each change is a new version whose provenance lists the speech event ids (C4).
+  A price makes the card live. A card that already has a price keeps it: a different spoken price is only
+  logged as a proposal for the shop (D-023). Each change is a new version whose provenance lists the speech
+  event ids (C4).
 - When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background; the frame
   cut to SAM's box with SAM's mask as alpha (real pixels, nothing retouched, D-020) arrives as the next version's
   image_url.
@@ -253,8 +255,18 @@ async def apply_speech(event: dict, ctx, s: Session, cid: str) -> None:
         if card["status"] == "retired":
             return
         changes = {}
-        if spoken.price is not None and spoken.price != card["price"]:
+        if spoken.price is not None and card["price"] is None:
             changes["price"] = spoken.price
+        elif spoken.price is not None and spoken.price != card["price"]:
+            # a priced card keeps its price; a different spoken price is only a proposal for the shop
+            log.info(
+                "price proposal: card %s v%s price %s heard %s from %s",
+                cid,
+                card["version"],
+                card["price"],
+                spoken.price,
+                event["event_id"],
+            )
         if spoken.sizes and card["sku"]:
             color = spoken.colors[0] if len(spoken.colors) == 1 else meta["color"]
             variants = variants_of(item_by_sku(card["sku"]), color, spoken.sizes)
