@@ -1,6 +1,6 @@
 # Scope of the C5 dry run c5-dry-1028-024114, rescored
 
-What this is: one dry loop of the C5 runner (`python -m measure.c5 --mode dry`), at 0 USD, rescored with the
+What this is: one dry loop of the C5 runner (`uv run python -m measure.c5 --dry`), at 0 USD, rescored with the
 scorer in this PR. It is not the C5 measurement: the 5-loop live run with real vision and real speech has not run.
 Every number below is a dry-run number and waits for the independent review of the definitions before use.
 
