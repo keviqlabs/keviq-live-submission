@@ -1,0 +1,9 @@
+# Scope of the speech64 card-line evidence
+
+- Question: does `card.speech_input` need the card line (product name and card price) to read the spoken price? The "card" variant is `speech_input` as on main (`card.py` sha256 `fbfec2d7…`, also in the run file). The "nocard" variant is the same prompt with the card sentence removed and "của món này" changed to "được nói trong câu". Both go through `card.read_speech`, so the price, size and colour filters are the same. The card given is the best case: the labelled product at the line midpoint, priced once its first price line has ended.
+- Lines: the 64 rows of the test1 voice probe, in order 0..63, run in pairs (even lines card variant first, odd lines nocard first).
+- One run on 27/10, ledger sessions `probe-test1-speech64-2141-card` and `probe-test1-speech64-2141-nocard`. It stopped at the 0.20 USD cap before line 31. The cap was then raised to 0.65 USD, and the run resumed from line 31 on the same sessions; no line was called twice. All 64 pairs were reached.
+- Gold: per-line price gold for 22 lines (19 priced, 3 without a price), written before the run, along with the rule in the score file. Two more priced lines (u15, u36) and the 40 lines outside gold are reported only.
+- Result on the 22 gold lines: both variants 22 correct, 0 misread, 0 missed, so by the rule the card line is dropped. One video, one run, n = 22 gold lines. Not rerun.
+- `speech64-card-line-run-1027-2141.json` joins the two run parts and keeps only line index, prices, sizes, colours and per-call numbers; video times, product ids and error text were dropped. `speech64-card-line-score-1027-2141.json` is the scorer output, unchanged. Neither file holds line text or frames.
+- Published numbers come from the ledger (`events`, type `model_call`): 128 calls, 0.37888290 USD; card p50/p95 4372/6292.5 ms, nocard 3690/5351.05 ms.
