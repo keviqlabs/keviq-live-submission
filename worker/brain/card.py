@@ -7,8 +7,9 @@
 - A final `speech` goes to a card by media time, not by arrival (D-025, worker/brain/window.py). Spark reads
   price, sizes and colours in the background (D-018; the rule reader in worker/voice/vn.py when there is no key
   or the call fails). The line is decided once its read is done and HOLD_MS after it arrived, in arrival order.
-  A heard price goes to the one candidate card that fits the kind of item the line names; any other line leaves
-  the price for the seller. A price makes the card live. A card that already has a price keeps it (D-023): a
+  A heard price goes to the one candidate card; with several, the kind of item the line names picks one. Any
+  other line leaves the price for the seller and counts as a wait by reason in the session (`price wait` log
+  lines). A price makes the card live. A card that already has a price keeps it (D-023): a
   different spoken price becomes a `price_proposal` for the seller, once per heard price while the card's price
   stays the same (D-024). Each change is a new version whose provenance lists the speech event ids (C4).
 - A version another writer already took (409, D-024: the seller's price route) is applied on top of the card's
@@ -25,6 +26,7 @@ import copy
 import json
 import logging
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 
 import httpx
@@ -125,6 +127,7 @@ class Session:
     proposed: dict[str, set[int]] = field(
         default_factory=dict
     )  # card_id -> heard prices proposed at its price
+    waits: Counter = field(default_factory=Counter)  # reason -> heard prices that waited for the seller
 
     def bump(self, card_id: str, **changes) -> dict:
         card = {**copy.deepcopy(self.cards[card_id]), **changes}
@@ -315,7 +318,15 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
         }
         keep, reason = window.choose(event["text"], cands)
         if spoken.price is not None and reason:
-            log.info("price wait: %s reason %s candidates %s", eid, reason, ",".join(cands) or "-")
+            s.waits[reason] += 1
+            log.info(
+                "price wait: %s reason %s candidates %s; session %s waits %s",
+                eid,
+                reason,
+                ",".join(cands) or "-",
+                event["session_id"],
+                " ".join(f"{r}={n}" for r, n in sorted(s.waits.items())),
+            )
         price = None if reason else spoken.price
         if len(keep) == 1:
             cid = keep[0]

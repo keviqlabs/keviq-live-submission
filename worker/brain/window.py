@@ -3,8 +3,8 @@
 - Each `is_new` product_seen opens a span on its card's media clock, `[frame_ts_ms - D_MS, the next is_new
   product_seen's frame_ts_ms)`. A card reopened by SKU gets another span.
 - The line's candidates are the cards that are not retired and have a span overlapping `[start_ms, end_ms]`.
-- A heard price goes to a card only when the line has a magnitude word, names a kind of item, and exactly one
-  candidate fits every kind the line names. Otherwise the price waits for the seller.
+- A heard price goes to a card only when the line has a magnitude word and exactly one candidate fits every kind
+  of item the line names (all candidates fit a line that names none). Otherwise the price waits for the seller.
 """
 
 from worker.voice import vn
@@ -73,8 +73,6 @@ def choose(text: str, candidates: dict[str, str]) -> tuple[list[str], str | None
     keep = [cid for cid, category in candidates.items() if all(category in cats for cats in said)]
     if not has_magnitude(toks):
         return keep, "no_magnitude"
-    if not said:
-        return keep, "no_kind"
     if len(keep) != 1:
         return keep, "many" if keep else "none"
     return keep, None
