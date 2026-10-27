@@ -197,7 +197,17 @@ async def test_pick_drafts_then_confirm_order_at_the_comment_card_price(c019):
     assert out[1]["template"] == "receipt"
 
 
-@pytest.mark.parametrize("text, size", [("size 39 nha shop", "39"), ("Lấy 40 nha", "40"), ("38", "38")])
+@pytest.mark.parametrize(
+    "text, size",
+    [
+        ("size 39 nha shop", "39"),
+        ("Lấy 40 nha", "40"),
+        ("38", "38"),
+        ("Mình lấy đôi 39 nha shop", "39"),
+        ("ko huỷ nha, size 39", "39"),
+        ("cỡ 40 ạ", "40"),
+    ],
+)
 async def test_text_naming_one_size_drafts(c019, text, size):
     runner, store, client, _ = c019
     out = await say(client, runner, "th-u064", text)
@@ -228,6 +238,13 @@ async def test_c106_text_answer_drafts_size_m(mem_app):
         ("ok", None),
         ("Size 99", "PICK:o-c019#7"),
         ("Size 39", "PICK:o-c019#x"),
+        # a size the customer refuses, or a number that is an address or a question, is not a pick
+        ("không lấy size 40 đâu", None),
+        ("ko lấy 39 nha", None),
+        ("giao 40 Lê Lợi nha shop", None),
+        ("mình ở số 39 Trần Phú", None),
+        ("450k hả shop, 39 còn không", None),
+        ("size 39, giao 40 Lê Lợi", None),
     ],
 )
 async def test_unclear_answer_asks_again(c019, text, quick_reply):
