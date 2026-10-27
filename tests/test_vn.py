@@ -37,6 +37,7 @@ def test_one_after_a_thousands_unit_before_an_item_word_is_the_count():
     # "… nghìn một chiếc" is the price of one item, not the price plus 100
     assert vn.parse("ba trăm bốn mươi nghìn một chiếc", COLORS).price == 340_000
     assert vn.parse("giá 180 nghìn một bộ nha", COLORS).price == 180_000
+    assert vn.parse("250 nghìn một đôi", COLORS).price == 250_000
 
 
 def test_a_repeated_muoi_reads_as_one():
@@ -50,6 +51,7 @@ def test_a_repeated_muoi_reads_as_one():
     [
         ("giá một triệu một", 1_100_000, [], []),
         ("giá một triệu một nhé", 1_100_000, [], []),
+        ("ba trăm năm mươi một cái", 351_000, [], []),  # "một" after "mươi" is a digit
         ("ba trăm năm mươi nghìn size bốn mươi", 350_000, ["40"], []),
         ("size ba mươi tám ba mươi chín màu kem", None, ["38", "39"], ["kem"]),
     ],
