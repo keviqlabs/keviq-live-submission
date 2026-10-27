@@ -1,6 +1,6 @@
 """SAM 3.1 card image: one short English noun phrase per call, the frame as a data URL.
 
-Reply verified on 2026-10-27 (D-019): a Responses object whose output text holds tokens
+Reply verified on 2026-10-27 (D-020): a Responses object whose output text holds tokens
 `<|box;x1=..;y1=..;x2=..;y2=..;w=<frameW>;h=<frameH>|><|mask;x=0;y=0;data=<H>,<W>,<marker><base85>|>`.
 The box is in source pixels, corners inclusive. The mask encoding is not specified in the docs we may read
 (dev.meta.ai/docs/sam/reading-segmentation) and we could not decode it, so the card image is the frame cropped

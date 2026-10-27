@@ -1,4 +1,4 @@
-"""worker/vision: Spark frame -> product_seen only on a change of product; SAM box -> crop of the frame (D-019)."""
+"""worker/vision: Spark frame -> product_seen only on a change of product; SAM box -> crop of the frame (D-020)."""
 
 import base64
 import json
@@ -82,7 +82,7 @@ async def test_model_failure_skips_the_frame_and_keeps_the_frame_cached(mem_app)
     assert frames.get(SID, max(frames._CACHE[SID])) == JPEG
 
 
-# The verified reply shape (D-019) with made-up numbers and a dummy mask payload.
+# The verified reply shape (D-020) with made-up numbers and a dummy mask payload.
 SAM_TEXT = "<0f>0<|box;x1=240;y1=100;x2=399;y2=259;w=640;h=360|><|mask;x=0;y=0;data=160,160,!!!!#0CZI|>"
 
 

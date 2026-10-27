@@ -1,7 +1,7 @@
 """Voice Transcribe over WebSocket -> final `speech` events (C8 timing on each).
 
 Audio is not an event, so the media process drives this: it hands over PCM chunks and posts what comes back.
-The session runs in ENDPOINTING mode (dev.meta.ai/docs/speech-to-text, read 2026-10-27, D-018): the server
+The session runs in ENDPOINTING mode (dev.meta.ai/docs/speech-to-text, read 2026-10-27, D-019): the server
 opens a turn with `speechStart`, sends partial `transcript`s and closes it with `speechComplete`, whose
 `transcript` is the final text. Only `speechComplete` becomes an event. Messages carry `audioProcessedMs`
 (processing progress, not word times), so a turn runs from its speechStart's position to its speechComplete's;

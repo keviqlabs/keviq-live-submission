@@ -4,12 +4,12 @@
   is retired, so a quick switch (< 3 s) never merges two items (C7). A product already on a card is reopened
   as a new version of that card instead of a second card.
 - A final `speech` applies to the card that is current when it arrives. Spark reads price, sizes and colours
-  in the background (D-017; the rule reader in worker/voice/vn.py when there is no key or the call fails).
+  in the background (D-018; the rule reader in worker/voice/vn.py when there is no key or the call fails).
   A price makes the card live. Each change is a new version whose provenance lists the speech event ids (C4).
 - When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background; the frame
-  cropped to SAM's box (real pixels, background kept, D-019) arrives as the next version's image_url.
+  cropped to SAM's box (real pixels, background kept, D-020) arrives as the next version's image_url.
 - product_seen replayed from a file (no `caused_by`) opens cards only with CARDS_FROM_REPLAY=1, so a replay that
-  still carries fixture cards does not get a second set (docs/DECISIONS.md D-016).
+  still carries fixture cards does not get a second set (docs/DECISIONS.md D-017).
 """
 
 import asyncio
