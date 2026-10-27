@@ -6,6 +6,7 @@ A card version that the card already has under another event_id is refused (Vers
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 
@@ -182,11 +183,34 @@ class PgStore:
         self._listener: asyncio.Task | None = None
 
     async def open(self) -> None:
+        self._conn = await self._connect()
+        self._listener = asyncio.create_task(self._listen())
+
+    async def _connect(self):
         import psycopg
         from psycopg.rows import dict_row
 
-        self._conn = await psycopg.AsyncConnection.connect(self.url, autocommit=True, row_factory=dict_row)
-        self._listener = asyncio.create_task(self._listen())
+        return await psycopg.AsyncConnection.connect(self.url, autocommit=True, row_factory=dict_row)
+
+    @contextlib.asynccontextmanager
+    async def _session(self):
+        """The shared connection under the lock, replaced first if a cancelled call left it busy.
+
+        A cancel through an anyio cancel scope (Starlette's StreamingResponse when an SSE client disconnects)
+        that lands mid-query can leave a command or transaction on the connection, and every later query then
+        fails with "another command is already in progress". Closing that connection ends its transaction on
+        the server without a commit."""
+        from psycopg.pq import TransactionStatus
+
+        async with self._lock:
+            status = self._conn.info.transaction_status
+            if self._conn.closed or status != TransactionStatus.IDLE:
+                log.warning("store connection left %s by a cancelled call; reconnecting", status.name)
+                if status == TransactionStatus.ACTIVE:
+                    await self._conn.cancel_safe(timeout=2.0)
+                await self._conn.close()
+                self._conn = await self._connect()
+            yield self._conn
 
     async def close(self) -> None:
         if self._listener:
@@ -211,13 +235,13 @@ class PgStore:
                 await asyncio.sleep(1)
 
     async def _fetch(self, sql: str, params: tuple = ()) -> list[dict]:
-        async with self._lock:
-            cur = await self._conn.execute(sql, params)
+        async with self._session() as conn:
+            cur = await conn.execute(sql, params)
             return await cur.fetchall()
 
     async def append(self, event: dict) -> tuple[int, bool]:
         body = _strip_meta(event)
-        async with self._lock, self._conn.transaction():
+        async with self._session() as conn, conn.transaction():
             cur = await self._conn.execute(
                 "INSERT INTO events (event_id, session_id, type, ts_ms, ingested_ms, body)"
                 " VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (event_id) DO NOTHING RETURNING seq",
