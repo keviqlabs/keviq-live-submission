@@ -4,6 +4,7 @@
                                             -> NEEDS_SELLER + waiting_for_shop  (discount, threshold, stock...)
     seller approve / reject (console)       -> CONFIRM_SENT + confirm_order | CANCELLED
     customer yes / no (Messenger)           -> CONFIRMED + receipt           | CANCELLED
+    cancel request (comment, plain "huỷ")   -> ask_cancel naming the order(s); CANCEL:<order_id> -> CANCELLED
 
 Functions take a View of the session, a Messenger and `now`, and return partial events (type + fields with
 event_id, ts_ms and caused_by) for the caller to post. Every decision comes from orders/rules.py and every state
@@ -17,12 +18,14 @@ import re
 from dataclasses import dataclass, field
 
 from orders import rules
-from orders.intent import customer_reply, discount_request, fold
-from orders.states import can_transition
+from orders.intent import cancel_request, customer_reply, discount_request, fold
+from orders.states import can_transition, machine
 
 LIVE = {"live", "edited"}
 HOLDS_STOCK = {"CONFIRM_SENT", "CONFIRMED", "CLOSED"}
-OPEN = {"DRAFT", "CONFIRM_SENT", "NEEDS_SELLER"}
+TERMINAL = set(machine()["terminal"])
+TRIGGER_LABELS = {"order", "other"}  # comment labels the orders stream reads; scam and spam never reach it
+MAX_ASK = 12  # Meta allows 13 quick replies; the last one is "Giữ tất cả"
 PAYMENT_METHOD = "cod"  # what the confirmation states; no code path here takes money (AGENTS.md rule 6)
 FIXTURE = re.compile(r"(^|\.)fx-")
 UNSAFE = re.compile(r"[^A-Za-z0-9.:-]")
@@ -104,6 +107,17 @@ class View:
         mine = [h[-1] for h in self.history.values() if thread_for(h[-1]["customer_ref"]) == thread]
         mine = [o for o in mine if o["state"] in ("CONFIRM_SENT", "NEEDS_SELLER")]
         return max(mine, key=lambda o: o["ts_ms"]) if mine else None
+
+    def open_orders(self, thread: str) -> list[dict]:
+        """The customer's orders that are not terminal, oldest first; fixture orders are left out."""
+        mine = [
+            h[-1]
+            for h in self.history.values()
+            if thread_for(h[-1]["customer_ref"]) == thread
+            and h[-1]["state"] not in TERMINAL
+            and not is_fixture(h[-1]["event_id"])
+        ]
+        return sorted(mine, key=lambda o: (self.history[o["order_id"]][0]["ts_ms"], o["order_id"]))
 
 
 def card_at(cards: list[dict], card_id: str, ts: int) -> dict | None:
@@ -227,12 +241,69 @@ def waiting_payload(order: dict, card: dict | None, comment_id: str | None) -> d
     return payload
 
 
+def order_text(view: View, order: dict) -> str:
+    line = order["lines"][0]
+    card = view.card(line["card_id"], line["card_version"])
+    name = (card or {}).get("name") or line["sku"] or line["card_id"]
+    return f"{order['order_id']} {name}, {variant_text(line['variant'])}, SL {line['qty']} = {vnd(order['amount'])}"
+
+
+async def ask_cancel(
+    trigger: dict,
+    view: View,
+    messenger,
+    now: int,
+    thread: str,
+    sources: list[str] = (),
+    comment_id: str | None = None,
+) -> list[dict]:
+    """Ask the customer which of their open orders to cancel. Never picks one and changes no state: only the
+    customer's CANCEL:<order_id> quick reply cancels. No open order or no 24h window -> nothing is sent."""
+    mine = view.open_orders(thread)
+    if not mine or not rules.can_message(view.last_contact.get(thread), now).allowed:
+        return []
+    if len(mine) == 1:
+        oid = mine[0]["order_id"]
+        payload = {
+            "order_id": oid,
+            "text": f"Bạn muốn huỷ đơn {order_text(view, mine[0])}? Bấm Huỷ đơn để huỷ, Giữ đơn để giữ lại.",
+            "quick_replies": [["Huỷ đơn", f"CANCEL:{oid}"], ["Giữ đơn", f"KEEP:{oid}"]],
+        }
+    else:
+        shown = mine[:MAX_ASK]
+        listed = "; ".join(f"{i}) {order_text(view, o)}" for i, o in enumerate(shown, 1))
+        payload = {
+            "order_ids": [o["order_id"] for o in shown],
+            "text": f"Bạn đang có {len(mine)} đơn: {listed}. Bạn muốn huỷ đơn nào?",
+            "quick_replies": [[f"Huỷ đơn {i}", f"CANCEL:{o['order_id']}"] for i, o in enumerate(shown, 1)]
+            + [["Giữ tất cả", "KEEP:all"]],
+        }
+    if comment_id:
+        payload["comment_id"] = comment_id
+    event_id = step_id(trigger["event_id"], mine[0]["order_id"] if len(mine) == 1 else "orders", "ask-cancel")
+    if any(m["event_id"] == event_id for m in view.messages):
+        return []
+    msg = await messenger.send(thread, "ask_cancel", payload)
+    return [stamp(msg, event_id, now, [trigger["event_id"], *sources, *(o["event_id"] for o in mine)])]
+
+
 async def on_labeled(trigger: dict, view: View, messenger, now: int) -> list[dict]:
-    """comment_labeled(order) -> DRAFT priced from the card version current at the comment, then the rules."""
+    """comment_labeled(order) -> DRAFT priced from the card version current at the comment, then the rules.
+    A cancel request in the comment (label order or other) never drafts: it may only lead to ask_cancel."""
+    comment = (view.comments.get(trigger["comment_id"]) or {}).get("comment")
+    if trigger.get("label") not in TRIGGER_LABELS or is_fixture(trigger["event_id"]) or comment is None:
+        return []
+    cancel = cancel_request(comment.get("text"))
+    if cancel:
+        if cancel["kind"] != "cancel":
+            return []  # negated or unclear: nothing is sent, the label stays for the seller
+        thread = thread_for(comment["user_ref"])
+        return await ask_cancel(
+            trigger, view, messenger, now, thread, [comment["event_id"]], trigger["comment_id"]
+        )
     draft_in = trigger.get("order_draft") or {}
     card_id = draft_in.get("referenced_card_id")
-    comment = (view.comments.get(trigger["comment_id"]) or {}).get("comment")
-    if trigger.get("label") != "order" or is_fixture(trigger["event_id"]) or not card_id or comment is None:
+    if trigger.get("label") != "order" or not card_id:
         return []  # unresolved references are the comments stream's question to the customer
     order_id = order_id_for(trigger["comment_id"])
     if view.order(order_id):
@@ -336,23 +407,23 @@ def receipt_payload(order: dict, card: dict | None, receipt: dict, address: str 
 
 
 async def on_reply(trigger: dict, view: View, messenger, now: int) -> list[dict]:
-    """The customer's yes / no in Messenger. Only the customer's own thread can confirm or cancel its order."""
+    """The customer's yes / no / keep in Messenger. Only the customer's own thread can confirm or cancel its
+    order, and only a reply naming the order (CANCEL:<order_id>) cancels; a plain "huỷ" gets ask_cancel."""
     payload = trigger.get("payload") or {}
     kind, order_id = customer_reply(trigger.get("template"), payload)
     thread = trigger["thread_ref"]
+    if kind in (None, "keep") or is_fixture(trigger["event_id"]):
+        return []
+    if kind == "no" and not order_id:
+        return await ask_cancel(trigger, view, messenger, now, thread)
     order = view.order(order_id) if order_id else view.open_order(thread)
-    if (
-        kind is None
-        or order is None
-        or is_fixture(order["event_id"])
-        or thread_for(order["customer_ref"]) != thread
-    ):
+    if order is None or is_fixture(order["event_id"]) or thread_for(order["customer_ref"]) != thread:
         return []
     order_id, tid = order["order_id"], trigger["event_id"]
     if kind == "no":
-        if order["state"] not in OPEN:
-            return []
-        ev = transition(order, "CANCELLED", "customer", "customer declined in Messenger")
+        if order["state"] in TERMINAL:
+            return []  # a repeated CANCEL: no second transition, no second message
+        ev = transition(order, "CANCELLED", "customer", f"customer chose CANCEL:{order_id} in Messenger")
         msg = await messenger.send(
             thread, "order_cancelled", {"order_id": order_id, "text": "Shop đã huỷ đơn theo yêu cầu."}
         )
