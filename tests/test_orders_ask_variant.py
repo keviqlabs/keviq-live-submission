@@ -171,9 +171,10 @@ async def test_size_like_the_customer_above_is_not_copied_from_their_order(mem_a
 
 async def test_pick_drafts_then_confirm_order_at_the_comment_card_price(c019):
     runner, store, client, _ = c019
-    v2 = {**cards()[0], "event_id": "k-card-01-v2", "version": 2, "price": 520000, "ts_ms": START - 10_000}
-    [(_, v2)] = replay.plan([v2], SID, start_ms=now_ms() - START)
-    assert (await client.post(f"/api/sessions/{SID}/events", json=[v2])).status_code == 200
+    # the seller reprices the card after the comment; a priced card changes price only through the route (D-024)
+    body = {"price": 520000, "card_version": 1, "proposal_event_id": None}
+    r = await client.post(f"/api/sessions/{SID}/cards/card-01/price", json=body)
+    assert r.json() == {"changed": True, "version": 2}
 
     out = await say(client, runner, "th-u064", "Size 39", "PICK:o-c019#1")
     draft, decide, msg = out

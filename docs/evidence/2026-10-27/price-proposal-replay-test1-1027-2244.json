@@ -1,0 +1,799 @@
+{
+ "recording": "probe-mini-1027-1545-default",
+ "reader": "rule (vn.parse), MODEL_API_KEY empty",
+ "store": "pg",
+ "clock": {
+  "t0_spread_ms": 0,
+  "speech_ingest_lag_ms": {
+   "median": 5,
+   "min": 3,
+   "max": 8
+  }
+ },
+ "A": {
+  "session": "replay-pp-test1-1027-2244-A",
+  "events_posted": 22,
+  "speech_events": 16,
+  "product_seen_events": 6,
+  "runner_failures": 0,
+  "model_call_events_in_store": 0,
+  "cards": {
+   "card-rppA-product": {
+    "opened_from": {
+     "frame_s": 3.0,
+     "labelled_product": "host/other"
+    },
+    "price_from_utterance": 3,
+    "price_product": "SP01",
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": 250000,
+      "status": "live",
+      "by_u": 3
+     }
+    ]
+   },
+   "card-rppA-product-2": {
+    "opened_from": {
+     "frame_s": 60.0,
+     "labelled_product": "SP02"
+    },
+    "price_from_utterance": 11,
+    "price_product": "SP02",
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": 320000,
+      "status": "live",
+      "by_u": 11
+     }
+    ]
+   },
+   "card-rppA-product-3": {
+    "opened_from": {
+     "frame_s": 94.0,
+     "labelled_product": "SP03"
+    },
+    "price_from_utterance": 26,
+    "price_product": "SP04",
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": 180000,
+      "status": "live",
+      "by_u": 26
+     }
+    ]
+   },
+   "card-rppA-product-4": {
+    "opened_from": {
+     "frame_s": 171.0,
+     "labelled_product": "SP05"
+    },
+    "price_from_utterance": null,
+    "price_product": null,
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": null,
+      "status": "retired",
+      "by_u": null
+     }
+    ]
+   },
+   "card-rppA-product-5": {
+    "opened_from": {
+     "frame_s": 191.0,
+     "labelled_product": "SP06"
+    },
+    "price_from_utterance": 38,
+    "price_product": "SP06",
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": 210000,
+      "status": "live",
+      "by_u": 38
+     }
+    ]
+   },
+   "card-rppA-product-6": {
+    "opened_from": {
+     "frame_s": 253.0,
+     "labelled_product": "SP08"
+    },
+    "price_from_utterance": null,
+    "price_product": null,
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     }
+    ]
+   }
+  },
+  "price_changed_by_speech": 0,
+  "price_proposal_total": 11,
+  "price_proposal_per_card": {
+   "card-rppA-product": 2,
+   "card-rppA-product-2": 1,
+   "card-rppA-product-3": 3,
+   "card-rppA-product-4": 0,
+   "card-rppA-product-5": 5,
+   "card-rppA-product-6": 0
+  },
+  "price_proposal_same_product": 4,
+  "price_proposal_other_product": 7,
+  "real_changes": {
+   "SP01": {
+    "price": "250000 -> 220000",
+    "utterances": [
+     7,
+     8,
+     9
+    ],
+    "proposals": [
+     {
+      "utterance": 8,
+      "card_id": "card-rppA-product",
+      "current_price": 250000,
+      "heard_price": 230000
+     },
+     {
+      "utterance": 9,
+      "card_id": "card-rppA-product",
+      "current_price": 250000,
+      "heard_price": 220100
+     }
+    ],
+    "card_holding_its_first_price": [
+     "card-rppA-product"
+    ],
+    "card_opened_for_it": [],
+    "proposal_on_card_holding_its_price": true,
+    "proposal_on_card_opened_for_it": false
+   },
+   "SP04": {
+    "price": "180000 -> 160000",
+    "utterances": [
+     30,
+     31
+    ],
+    "proposals": [
+     {
+      "utterance": 30,
+      "card_id": "card-rppA-product-3",
+      "current_price": 180000,
+      "heard_price": 160000
+     },
+     {
+      "utterance": 31,
+      "card_id": "card-rppA-product-3",
+      "current_price": 180000,
+      "heard_price": 160100
+     }
+    ],
+    "card_holding_its_first_price": [
+     "card-rppA-product-3"
+    ],
+    "card_opened_for_it": [],
+    "proposal_on_card_holding_its_price": true,
+    "proposal_on_card_opened_for_it": false
+   },
+   "SP09": {
+    "price": "650000 -> 600000",
+    "utterances": [
+     54,
+     55
+    ],
+    "proposals": [
+     {
+      "utterance": 54,
+      "card_id": "card-rppA-product-5",
+      "current_price": 210000,
+      "heard_price": 600000
+     },
+     {
+      "utterance": 55,
+      "card_id": "card-rppA-product-5",
+      "current_price": 210000,
+      "heard_price": 600100
+     }
+    ],
+    "card_holding_its_first_price": [],
+    "card_opened_for_it": [],
+    "proposal_on_card_holding_its_price": false,
+    "proposal_on_card_opened_for_it": false
+   }
+  },
+  "proposals": [
+   {
+    "card_id": "card-rppA-product",
+    "card_version": 2,
+    "current_price": 250000,
+    "heard_price": 230000,
+    "utterance": 8,
+    "utterance_s": 43.5,
+    "heard_product": "SP01",
+    "card_price_from_utterance": 3,
+    "card_price_product": "SP01",
+    "card_labelled_product": "host/other",
+    "same_product": true
+   },
+   {
+    "card_id": "card-rppA-product",
+    "card_version": 2,
+    "current_price": 250000,
+    "heard_price": 220100,
+    "utterance": 9,
+    "utterance_s": 47.1,
+    "heard_product": "SP01",
+    "card_price_from_utterance": 3,
+    "card_price_product": "SP01",
+    "card_labelled_product": "host/other",
+    "same_product": true
+   },
+   {
+    "card_id": "card-rppA-product-2",
+    "card_version": 2,
+    "current_price": 320000,
+    "heard_price": 280000,
+    "utterance": 18,
+    "utterance_s": 97.42,
+    "heard_product": "SP03",
+    "card_price_from_utterance": 11,
+    "card_price_product": "SP02",
+    "card_labelled_product": "SP02",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppA-product-3",
+    "card_version": 2,
+    "current_price": 180000,
+    "heard_price": 160000,
+    "utterance": 30,
+    "utterance_s": 152.86,
+    "heard_product": "SP04",
+    "card_price_from_utterance": 26,
+    "card_price_product": "SP04",
+    "card_labelled_product": "SP03",
+    "same_product": true
+   },
+   {
+    "card_id": "card-rppA-product-3",
+    "card_version": 2,
+    "current_price": 180000,
+    "heard_price": 160100,
+    "utterance": 31,
+    "utterance_s": 156.14,
+    "heard_product": "SP04",
+    "card_price_from_utterance": 26,
+    "card_price_product": "SP04",
+    "card_labelled_product": "SP03",
+    "same_product": true
+   },
+   {
+    "card_id": "card-rppA-product-3",
+    "card_version": 2,
+    "current_price": 180000,
+    "heard_price": 150000,
+    "utterance": 34,
+    "utterance_s": 171.58,
+    "heard_product": "SP05",
+    "card_price_from_utterance": 26,
+    "card_price_product": "SP04",
+    "card_labelled_product": "SP03",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppA-product-5",
+    "card_version": 2,
+    "current_price": 210000,
+    "heard_price": 450000,
+    "utterance": 42,
+    "utterance_s": 230.38,
+    "heard_product": "SP07",
+    "card_price_from_utterance": 38,
+    "card_price_product": "SP06",
+    "card_labelled_product": "SP06",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppA-product-5",
+    "card_version": 2,
+    "current_price": 210000,
+    "heard_price": 550000,
+    "utterance": 46,
+    "utterance_s": 252.14,
+    "heard_product": "SP08",
+    "card_price_from_utterance": 38,
+    "card_price_product": "SP06",
+    "card_labelled_product": "SP06",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppA-product-5",
+    "card_version": 2,
+    "current_price": 210000,
+    "heard_price": 650000,
+    "utterance": 49,
+    "utterance_s": 270.38,
+    "heard_product": "SP09",
+    "card_price_from_utterance": 38,
+    "card_price_product": "SP06",
+    "card_labelled_product": "SP06",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppA-product-5",
+    "card_version": 2,
+    "current_price": 210000,
+    "heard_price": 600000,
+    "utterance": 54,
+    "utterance_s": 286.14,
+    "heard_product": "SP09",
+    "card_price_from_utterance": 38,
+    "card_price_product": "SP06",
+    "card_labelled_product": "SP06",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppA-product-5",
+    "card_version": 2,
+    "current_price": 210000,
+    "heard_price": 600100,
+    "utterance": 55,
+    "utterance_s": 290.62,
+    "heard_product": "SP09",
+    "card_price_from_utterance": 38,
+    "card_price_product": "SP06",
+    "card_labelled_product": "SP06",
+    "same_product": false
+   }
+  ]
+ },
+ "B": {
+  "session": "replay-pp-test1-1027-2244-B",
+  "events_posted": 70,
+  "speech_events": 64,
+  "product_seen_events": 6,
+  "runner_failures": 0,
+  "model_call_events_in_store": 0,
+  "cards": {
+   "card-rppB-product": {
+    "opened_from": {
+     "frame_s": 3.0,
+     "labelled_product": "host/other"
+    },
+    "price_from_utterance": 3,
+    "price_product": "SP01",
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": 250000,
+      "status": "live",
+      "by_u": 3
+     }
+    ]
+   },
+   "card-rppB-product-2": {
+    "opened_from": {
+     "frame_s": 60.0,
+     "labelled_product": "SP02"
+    },
+    "price_from_utterance": 11,
+    "price_product": "SP02",
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": 320000,
+      "status": "live",
+      "by_u": 11
+     },
+     {
+      "v": 3,
+      "price": 320000,
+      "status": "live",
+      "by_u": 13
+     },
+     {
+      "v": 4,
+      "price": 320000,
+      "status": "live",
+      "by_u": 19
+     }
+    ]
+   },
+   "card-rppB-product-3": {
+    "opened_from": {
+     "frame_s": 94.0,
+     "labelled_product": "SP03"
+    },
+    "price_from_utterance": 26,
+    "price_product": "SP04",
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": 180000,
+      "status": "live",
+      "by_u": 26
+     }
+    ]
+   },
+   "card-rppB-product-4": {
+    "opened_from": {
+     "frame_s": 171.0,
+     "labelled_product": "SP05"
+    },
+    "price_from_utterance": 36,
+    "price_product": "SP05",
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": 150000,
+      "status": "live",
+      "by_u": 36
+     }
+    ]
+   },
+   "card-rppB-product-5": {
+    "opened_from": {
+     "frame_s": 191.0,
+     "labelled_product": "SP06"
+    },
+    "price_from_utterance": 38,
+    "price_product": "SP06",
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": 210000,
+      "status": "live",
+      "by_u": 38
+     }
+    ]
+   },
+   "card-rppB-product-6": {
+    "opened_from": {
+     "frame_s": 253.0,
+     "labelled_product": "SP08"
+    },
+    "price_from_utterance": 58,
+    "price_product": "SP10",
+    "versions": [
+     {
+      "v": 1,
+      "price": null,
+      "status": "draft",
+      "by_u": null
+     },
+     {
+      "v": 2,
+      "price": 850000,
+      "status": "live",
+      "by_u": 58
+     }
+    ]
+   }
+  },
+  "price_changed_by_speech": 0,
+  "price_proposal_total": 12,
+  "price_proposal_per_card": {
+   "card-rppB-product": 2,
+   "card-rppB-product-2": 1,
+   "card-rppB-product-3": 3,
+   "card-rppB-product-4": 0,
+   "card-rppB-product-5": 5,
+   "card-rppB-product-6": 1
+  },
+  "price_proposal_same_product": 4,
+  "price_proposal_other_product": 8,
+  "real_changes": {
+   "SP01": {
+    "price": "250000 -> 220000",
+    "utterances": [
+     7,
+     8,
+     9
+    ],
+    "proposals": [
+     {
+      "utterance": 8,
+      "card_id": "card-rppB-product",
+      "current_price": 250000,
+      "heard_price": 230000
+     },
+     {
+      "utterance": 9,
+      "card_id": "card-rppB-product",
+      "current_price": 250000,
+      "heard_price": 220100
+     }
+    ],
+    "card_holding_its_first_price": [
+     "card-rppB-product"
+    ],
+    "card_opened_for_it": [],
+    "proposal_on_card_holding_its_price": true,
+    "proposal_on_card_opened_for_it": false
+   },
+   "SP04": {
+    "price": "180000 -> 160000",
+    "utterances": [
+     30,
+     31
+    ],
+    "proposals": [
+     {
+      "utterance": 30,
+      "card_id": "card-rppB-product-3",
+      "current_price": 180000,
+      "heard_price": 160000
+     },
+     {
+      "utterance": 31,
+      "card_id": "card-rppB-product-3",
+      "current_price": 180000,
+      "heard_price": 160100
+     }
+    ],
+    "card_holding_its_first_price": [
+     "card-rppB-product-3"
+    ],
+    "card_opened_for_it": [],
+    "proposal_on_card_holding_its_price": true,
+    "proposal_on_card_opened_for_it": false
+   },
+   "SP09": {
+    "price": "650000 -> 600000",
+    "utterances": [
+     54,
+     55
+    ],
+    "proposals": [
+     {
+      "utterance": 54,
+      "card_id": "card-rppB-product-5",
+      "current_price": 210000,
+      "heard_price": 600000
+     },
+     {
+      "utterance": 55,
+      "card_id": "card-rppB-product-5",
+      "current_price": 210000,
+      "heard_price": 600100
+     }
+    ],
+    "card_holding_its_first_price": [],
+    "card_opened_for_it": [],
+    "proposal_on_card_holding_its_price": false,
+    "proposal_on_card_opened_for_it": false
+   }
+  },
+  "proposals": [
+   {
+    "card_id": "card-rppB-product",
+    "card_version": 2,
+    "current_price": 250000,
+    "heard_price": 230000,
+    "utterance": 8,
+    "utterance_s": 43.5,
+    "heard_product": "SP01",
+    "card_price_from_utterance": 3,
+    "card_price_product": "SP01",
+    "card_labelled_product": "host/other",
+    "same_product": true
+   },
+   {
+    "card_id": "card-rppB-product",
+    "card_version": 2,
+    "current_price": 250000,
+    "heard_price": 220100,
+    "utterance": 9,
+    "utterance_s": 47.1,
+    "heard_product": "SP01",
+    "card_price_from_utterance": 3,
+    "card_price_product": "SP01",
+    "card_labelled_product": "host/other",
+    "same_product": true
+   },
+   {
+    "card_id": "card-rppB-product-2",
+    "card_version": 3,
+    "current_price": 320000,
+    "heard_price": 280000,
+    "utterance": 18,
+    "utterance_s": 97.42,
+    "heard_product": "SP03",
+    "card_price_from_utterance": 11,
+    "card_price_product": "SP02",
+    "card_labelled_product": "SP02",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppB-product-3",
+    "card_version": 2,
+    "current_price": 180000,
+    "heard_price": 160000,
+    "utterance": 30,
+    "utterance_s": 152.86,
+    "heard_product": "SP04",
+    "card_price_from_utterance": 26,
+    "card_price_product": "SP04",
+    "card_labelled_product": "SP03",
+    "same_product": true
+   },
+   {
+    "card_id": "card-rppB-product-3",
+    "card_version": 2,
+    "current_price": 180000,
+    "heard_price": 160100,
+    "utterance": 31,
+    "utterance_s": 156.14,
+    "heard_product": "SP04",
+    "card_price_from_utterance": 26,
+    "card_price_product": "SP04",
+    "card_labelled_product": "SP03",
+    "same_product": true
+   },
+   {
+    "card_id": "card-rppB-product-3",
+    "card_version": 2,
+    "current_price": 180000,
+    "heard_price": 150000,
+    "utterance": 34,
+    "utterance_s": 171.58,
+    "heard_product": "SP05",
+    "card_price_from_utterance": 26,
+    "card_price_product": "SP04",
+    "card_labelled_product": "SP03",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppB-product-5",
+    "card_version": 2,
+    "current_price": 210000,
+    "heard_price": 450000,
+    "utterance": 42,
+    "utterance_s": 230.38,
+    "heard_product": "SP07",
+    "card_price_from_utterance": 38,
+    "card_price_product": "SP06",
+    "card_labelled_product": "SP06",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppB-product-5",
+    "card_version": 2,
+    "current_price": 210000,
+    "heard_price": 550000,
+    "utterance": 46,
+    "utterance_s": 252.14,
+    "heard_product": "SP08",
+    "card_price_from_utterance": 38,
+    "card_price_product": "SP06",
+    "card_labelled_product": "SP06",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppB-product-5",
+    "card_version": 2,
+    "current_price": 210000,
+    "heard_price": 650000,
+    "utterance": 49,
+    "utterance_s": 270.38,
+    "heard_product": "SP09",
+    "card_price_from_utterance": 38,
+    "card_price_product": "SP06",
+    "card_labelled_product": "SP06",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppB-product-5",
+    "card_version": 2,
+    "current_price": 210000,
+    "heard_price": 600000,
+    "utterance": 54,
+    "utterance_s": 286.14,
+    "heard_product": "SP09",
+    "card_price_from_utterance": 38,
+    "card_price_product": "SP06",
+    "card_labelled_product": "SP06",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppB-product-5",
+    "card_version": 2,
+    "current_price": 210000,
+    "heard_price": 600100,
+    "utterance": 55,
+    "utterance_s": 290.62,
+    "heard_product": "SP09",
+    "card_price_from_utterance": 38,
+    "card_price_product": "SP06",
+    "card_labelled_product": "SP06",
+    "same_product": false
+   },
+   {
+    "card_id": "card-rppB-product-6",
+    "card_version": 2,
+    "current_price": 850000,
+    "heard_price": 250000,
+    "utterance": 62,
+    "utterance_s": 334.86,
+    "heard_product": "SP01",
+    "card_price_from_utterance": 58,
+    "card_price_product": "SP10",
+    "card_labelled_product": "SP08",
+    "same_product": false
+   }
+  ]
+ },
+ "sql": {
+  "query": "SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd\nFROM events WHERE type = 'model_call' AND session_id = ANY(ARRAY['replay-pp-test1-1027-2244-A', 'replay-pp-test1-1027-2244-B']) GROUP BY session_id;",
+  "rows": [],
+  "rowcount": 0
+ }
+}

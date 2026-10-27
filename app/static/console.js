@@ -5,13 +5,40 @@ $("sid").textContent = sid;
 $("overlay-link").href = `/overlay/${encodeURIComponent(sid)}`;
 
 const cards = new Map();     // card_id -> latest version
+const versions = new Map();  // card_id -> every version seen
+const proposals = new Map(); // card_id -> price_proposal events (D-024)
+const typed = new Map();     // card_id -> price the seller typed, kept across renders and errors
+const cardNotes = new Map(); // card_id -> {text, kind} under the card: the last price save's error or note
 const comments = new Map();  // comment_id -> {comment, labeled}
 const orders = new Map();    // order_id -> latest order event
 const vnd = (n) => (n == null ? "giá chưa có" : n.toLocaleString("vi-VN") + " ₫");
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const time = (ms) => new Date(ms).toLocaleTimeString("vi-VN");
 
+// D-024: open while the card is not retired, its price is the proposal's current_price and no seller version is
+// newer than card_version. Only the seller's route changes a priced card's price, so a newer version with another
+// price is a seller version (worker versions copy edited_by, so that field alone does not tell).
+function isOpen(p) {
+  const c = cards.get(p.card_id);
+  return Boolean(c) && c.status !== "retired" && c.price === p.current_price
+    && (versions.get(p.card_id) || []).every((v) => v.version <= p.card_version || v.price === p.current_price);
+}
+
+function priceHtml(c) {
+  if (c.status === "retired") return "";
+  const id = esc(c.card_id), note = cardNotes.get(c.card_id);
+  const open = (proposals.get(c.card_id) || []).filter(isOpen).sort((a, b) => b.ts_ms - a.ts_ms);
+  return `${open.map((p) => `<div class="proposal">Nghe được ${vnd(p.heard_price)} lúc ${time(p.ts_ms)} (đang ${vnd(p.current_price)})
+      <button data-act="use" data-cid="${id}" data-pid="${esc(p.event_id)}">Dùng giá này</button></div>`).join("")}
+    <div class="actions">
+      <input type="number" min="1000" step="1000" data-card-price="${id}" value="${esc(typed.get(c.card_id) ?? "")}" placeholder="giá mới" aria-label="giá mới cho ${id}">
+      <button data-act="save" data-cid="${id}">Lưu giá</button>
+    </div>
+    ${note ? `<div class="${note.kind}">${esc(note.text)}</div>` : ""}`;
+}
+
 function renderCards() {
+  const focused = document.activeElement?.dataset?.cardPrice;
   const list = [...cards.values()].sort((a, b) => b.ts_ms - a.ts_ms);
   $("cards").innerHTML = list.map((c) => `
     <div class="item">
@@ -19,7 +46,39 @@ function renderCards() {
       <div class="row"><b>${esc(c.name)}</b><span class="tag ${esc(c.status)}">${esc(c.status)} v${c.version}</span></div>
       <div>${vnd(c.price)} · ${esc(c.sku ?? "no sku")} · stock ${c.stock}</div>
       <div class="prov">frame ${c.provenance.frame_ts_ms ? time(c.provenance.frame_ts_ms) : "–"} · speech ${esc(c.provenance.speech_event_ids.join(", ") || "–")} · ${c.provenance.edited_by ? "edited by " + esc(c.provenance.edited_by) : "model"}</div>
+      ${priceHtml(c)}
     </div>`).join("");
+  if (focused) document.querySelector(`[data-card-price="${CSS.escape(focused)}"]`)?.focus();
+}
+
+// The seller's price for a card (POST /cards/{id}/price): errors stay under the card with the typed text.
+async function setPrice(cid, body) {
+  const r = await fetch(api(`/cards/${encodeURIComponent(cid)}/price`), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const d = out.detail, why = typeof d === "string" ? d : Array.isArray(d) ? d.map((x) => x.msg).join("; ") : r.statusText;
+    cardNotes.set(cid, { text: `Không lưu được (${r.status}): ${why}`, kind: "err" });
+  } else if (out.changed) {
+    cardNotes.delete(cid);
+    if (!body.proposal_event_id) typed.delete(cid);
+  } else {
+    cardNotes.set(cid, { text: `Giá đã là ${vnd(body.price)}, không có version mới.`, kind: "prov" });
+  }
+  renderCards();
+}
+
+async function cardAction(act, cid, pid) {
+  const c = cards.get(cid);
+  if (act === "use") {
+    const p = (proposals.get(cid) || []).find((x) => x.event_id === pid);
+    return setPrice(cid, { price: p.heard_price, card_version: c.version, proposal_event_id: pid });
+  }
+  const raw = String(typed.get(cid) ?? "").trim();
+  if (!/^\d+$/.test(raw)) {
+    cardNotes.set(cid, { text: "Nhập giá là số nguyên VND.", kind: "err" });
+    return renderCards();
+  }
+  return setPrice(cid, { price: Number(raw), card_version: c.version });
 }
 
 function renderComments() {
@@ -120,11 +179,21 @@ function simReply(o, yes) {
   return { object: "page", entry: [{ id: "sim-page", time: ts, messaging: [{ sender: { id: psid }, recipient: { id: "sim-page" }, timestamp: ts, message }] }] };
 }
 
-document.addEventListener("input", (ev) => { const id = ev.target.dataset?.price; if (id) prices.set(id, ev.target.value); });
+document.addEventListener("input", (ev) => {
+  const id = ev.target.dataset?.price, cid = ev.target.dataset?.cardPrice;
+  if (id) prices.set(id, ev.target.value);
+  if (cid) typed.set(cid, ev.target.value);
+});
 document.addEventListener("click", async (ev) => {
   const b = ev.target.closest("button[data-act]");
   if (!b) return;
   const oid = b.dataset.oid, act = b.dataset.act;
+  if (act === "use" || act === "save") {
+    b.disabled = true;
+    await cardAction(act, b.dataset.cid, b.dataset.pid);
+    b.disabled = false;
+    return;
+  }
   if (act === "log") {
     if (shown.delete(oid)) renderOrders(); else { shown.add(oid); renderOrders(); loadLog(oid); }
     return;
@@ -151,7 +220,13 @@ function banner(text, level) {
 }
 
 const handlers = {
-  card: (e) => { const cur = cards.get(e.card_id); if (!cur || cur.version <= e.version) cards.set(e.card_id, e); renderCards(); },
+  card: (e) => {
+    const cur = cards.get(e.card_id);
+    if (!cur || cur.version <= e.version) cards.set(e.card_id, e);
+    versions.set(e.card_id, [...(versions.get(e.card_id) || []), e]);
+    renderCards();
+  },
+  price_proposal: (e) => { proposals.set(e.card_id, [...(proposals.get(e.card_id) || []), e]); renderCards(); },
   comment: (e) => { comments.set(e.comment_id, { ...(comments.get(e.comment_id) || {}), comment: e }); renderComments(); },
   comment_labeled: (e) => { comments.set(e.comment_id, { ...(comments.get(e.comment_id) || {}), labeled: e }); renderComments(); },
   order: (e) => {
