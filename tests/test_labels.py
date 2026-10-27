@@ -5,11 +5,13 @@ the timeline resolution in code (C3), not model quality: its F1 is 1.0 by constr
 """
 
 import asyncio
+import importlib.util
 import json
 
 import pytest
 
 from app.contracts import now_ms
+from app.settings import ROOT
 from connectors.sim.comments import SESSION, events
 from connectors.sim.moderator import SimModerator
 from connectors.sim.replay import plan
@@ -117,6 +119,17 @@ def test_scan_agrees_with_the_hand_labels():
     assert any(ch.isdigit() for ch in GOLD[missed[0][0]]["text"]) is False
 
 
+def test_gold_is_what_the_authoring_rows_fix():
+    """The committed gold equals author.py's output, labels set by each row's code; the first 30 await the Founder."""
+    spec = importlib.util.spec_from_file_location("author", ROOT / "data" / "comments" / "author.py")
+    author = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(author)
+    assert {r["comment_id"]: r for r in author.rows()} == GOLD
+    assert author.card_events() == [json.loads(x) for x in (ROOT / "data/comments/cards.jsonl").open()]
+    sources = [GOLD[f"c{n:03d}"]["label_source"] for n in range(1, 201)]
+    assert set(sources[:30]) <= {"founder_pending", "founder_approved"} and set(sources[30:]) == {"template"}
+
+
 # --- timeline resolution
 
 
@@ -190,6 +203,10 @@ async def test_two_hundred_comments_through_the_stream(mem_app, monkeypatch):
     r = measure_labels.report(out, GOLD)
     assert r["comments"] == 200
     assert r["labels"]["micro_f1"] == 1.0
+    assert {s: (v["n"], v["micro_f1"]) for s, v in r["labels_by_source"].items()} == {
+        "founder_pending": (30, 1.0),
+        "template": (170, 1.0),
+    }
     assert r["order_fields"]["all_exact"] == 1.0, r["order_fields"]["wrong"]
     assert r["core"]["c3"]["accuracy"] == 1.0 and r["core"]["c3"]["n"] == 71
     sh = r["shield"]
@@ -305,6 +322,16 @@ def test_measure_counts_misses_and_the_latest_label():
     assert (r["n"], r["labeled"]) == (4, 3)
     assert r["micro_precision"] == pytest.approx(2 / 3) and r["micro_recall"] == pytest.approx(2 / 4)
     assert r["micro_f1"] == pytest.approx(2 * (2 / 3) * 0.5 / (2 / 3 + 0.5))
+
+
+def test_measure_splits_f1_by_label_source():
+    gold = {cid: GOLD[cid] for cid in ["c001", "c002", "c031", "c032"]}
+    evs = [comment(c) for c in gold] + [labeled(c, g["label"]) for c, g in gold.items() if c != "c002"]
+    r = measure_labels.report(evs, gold)
+    assert r["labels_by_source"]["template"] == {"n": 2, "labeled": 2, "micro_f1": 1.0}
+    assert r["labels_by_source"]["founder_pending"]["n"] == 2
+    assert r["labels_by_source"]["founder_pending"]["micro_f1"] == pytest.approx(2 / 3)
+    assert "founder_pending n=2 F1=0.667 (Founder review pending" in measure_labels.table(r)
 
 
 def test_measure_order_fields_and_shield():
