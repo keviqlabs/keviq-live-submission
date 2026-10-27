@@ -59,6 +59,15 @@ Order state machine (`states.py`), permission rules (`rules.py`), the order flow
 Every step is an `order` event whose `caused_by` points at the comment, the card version, the previous order event
 and the customer message (and the `ask_variant` question when there was one). `GET /api/sessions/{sid}/orders/{order_id}/log` returns that chain for the console (C6).
 
+## Replay: `data/sessions/ask-variant`
+
+`make replay SESSION=ask-variant` (with fixtures, not `--no-fixtures`) plays c019 "lấy đôi này" and c106 "size như
+bạn trên nha shop" with hand-written `order` labels, plus replies: another customer's "size 39" and `PICK` for
+c019 (nothing happens), an address (asked again), "size 39" (draft, `confirm_order`), the customer's own
+`CONFIRM` (receipt), and "size L" for c106 after another customer took M. `gold.json` lists the final state of each
+order and the messages per thread; `tests/test_replay_ask_variant.py` checks them in process. The `fx-` cards keep
+the labels worker off these comments, so no model is called.
+
 ## Console API (`app/orders_api.py`)
 
 - `POST /api/sessions/{sid}/orders/{order_id}/decision` `{"decision": "approve"|"reject", "unit_price"?: int}`

@@ -1,0 +1,59 @@
+{
+ "session": "ask-variant",
+ "note": "Synthetic replay for an order comment without a size (c019, c106) and for replies from the wrong customer. Comments, users and cards come from data/comments/ (c019 Founder-approved, c102/c106 template). Replay with fixtures (the default, not --no-fixtures): the fx- cards keep the labels worker from labelling these comments, so no model is called, and the orders worker acts on the hand-written lb- labels. 'expected' is what the orders worker leaves behind: final state and variant per order, message_out templates per thread in order.",
+ "comments": {
+  "c019": {
+   "label": "order",
+   "referenced_card_id": "card-01"
+  },
+  "c102": {
+   "label": "order",
+   "referenced_card_id": "card-05"
+  },
+  "c106": {
+   "label": "order",
+   "referenced_card_id": "card-05"
+  }
+ },
+ "expected": {
+  "orders": {
+   "o-c019": {
+    "state": "CONFIRMED",
+    "variant": {
+     "size": "39",
+     "color": "trắng"
+    }
+   },
+   "o-c102": {
+    "state": "CONFIRM_SENT",
+    "variant": {
+     "size": "M",
+     "color": "xanh"
+    }
+   },
+   "o-c106": {
+    "state": "CONFIRM_SENT",
+    "variant": {
+     "size": "L",
+     "color": "xanh"
+    }
+   }
+  },
+  "messages_out": {
+   "th-u064": [
+    "ask_variant",
+    "ask_variant",
+    "confirm_order",
+    "receipt"
+   ],
+   "th-u099": [],
+   "th-u095": [
+    "confirm_order"
+   ],
+   "th-u083": [
+    "ask_variant",
+    "confirm_order"
+   ]
+  }
+ }
+}
