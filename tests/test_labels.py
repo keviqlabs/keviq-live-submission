@@ -120,14 +120,23 @@ def test_scan_agrees_with_the_hand_labels():
 
 
 def test_gold_is_what_the_authoring_rows_fix():
-    """The committed gold equals author.py's output, labels set by each row's code; the first 30 await the Founder."""
+    """The committed gold equals author.py's output, labels set by each row's code; the Founder approved the first 30."""
     spec = importlib.util.spec_from_file_location("author", ROOT / "data" / "comments" / "author.py")
     author = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(author)
     assert {r["comment_id"]: r for r in author.rows()} == GOLD
     assert author.card_events() == [json.loads(x) for x in (ROOT / "data/comments/cards.jsonl").open()]
     sources = [GOLD[f"c{n:03d}"]["label_source"] for n in range(1, 201)]
-    assert set(sources[:30]) <= {"founder_pending", "founder_approved"} and set(sources[30:]) == {"template"}
+    assert set(sources[:30]) == {"founder_approved"} and set(sources[30:]) == {"template"}
+    actions = {cid: g["expected_action"] for cid, g in GOLD.items() if "expected_action" in g}
+    assert actions == {
+        "c019": "ask_customer",
+        "c022": "ask_customer",
+        "c034": "needs_seller",
+        "c092": "needs_seller",
+        "c106": "ask_customer",
+    }
+    assert all(GOLD[cid]["label"] == "order" for cid in actions)
 
 
 # --- timeline resolution
@@ -205,11 +214,15 @@ async def test_two_hundred_comments_through_the_stream(mem_app, monkeypatch):
     assert r["comments"] == 200
     assert r["labels"]["micro_f1"] == 1.0
     assert {s: (v["n"], v["micro_f1"]) for s, v in r["labels_by_source"].items()} == {
-        "founder_pending": (30, 1.0),
+        "founder_approved": (30, 1.0),
         "template": (170, 1.0),
     }
     assert r["order_fields"]["all_exact"] == 1.0, r["order_fields"]["wrong"]
-    assert r["core"]["c3"]["accuracy"] == 1.0 and r["core"]["c3"]["n"] == 71
+    assert r["expected_action"] == {
+        "ask_customer": {"n": 3, "ok": 3, "misses": []},
+        "needs_seller": {"n": 2, "ok": 2, "misses": []},
+    }
+    assert r["core"]["c3"]["accuracy"] == 1.0 and r["core"]["c3"]["n"] == 74
     sh = r["shield"]
     assert sh["scam_contact_hide_rate"] == 1.0 and sh["scam_hide_or_warn_rate"] == 1.0
     assert sh["phone_hidden_rate"] == 1.0
@@ -330,9 +343,52 @@ def test_measure_splits_f1_by_label_source():
     evs = [comment(c) for c in gold] + [labeled(c, g["label"]) for c, g in gold.items() if c != "c002"]
     r = measure_labels.report(evs, gold)
     assert r["labels_by_source"]["template"] == {"n": 2, "labeled": 2, "micro_f1": 1.0}
-    assert r["labels_by_source"]["founder_pending"]["n"] == 2
-    assert r["labels_by_source"]["founder_pending"]["micro_f1"] == pytest.approx(2 / 3)
-    assert "founder_pending n=2 F1=0.667 (Founder review pending" in measure_labels.table(r)
+    assert r["labels_by_source"]["founder_approved"]["n"] == 2
+    assert r["labels_by_source"]["founder_approved"]["micro_f1"] == pytest.approx(2 / 3)
+    assert "founder_approved n=2 F1=0.667;" in measure_labels.table(r)
+    pending = {**gold, "c001": {**gold["c001"], "label_source": "founder_pending"}}
+    assert "founder_pending n=1 F1=1.000 (Founder review pending" in measure_labels.table(
+        measure_labels.report(evs, pending)
+    )
+
+
+def test_measure_expected_action_counts_guesses():
+    """ask_customer misses when the model fills in what the comment left open; needs_seller needs the whole order."""
+
+    def draft(cid, **change):
+        o = {**GOLD[cid]["order"], **change}
+        return {
+            "sku": o["sku"],
+            "variant": {"size": o["size"], "color": o["color"]},
+            "qty": o["qty"],
+            "referenced_card_id": o["referenced_card_id"],
+            "reference_kind": o["reference_kind"],
+        }
+
+    gold = {cid: GOLD[cid] for cid in ["c019", "c022", "c106", "c034", "c092", "c031"]}
+    evs = [comment(c) for c in gold]
+    evs += [labeled("c019", "order", draft("c019", size="40"))]
+    evs += [
+        labeled("c022", "order", draft("c022", reference_kind="previous_card", referenced_card_id="card-01"))
+    ]
+    evs += [labeled("c106", "other"), labeled("c034", "order", draft("c034"))]
+    evs += [labeled("c092", "order", draft("c092", qty=2)), labeled("c031", GOLD["c031"]["label"])]
+    r = measure_labels.report(evs, gold)
+    assert r["expected_action"] == {
+        "ask_customer": {
+            "n": 3,
+            "ok": 0,
+            "misses": [
+                {"comment_id": "c019", "why": "guessed size 40"},
+                {"comment_id": "c022", "why": "guessed reference_kind previous_card"},
+                {"comment_id": "c106", "why": "label other"},
+            ],
+        },
+        "needs_seller": {"n": 2, "ok": 1, "misses": [{"comment_id": "c092", "why": "wrong qty"}]},
+    }
+    assert (
+        "expected_action needs_seller: model part right 1/2 misses: c092 wrong qty" in measure_labels.table(r)
+    )
 
 
 def test_measure_order_fields_and_shield():
