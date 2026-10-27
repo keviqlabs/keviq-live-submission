@@ -115,7 +115,8 @@ def create_app(store=None) -> FastAPI:
 
     @app.get("/api/cost")
     async def cost(request: Request):
-        """Spend the caps check (all model_call rows), plus the part caused by test sessions, shown apart."""
+        """Spend the caps check (all model_call rows; today = recorded today, VN day), plus the part caused by
+        test sessions, shown apart."""
         start, end = vn_day_bounds(now_ms())
         store = st(request)
         return {

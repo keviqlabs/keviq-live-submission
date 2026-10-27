@@ -150,8 +150,8 @@ class MemoryStore:
             e.get("cost_usd", 0)
             for e in self._events
             if e["type"] == "model_call"
-            and (start_ms is None or e["ts_ms"] >= start_ms)
-            and (end_ms is None or e["ts_ms"] < end_ms)
+            and (start_ms is None or e["ingested_ms"] >= start_ms)
+            and (end_ms is None or e["ingested_ms"] < end_ms)
             and (not test_only or e["session_id"].startswith(TEST_SESSION_PREFIXES))
         )
 
@@ -321,10 +321,12 @@ class PgStore:
     async def cost_usd(
         self, start_ms: int | None = None, end_ms: int | None = None, test_only: bool = False
     ) -> float:
+        # The window is on ingested_ms (when the store recorded the call), not ts_ms: a worker's model_call takes its
+        # trigger's ts_ms, which may be any day (ts_ms=1 in a test, an old replay), but the money is spent now.
         prefixes = [p + "%" for p in TEST_SESSION_PREFIXES] if test_only else ["%"]
         rows = await self._fetch(
             "SELECT COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd FROM events WHERE type = 'model_call'"
-            " AND ts_ms >= %s AND ts_ms < %s AND session_id LIKE ANY(%s)",
+            " AND ingested_ms >= %s AND ingested_ms < %s AND session_id LIKE ANY(%s)",
             (start_ms if start_ms is not None else 0, end_ms if end_ms is not None else 2**62, prefixes),
         )
         return float(rows[0]["usd"])
