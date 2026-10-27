@@ -5,7 +5,8 @@
 
 Prices need a magnitude word (trăm, nghìn/ngàn/k, triệu/tr/củ) or a number of 1000 or more; a bare "bốn trăm
 rưỡi" is read as thousands (450000), as sellers say it. Sizes follow "size"/"cỡ": digit pairs ("ba tám" = 38),
-numbers ("bốn mươi" = 40), digits or S/M/L letters, until a word that is not part of the list.
+numbers ("bốn mươi" = 40), digits or S/M/L letters, until a word that is not part of the list. A "một" right after
+nghìn/triệu and before an item word ("… nghìn một đôi") counts the item and is not part of the price.
 """
 
 import re
@@ -34,6 +35,7 @@ NUMBER_WORDS = {*DIGITS, *UNITS, "mười", "mươi", "trăm", "lẻ", "linh", "
 SIZE_WORDS = {"size", "sai", "sài", "cỡ", "sz"}
 SIZE_FILLER = {"còn", "có", "và", "với", "từ", "đến", "tới", "nha", "nhé", "ạ"}
 LETTER_SIZES = {"xs", "s", "m", "l", "xl", "xxl"}
+ITEM_WORDS = {"đôi", "cái", "chiếc", "bộ", "cặp", "món"}  # counted items: "một đôi" is one pair
 TOKEN = re.compile(r"\d+(?:[.,]\d+)*|[^\W\d_]+|[,;]")
 THOUSANDS = re.compile(r"^\d{1,3}(?:[.,]\d{3})+$")
 
@@ -77,6 +79,8 @@ def price_value(run: list[str]) -> int | None:
             group += 10
             pending, last_unit = None, 10
         elif t == "mươi":
+            if k and run[k - 1] == "mươi":
+                continue  # the transcriber repeats it: "hai mươi mươi nghìn" is 20 000
             group += (pending or 1) * 10
             pending, last_unit = None, 10
         elif t == "trăm":
@@ -149,6 +153,14 @@ def parse(text: str, colors: set[str] | frozenset[str] = frozenset()) -> Spoken:
                 spoken.sizes.extend(s for s in size_values(run) if s not in spoken.sizes)
             else:
                 in_sizes = False
+                if (
+                    len(run) > 1
+                    and run[-1] == "một"
+                    and run[-2] in UNITS
+                    and j < len(toks)
+                    and toks[j] in ITEM_WORDS
+                ):
+                    run = run[:-1]  # "hai trăm nghìn một đôi" is 200 000 for one pair, not 200 100
                 value = price_value(run)
                 if value is not None and 10_000 <= value <= 100_000_000 and spoken.price is None:
                     spoken.price = value
