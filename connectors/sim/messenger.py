@@ -3,12 +3,13 @@
 No network calls. Outgoing messages carry the body the Send API would receive (`payload["send_api"]`, POST
 /{page-id}/messages); simulated customer replies come in as a Page webhook body (`object: "page"`,
 `entry[].messaging[]`) and `parse_webhook()` turns them into message_in fields. Thread refs are `th-<user_ref>`;
-the PSID in the sim is the user_ref. Quick reply payloads are `CONFIRM:<order_id>` / `CANCEL:<order_id>`.
+the PSID in the sim is the user_ref. Quick reply payloads are `CONFIRM:<order_id>` / `CANCEL:<order_id>` /
+`KEEP:<order_id>` (`KEEP:all` keeps every order).
 """
 
 from connectors.facebook.interface import Messenger
 
-QUICK_REPLY_TEMPLATES = {"CONFIRM": "confirm_yes", "CANCEL": "confirm_no"}
+QUICK_REPLY_TEMPLATES = {"CONFIRM": "confirm_yes", "CANCEL": "confirm_no", "KEEP": "keep_order"}
 
 
 def psid(thread_ref: str) -> str:

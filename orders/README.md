@@ -13,9 +13,26 @@ Order state machine (`states.py`), permission rules (`rules.py`), the order flow
    `waiting_for_shop` message.
 3. The seller decides in the console: approve at the card price, approve at a new unit price
    (`rules.price_change`), or reject (`CANCELLED` by the seller). Approve → `CONFIRM_SENT` by the seller.
-4. The customer's `message_in` (quick reply `CONFIRM:<order_id>` / `CANCEL:<order_id>`, or a plain yes/no in the
+4. The customer's `message_in` (quick reply `CONFIRM:<order_id>` / `CANCEL:<order_id>`, or a plain yes in the
    thread) → `CONFIRMED` with a receipt `{card_id, card_version, image_url, price}` from that card version, and a
    receipt message; or `CANCELLED` by the customer.
+
+## Cancel
+
+1. `intent.cancel_request(text)` reads a comment labelled `other` or `order` (before any draft, so "huỷ đơn đôi 39"
+   never makes a new order). Negation ("đừng huỷ", "không huỷ đâu", "khỏi huỷ"), a link, "bị/chưa huỷ" or a hedge
+   ("hay", "có nên") is not a cancel: with label `other` nothing is sent, with label `order` the draft goes on as
+   usual ("chốt 1 đôi size 39, ko huỷ nha"). Scam and spam labels are never read.
+2. A cancel request, or a plain "huỷ"/"không" in Messenger, asks the same customer (`user_ref` → thread) about their
+   open orders (not `CLOSED`/`CANCELLED`) with an `ask_cancel` message, if `rules.can_message` allows it (24 h):
+   - one open order → names it, quick replies `Huỷ đơn` → `CANCEL:<order_id>`, `Giữ đơn` → `KEEP:<order_id>`;
+   - two or more → lists them, one `CANCEL:<order_id>` per order (up to 12) and `Giữ tất cả` → `KEEP:all`.
+     No order is picked for the customer;
+   - no open order → nothing is sent.
+3. Only `CANCEL:<order_id>` from that order's own thread moves it to `CANCELLED` (actor `customer`), with an
+   `order_cancelled` message. A second `CANCEL`, or one on a terminal order, changes nothing. `KEEP` changes
+   nothing. An order in `NEEDS_SELLER` may be cancelled by the customer; the approval queue and prices are not
+   touched.
 
 Every step is an `order` event whose `caused_by` points at the comment, the card version, the previous order event
 and the customer message. `GET /api/sessions/{sid}/orders/{order_id}/log` returns that chain for the console (C6).
