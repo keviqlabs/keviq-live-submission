@@ -15,7 +15,7 @@ Everything in this repository was written during the event (from 2026-10-26 23:2
 
 **Prior work.** Before the event the author built an earlier prototype (a replay console) in a separate private repository. None of its code is in this repository.
 
-AI coding assistants were used as tools. The entrant is the Founder, working alone. Branches the assistant created were named with its default `claude/` prefix, so some merge commits in the history carry that prefix; from 27 October branches carry no tool name and merges use a written title.
+AI coding assistants were used as tools. The entrant is the Founder, working alone. Branches the assistant created were named with its default `claude/` prefix, so some merge commits in the history carry that prefix; branches opened after PR #20 was merged (27 October, 20:16 ICT) carry no tool name, and merges use a written title.
 
 ## Run it in 5 minutes
 
