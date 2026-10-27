@@ -49,6 +49,18 @@ def test_draft_checks_send_discounts_and_mismatches_to_the_seller():
         assert not d.allowed and d.needs_seller and d.reason
 
 
+def test_only_the_seller_changes_a_line_price():
+    assert rules.price_change(450000, 450000, "assistant").allowed
+    for actor in ("assistant", "customer", "system"):
+        d = rules.price_change(400000, 450000, actor)
+        assert not d.allowed and d.needs_seller and d.reason
+    d = rules.price_change(400000, 450000, "seller")
+    assert d.allowed and not d.needs_seller and "400000" in d.reason
+    for bad in (None, -1, "400000", 1.5, True):
+        d = rules.price_change(bad, 450000, "seller")
+        assert not d.allowed and not d.needs_seller
+
+
 def test_no_message_outside_24h():
     h = 3600 * 1000
     assert rules.can_message(0, 23 * h).allowed
