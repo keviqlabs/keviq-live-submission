@@ -5,7 +5,10 @@ runner checks /api/cost?session=<run> gives 8.0/6.0 and that the session is empt
 this process's env plus CATALOG_PATH and the cap 8 / warning 6 (CARDS_FROM_REPLAY removed); each prints a proof
 line of what it loaded and the runner stops if it differs (catalog sha256, the labels catalog, cap/warn, git sha,
 vision effort, the model key set or not). Without --paid the children run with MODEL_API_KEY empty: 0 USD, the
-vision and voice calls fail or are skipped, so it tests the plumbing only.
+vision and voice calls fail or are skipped, so it tests the plumbing only. The runner then posts the 6b vision rows
+(measure/c5_dry.media_items) as product_seen on the loop's clock, each caused by this run's frame at or just before
+its time, so cards open on the runtime path (caused_by, not CARDS_FROM_REPLAY). With no speech no card goes live,
+and the cut-out (a model call) needs the key: those cards have no image. These rows are stored output, not a model.
 
 Per loop: worker up (it reads from the head, as after a restart), media up; t0 = the first frame's ts_ms minus its
 index * 1000 (media posts frame i at t0 + i * 1000); comments and customers on that clock; at t0 + loop + tail
@@ -121,6 +124,7 @@ class Watch:
         self.http, self.sid, self.feed, self.shop = http, sid, feed, shop
         self.frames: list[dict] = []
         self.last_new, self.capped, self.cap = time.monotonic(), None, asyncio.Event()
+        self.stopping = asyncio.Event()
 
     async def poll(self) -> None:
         from worker.runner import parse_sse
@@ -144,12 +148,23 @@ class Watch:
     async def run(self) -> None:
         import httpx
 
-        while True:
+        while not self.stopping.is_set():
             try:
                 await self.poll()
             except httpx.HTTPError as exc:
                 log.warning("watch: %s", exc)
-            await asyncio.sleep(0.5)
+            try:
+                await asyncio.wait_for(self.stopping.wait(), 0.5)
+            except TimeoutError:
+                pass
+
+    async def halt(self, task: asyncio.Task) -> None:
+        """Stops run() between polls: a poll in flight ends on its own, it is never cancelled mid-query."""
+        self.stopping.set()
+        try:
+            await task
+        except Exception as exc:
+            log.warning("watch: %s", exc)
 
     async def frame_after(self, n: int, timeout_s: float) -> dict:
         end = time.monotonic() + timeout_s
@@ -190,6 +205,49 @@ async def post_comments(http, sid: str, items: list[tuple[int, dict]]) -> int:
     return worst
 
 
+def replay_seen(sid: str, k: int, t0: int, loop_ms: int) -> list[tuple[int, dict]]:
+    """(post at, product_seen) for the 6b new rows that fall in the loop, on its clock t0."""
+    from measure import c5_dry
+
+    return [(due, ev) for due, ev in c5_dry.media_items(sid, k, t0)
+            if ev["type"] == "product_seen" and ev["ts_ms"] - t0 < loop_ms]  # fmt: skip
+
+
+def caused(ev: dict, frames: list[dict]) -> dict | None:
+    """The product_seen caused by the session's last frame at or before its time; None when there is none."""
+    from app.contracts import validate_event
+
+    before = [f for f in frames if f["session_id"] == ev["session_id"] and f["ts_ms"] <= ev["ts_ms"]]
+    if not before:
+        return None
+    frame = max(before, key=lambda f: f["ts_ms"])
+    return validate_event({**ev, "caused_by": [frame["event_id"]], "frame_ts_ms": frame["ts_ms"]})
+
+
+async def post_seen(http, sid: str, items: list[tuple[int, dict]], frames: list[dict], start: int,
+                    wait_s: float = 2.0) -> dict:  # fmt: skip
+    """Posts each product_seen when due, caused by a frame of this loop (frames[start:], the watch's list).
+
+    A label whose own frame has not come through the watch yet waits up to wait_s for it, then takes the frame just
+    before; a label before the loop's first frame is not posted."""
+    from app.contracts import now_ms
+
+    posted, no_frame = 0, []
+    for due, ev in sorted(items, key=lambda x: x[0]):
+        await asyncio.sleep(max(due - now_ms(), 0) / 1000)
+        end = time.monotonic() + wait_s
+        while not any(f["ts_ms"] >= ev["ts_ms"] for f in frames[start:]):
+            if time.monotonic() > end:
+                break
+            await asyncio.sleep(0.1)
+        if (seen := caused(ev, frames[start:])) is None:
+            no_frame.append(ev["event_id"])
+            continue
+        (await http.post(f"/api/sessions/{sid}/events", json=[seen])).raise_for_status()
+        posted += 1
+    return {"posted": posted, "no_frame": no_frame}
+
+
 async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, check_code: bool,
                seconds: float | None = None, paid: bool = False) -> int:  # fmt: skip
     import httpx
@@ -227,6 +285,7 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
         customers = Customers(http, run, feed)
         watch = Watch(http, run, feed, shop)
         watching = asyncio.create_task(watch.run())
+        seen = None
         try:
             for k in range(1, loops + 1):
                 rows, msgs = c5.streams(k)
@@ -255,6 +314,8 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                 customers.start([m for m in msgs if m["not_before_ms"] < loop_ms], t0, end + c5.TAIL_MS, k)
                 due = [r for r in rows if r.get("arrives_ms", r["ts_ms"]) < loop_ms]
                 posting = asyncio.create_task(post_comments(http, run, c5.comment_schedule(due, run, t0)))
+                seen = None if paid else asyncio.create_task(post_seen(http, run, replay_seen(run, k, t0, loop_ms),
+                                                                       watch.frames, n_frames))  # fmt: skip
                 try:  # the loop end, or a session_cap refusal
                     await asyncio.wait_for(watch.cap.wait(), max(end + c5.TAIL_MS - now_ms(), 0) / 1000)
                 except TimeoutError:
@@ -262,7 +323,10 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                 media_rc, media_stopped = await media.stop(30.0 if not watch.capped else 0.0)
                 if watch.capped:
                     posting.cancel()
+                    if seen:
+                        seen.cancel()
                 late_ms = None if watch.capped else await posting
+                seen_log = None if watch.capped or not seen else await seen
                 calm = await watch.quiet([shop.tasks, customers.tasks])
                 retired = c5.retire_events(feed, run)
                 if retired:
@@ -275,13 +339,16 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                                   "waits_line": "waits" in worker.said, "retired": len(retired),
                                   "runner_failures": worker.failures, "comments_late_max_ms": late_ms,
                                   "media": {"rc": media_rc, "stopped": media_stopped, "summary": media.summary},
-                                  "worker_rc": worker_rc, "proofs": proofs, "capped": watch.capped})  # fmt: skip
+                                  "worker_rc": worker_rc, "proofs": proofs, "capped": watch.capped,
+                                  "replay_seen": seen_log})  # fmt: skip
                 print(f"loop {k}: done, retired {len(retired)}, waits {snapshot}, failures {worker.failures}")
                 if watch.capped:
                     print(f"loop {k}: session_cap refusal {watch.capped}, run stops")
                     break
         finally:
-            watching.cancel()
+            if seen and not seen.done():
+                seen.cancel()
+            await watch.halt(watching)  # not cancel(): the poll in flight ends before read_all queries
             for child in children:
                 if child.proc and child.proc.returncode is None:
                     child.proc.kill()
@@ -292,6 +359,9 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
         "config": {"mode": "live", "base_url_port": urlsplit(base_url).port, "healthz": health,
                    "catalog_path": c5.repo_path(catalog), "catalog_sha256": want["catalog_sha256"],
                    "vision": "worker vision brain (spark), effort minimal", "effort": "minimal", "fps": 1,
+                   "product_seen": "worker vision" if paid else "6b rows (c5_dry.media_items) posted by the runner, "
+                   "caused by this run's frames",
+                   "cutout": "on a card gone live (model call)" if paid else "none: no speech, no live card, no key",
                    "card_line": False, "labels": "labels brain with the model" if paid else "labels brain, no key",
                    "speech": "media voice (Voice Transcribe)" if paid else "media voice skipped (no key)",
                    "cap_usd": 8.0, "warn_usd": 6.0, "paid": paid, "seconds": seconds,
