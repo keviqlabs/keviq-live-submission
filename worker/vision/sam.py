@@ -123,14 +123,17 @@ async def crop(
         frame = Path(tmp) / "frame.jpg"
         frame.write_bytes(jpeg)
         if mask is None:
-            return await _ffmpeg(["-i", str(frame), "-vf", f"crop={cw}:{ch}:{left}:{top},{SCALE}"])
+            return await _ffmpeg(
+                ["-i", str(frame), "-vf", f"format=rgb24,crop={cw}:{ch}:{left}:{top},{SCALE}"]
+            )
         mw, mh, data = mask
         pgm = Path(tmp) / "alpha.pgm"
         pgm.write_bytes(b"P5\n%d %d\n255\n" % (mw, mh) + data)
         graph = (
-            f"[0]crop={cw}:{ch}:{left}:{top},format=rgba[c];[1]scale={cw}:{ch}:flags=neighbor,format=gray[a];"
+            f"[0]format=rgba,crop={cw}:{ch}:{left}:{top}[c];[1]scale={cw}:{ch}:flags=neighbor,format=gray[a];"
             f"[c][a]alphamerge,{SCALE}"
-        )  # the mask is box-sized; it is only rescaled if SAM's frame size differs from this JPEG's
+        )  # RGB(A) before the crop in both paths: on the JPEG's 4:2:0 an odd width or left edge is rounded to even
+        # and the mask no longer fits. The mask is box-sized; it is only rescaled if SAM's frame size differs
         return await _ffmpeg(["-i", str(frame), "-i", str(pgm), "-filter_complex", graph, "-pix_fmt", "rgba"])
 
 
