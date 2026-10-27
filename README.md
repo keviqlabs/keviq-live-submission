@@ -43,41 +43,44 @@ One real run on 27 October: 200 synthetic comments from `data/comments/` posted 
 | receive (comment stored → worker) | 7 | 13 | 233 |
 | wait (worker → model call starts; the 1 s batch window) | 1016 | 1026 | 233 |
 | infer (model call) | 1989 | 2879 | 200 |
-| display (worker emit → app store) | 3 | 4 | 233 |
+| event delivery (worker emitted → app ingested; not console render, D-010) | 3 | 4 | 233 |
 | **end to end, comment stored → model label stored** | **3007** | **3895** | 200 |
 | model_call latency_ms | 1983 | 2958 | 199 |
 | first hide, comment stored → hide label stored | 11 | 22 | 34 |
 
 - 199 calls for 200 comments: at live arrival rates each batch holds one comment (one batch held two).
-- receive, wait and display include the 33 shield labels; infer and end to end are model labels only.
+- receive, wait and event delivery include the 33 shield labels; infer and end to end are model labels only.
 - 33 of the 34 hides come from the shield on receipt. The spelled-out phone number (c146) has no digits for the regex, so the model label hides it, at 3.7 s.
 - Spend: $0.2578 for 199 calls.
 - Earlier run, for comparison: sim speed 20, default effort, batches of 6–9 comments, label p95 21.4 s.
-- A later run with the same code and settings was slower: label p95 5.6 s, model call p95 4.7 s (next section).
+- Two later runs with the same code and settings were slower: label p95 5.6 s and 5.3 s, model call p95 4.7 s and 4.3 s (`labels-comments200-s1-1027-135456.json`, and the next section).
 
 ## Labels against the approved gold
 
-The Founder confirmed the review sample c001–c030 on 27 October (all 30, none changed). Three template rows were replaced by seller cases, and five orders carry the action the shop should take next (`data/README.md`). One run on that set at live speed, same settings as above, session `comments200-s1-1027-135456`: 197 calls, $0.2596, 0 errors. Evidence: `docs/evidence/2026-10-27/labels-comments200-s1-1027-135456.json` (`python -m measure.labels`), command output in the PR.
+The Founder confirmed the review sample c001–c030 on 27 October (all 30, none changed). Five template rows were replaced by seller and cancel cases, and seven rows carry the action the shop should take next (`data/README.md`). One run on that set at live speed, same settings as above, session `comments200-v2-1027-141048`: 198 calls, $0.2589, 0 errors, written to the project database so the cost cap counts it. Evidence: `docs/evidence/2026-10-27/labels-comments200-v2-1027-141048.json` (`python -m measure.labels`) and `docs/evidence/2026-10-27/measure-comments200-v2-1027-141048-142057.json` (`python -m measure`, stages), command output in PR #7.
 
 | | result |
 |---|---|
 | micro-F1, Founder-approved sample c001–c030 | 1.000, n=30 |
-| micro-F1, template gold c031–c200 | 0.976, n=170 |
+| micro-F1, template gold c031–c200 | 0.959, n=170 |
 | order fields all exact | 73/74 |
-| `ask_customer` (c019, c022, c106): no size or item guessed | 3/3 |
+| `ask_customer` (c019, c022, c106): no size or item guessed | 2/3 |
 | `needs_seller` (c034 over the threshold, c092 discount): order filled in right | 2/2 |
+| `confirm_cancel` (c192 "huỷ giúp em đôi size 39"): labeled `other` | 0/1 |
+| `none` (c169 "đừng huỷ đơn em"): labeled `other` | 0/1 |
 | scams with contact hidden | 26/26 |
-| label end to end p50 / p95 | 3966 / 5616 ms |
-| model_call latency_ms p50 / p95 | 2959 / 4689 ms |
+| label end to end p50 / p95 | 3835 / 5325 ms |
+| model_call latency_ms p50 / p95 | 2804 / 4331 ms |
 
-- The one order-field miss is c106 "size như bạn trên": the model left the item unresolved instead of taking the live card, so the shop asks which item rather than which size. No size was guessed.
-- These rows score the model's labels only. Whether the shop then asks the customer or waits for the seller is up to the orders and Messenger streams.
+- The model labels both cancel comments `complaint`. Contract v1 has no cancel label and the labeling prompt says nothing about cancelling, so the shop does not see the cancel as `other`. Not fixed here.
+- c106 "size như bạn trên" was labeled `other`, so it got no order and no question. In the previous run on this row (session `comments200-s1-1027-135456`, before the cancel rows) it was an order with the item unresolved. The same comment gets different labels from run to run.
+- These rows score the model's labels only. Whether the shop then asks the customer, waits for the seller or confirms a cancel is up to the orders and Messenger streams.
 
 ## Honest limits
 
 - In `data/sessions/demo1` no model is called: the cards, labels and orders are hand-written stand-ins (`fx-` events), so the demo1 numbers check the measuring code, not the models. `uv run python -m connectors.sim.replay --session demo1 --no-fixtures` drops them.
-- C8 label latency misses the 1 s target (table above). The display stage counts worker emit to app store; console render time is not measured.
-- The 200-comment labeled set is in `data/comments/` (how the gold is set: `data/README.md`); the Founder confirmed its review sample, c001–c030, on 27 October. No cancel row yet. The 500-comment set is not built yet.
+- C8 label latency misses the 1 s target (table above). The last stage is event delivery, worker emitted → app ingested; console render time is not measured.
+- The 200-comment labeled set is in `data/comments/` (how the gold is set: `data/README.md`); the Founder confirmed its review sample, c001–c030, on 27 October. It has one cancel row and one "don't cancel" row; the model labels both `complaint`. The 500-comment set is not built yet.
 - Facebook is an interface only and Messenger is simulated: nothing is sent to real people and no real comment is hidden.
 - The request and response shapes for the Model API (structured output, SAM, voice stream) come from the docs and are not yet checked against live calls.
 
