@@ -8,6 +8,7 @@ events; speech goes through the rule reader (the model reply is an error), 0 USD
 from app.contracts import now_ms
 from tests.test_card import SID, cards_in, fresh, hear, run, runner_with, said, seen  # noqa: F401
 from tests.test_card_handoff import model_down
+from worker.brain import card
 
 
 async def proposals(store) -> list[dict]:
@@ -119,3 +120,64 @@ async def test_worker_409_drops_a_price_the_seller_already_set(mem_app):
         (1, None, "draft"),
         (2, 300000, "edited"),
     ]
+
+
+async def test_product_seen_409_on_a_reopened_card_follows_the_sellers_version(mem_app):
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(2))
+    ts = now_ms()
+    await live_at_250(client, store, runner, ts)
+    r = await client.post(
+        f"/api/sessions/{SID}/cards/card-a/price", json={"price": 220000, "card_version": 2}
+    )
+    assert r.json() == {"changed": True, "version": 3}
+    # the same product again: the worker has not seen v3, so its reopen version is numbered 3 and refused;
+    # it follows v3 and has nothing left to apply
+    assert await hear(client, store, runner, seen("ps-a2", "sneaker", "trắng", ts + 5000)) == []
+    [nxt] = await hear(client, store, runner, said("sp-3", "size 38 nhé", ts + 9000))
+    assert (nxt["version"], nxt["price"], nxt["status"]) == (4, 220000, "edited")
+    assert [v["size"] for v in nxt["variants"]] == ["38"]
+    assert [(c["version"], c["price"]) for c in await cards_in(store)] == [
+        (1, None),
+        (2, 250000),
+        (3, 220000),
+        (4, 220000),
+    ]
+
+
+async def test_product_seen_409_on_retiring_a_draft_the_seller_priced_still_opens_the_new_card(mem_app):
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(1))
+    ts = now_ms()
+    await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
+    r = await client.post(
+        f"/api/sessions/{SID}/cards/card-a/price", json={"price": 300000, "card_version": 1}
+    )
+    assert r.json() == {"changed": True, "version": 2}
+    # the worker still holds card-a as an unpriced draft, so its retire version is numbered 2 and refused;
+    # a status applies only on a draft, so card-a stays as the seller left it
+    [opened] = await hear(client, store, runner, seen("ps-b", "bag", "đỏ", ts + 2000))
+    assert (opened["card_id"], opened["version"], opened["status"]) == ("card-b", 1, "draft")
+    [live] = await hear(client, store, runner, said("sp-1", "túi này 550 nghìn", ts + 4000))
+    assert (live["card_id"], live["version"], live["price"]) == ("card-b", 2, 550000)
+    assert [(c["card_id"], c["version"], c["price"], c["status"]) for c in await cards_in(store)] == [
+        ("card-a", 1, None, "draft"),
+        ("card-a", 2, 300000, "edited"),
+        ("card-b", 1, None, "draft"),
+        ("card-b", 2, 550000, "live"),
+    ]
+    assert card.SESSIONS[SID].cards["card-a"]["price"] == 300000
+
+
+async def test_a_seller_version_with_the_number_the_worker_holds_unstored_is_followed(mem_app):
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(1))
+    await live_at_250(client, store, runner, now_ms())
+    card.SESSIONS[SID].bump("card-a", variants=[])  # a v3 that never reached the store
+    r = await client.post(
+        f"/api/sessions/{SID}/cards/card-a/price", json={"price": 220000, "card_version": 2}
+    )
+    assert r.json() == {"changed": True, "version": 3}
+    await runner.handle((await cards_in(store))[-1])  # the worker reads the seller's v3 from the stream
+    held = card.SESSIONS[SID].cards["card-a"]
+    assert (held["version"], held["price"], held["provenance"]["edited_by"]) == (3, 220000, "seller")
