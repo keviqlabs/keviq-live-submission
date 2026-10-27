@@ -106,6 +106,28 @@ async def test_worker_409_reads_the_highest_version_and_applies_its_sizes_on_top
     ]  # 3 is never reused
 
 
+async def test_worker_409_follows_a_highest_version_below_its_own_number(mem_app):
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(2))
+    ts = now_ms()
+    await live_at_250(client, store, runner, ts)
+    card.SESSIONS[SID].bump("card-a")  # a v3 the worker holds but never stored
+    r = await client.post(
+        f"/api/sessions/{SID}/cards/card-a/price", json={"price": 220000, "card_version": 2}
+    )
+    assert r.json() == {"changed": True, "version": 3}
+    # the worker's sizes version is numbered 4 at 250000 and refused for its price; the store's highest is v3
+    [nxt] = await hear(client, store, runner, said("sp-3", "size 38 nhé", ts + 9000))
+    assert (nxt["version"], nxt["price"], nxt["status"]) == (4, 220000, "edited")
+    assert [v["size"] for v in nxt["variants"]] == ["38"]
+    assert [(c["version"], c["price"]) for c in await cards_in(store)] == [
+        (1, None),
+        (2, 250000),
+        (3, 220000),
+        (4, 220000),
+    ]
+
+
 async def test_worker_409_drops_a_price_the_seller_already_set(mem_app):
     _, store, client = mem_app
     runner = runner_with(client, model_down(1))
