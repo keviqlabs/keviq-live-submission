@@ -1,4 +1,5 @@
-"""Worker handlers for the orders stream: comment_labeled(order) -> draft + rules; message_in -> confirm / cancel.
+"""Worker handlers for the orders stream: comment_labeled(order|other) -> draft + rules, or ask_cancel for a
+cancel request; message_in -> confirm / cancel / keep.
 
 Each handler reads the session so far from the app (`GET /api/sessions/{sid}/events?follow=false`) and hands it
 to orders/flow.py; the runner posts what comes back (D-003: the app is the only writer). Fixture triggers and
@@ -24,7 +25,7 @@ async def load_view(ctx, session_id: str) -> flow.View:
 
 
 async def on_labeled(event: dict, ctx) -> list[dict]:
-    if event.get("label") != "order" or flow.is_fixture(event["event_id"]):
+    if event.get("label") not in flow.TRIGGER_LABELS or flow.is_fixture(event["event_id"]):
         return []
     view = await load_view(ctx, event["session_id"])
     return await flow.on_labeled(event, view, MESSENGER, ctx.received_ms)
@@ -32,7 +33,7 @@ async def on_labeled(event: dict, ctx) -> list[dict]:
 
 async def on_message(event: dict, ctx) -> list[dict]:
     kind, _ = flow.customer_reply(event.get("template"), event.get("payload") or {})
-    if kind is None:
+    if kind in (None, "keep"):
         return []
     view = await load_view(ctx, event["session_id"])
     return await flow.on_reply(event, view, MESSENGER, ctx.received_ms)
