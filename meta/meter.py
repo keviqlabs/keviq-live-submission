@@ -23,9 +23,10 @@ class Meter:
     names its session. At the cap, `BudgetExceeded("session_cap")`, whose text ("session_cap: spent 8.0000 USD, cap
     8.0 USD") is the refused model_call's `error`; the warning is logged once per session.
 
-    Limit: the spend is read before each call and there is no reserve, so the calls already in flight when the cap
-    is crossed still finish and can take the session over it. A voice stream is checked once, when it opens, and
-    its cost is logged when it ends.
+    Overshoot limit: nothing is reserved ahead of a call. The spend is read before each call, so calls already in
+    flight when the cap is crossed still complete and can take the session over it. A voice stream is checked only
+    when it opens: a stream already open is not cut at the cap and runs to the end of its play, and its cost is
+    logged when it ends.
     """
 
     def __init__(
