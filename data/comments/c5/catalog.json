@@ -1,0 +1,233 @@
+[
+ {
+  "sku": "SP01",
+  "name": "SP01 giày đen",
+  "kind": "giày",
+  "category": "sneaker",
+  "categories": [
+   "sneaker",
+   "boot",
+   "loafer",
+   "heels",
+   "sandal"
+  ],
+  "price": 250000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "40",
+    "color": "đen",
+    "stock": 2
+   },
+   {
+    "size": "41",
+    "color": "đen",
+    "stock": 1
+   }
+  ]
+ },
+ {
+  "sku": "SP02",
+  "name": "SP02 giày trắng",
+  "kind": "giày",
+  "category": "sneaker",
+  "categories": [
+   "sneaker",
+   "boot",
+   "loafer",
+   "heels",
+   "sandal"
+  ],
+  "price": 320000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "39",
+    "color": "trắng",
+    "stock": 1
+   },
+   {
+    "size": "40",
+    "color": "trắng",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "SP03",
+  "name": "SP03 giày xám",
+  "kind": "giày",
+  "category": "sneaker",
+  "categories": [
+   "sneaker",
+   "boot",
+   "loafer",
+   "heels",
+   "sandal"
+  ],
+  "price": 280000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "41",
+    "color": "xám",
+    "stock": 2
+   },
+   {
+    "size": "42",
+    "color": "xám",
+    "stock": 1
+   }
+  ]
+ },
+ {
+  "sku": "SP04",
+  "name": "SP04 áo đen",
+  "kind": "áo",
+  "category": "shirt",
+  "categories": [
+   "shirt",
+   "tshirt",
+   "sweater",
+   "jacket"
+  ],
+  "price": 180000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "M",
+    "color": "đen",
+    "stock": 2
+   },
+   {
+    "size": "L",
+    "color": "đen",
+    "stock": 3
+   }
+  ]
+ },
+ {
+  "sku": "SP05",
+  "name": "SP05 áo trắng",
+  "kind": "áo",
+  "category": "shirt",
+  "categories": [
+   "shirt",
+   "tshirt",
+   "sweater",
+   "jacket"
+  ],
+  "price": 150000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "M",
+    "color": "trắng",
+    "stock": 1
+   },
+   {
+    "size": "L",
+    "color": "trắng",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "SP06",
+  "name": "SP06 áo xanh",
+  "kind": "áo",
+  "category": "shirt",
+  "categories": [
+   "shirt",
+   "tshirt",
+   "sweater",
+   "jacket"
+  ],
+  "price": 210000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": "L",
+    "color": "xanh",
+    "stock": 2
+   },
+   {
+    "size": "XL",
+    "color": "xanh",
+    "stock": 1
+   }
+  ]
+ },
+ {
+  "sku": "SP07",
+  "name": "SP07 tay cầm đen",
+  "kind": "tay cầm",
+  "category": "other",
+  "categories": [
+   "other"
+  ],
+  "price": 450000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": null,
+    "color": "đen",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "SP08",
+  "name": "SP08 tay cầm trắng",
+  "kind": "tay cầm",
+  "category": "other",
+  "categories": [
+   "other"
+  ],
+  "price": 550000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": null,
+    "color": "trắng",
+    "stock": 1
+   }
+  ]
+ },
+ {
+  "sku": "SP09",
+  "name": "SP09 bàn phím đen",
+  "kind": "bàn phím",
+  "category": "other",
+  "categories": [
+   "other"
+  ],
+  "price": 650000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": null,
+    "color": "đen",
+    "stock": 2
+   }
+  ]
+ },
+ {
+  "sku": "SP10",
+  "name": "SP10 bàn phím trắng",
+  "kind": "bàn phím",
+  "category": "other",
+  "categories": [
+   "other"
+  ],
+  "price": 850000,
+  "currency": "VND",
+  "variants": [
+   {
+    "size": null,
+    "color": "trắng",
+    "stock": 1
+   }
+  ]
+ }
+]

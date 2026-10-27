@@ -6,8 +6,9 @@ messenger-k.jsonl is the customer side of Messenger for loop k: which reply to s
 
 The product windows come from the local test1 gold (data/local/test1, not committed):
     python data/comments/c5/author_c5.py windows PATH/TO/test1/labels.json
-copies only segment bounds, product codes and when a fixed price was said into windows.json. The streams are built
-from windows.json alone, so the committed files carry product codes and times, nothing heard in the video.
+copies only segment bounds, product codes and when a fixed price was said into windows.json, and the shop catalog
+(code, kind, colour, sizes, stock, first price) into catalog.json. The streams are built from windows.json alone, so
+the committed files carry product codes, times and stock, nothing heard in the video.
 No randomness: rerunning gives the same files. With the local gold present (C5_GOLD or the default path) the run
 also checks the orders against its stock and prices.
 """
@@ -524,6 +525,20 @@ def windows(gold):
     }  # fmt: skip
 
 
+def catalog(gold):
+    """The C5 shop catalog, in the shape of data/catalog.json: per product its code, kind, colour, sizes, stock
+    and the price before any change was said. The name is the code plus generic words, never one heard in the
+    video. categories: the vision categories the kind stands for (the gold category_map)."""
+    return [
+        {"sku": sku, "name": f"{sku} {p['kind']} {p['color']}", "kind": p["kind"],
+         "category": gold["category_map"][p["kind"]][0], "categories": gold["category_map"][p["kind"]],
+         "price": p["price_first"], "currency": "VND",
+         "variants": [{"size": None if size == "one" else size, "color": p["color"], "stock": n}
+                      for size, n in p["stock"].items()]}
+        for sku, p in sorted(gold["products"].items())
+    ]  # fmt: skip
+
+
 def check_stock(gold, streams):
     """Problems (empty = none) with the order gold against the test1 stock and prices: per loop, the orders that
     should go through hold no more than the stock, and the over-stock order asks for more than there is."""
@@ -562,7 +577,8 @@ def main(argv):
         if not gold:
             sys.exit("windows: give the path to the local test1 labels.json")
         (HERE / "windows.json").write_text(json.dumps(windows(gold), indent=1) + "\n")
-        print("wrote windows.json")
+        (HERE / "catalog.json").write_text(json.dumps(catalog(gold), ensure_ascii=False, indent=1) + "\n")
+        print("wrote windows.json, catalog.json")
         return
     win = json.loads((HERE / "windows.json").read_text())
     taken = [json.loads(line)["text"] for line in (ROOT / "data/comments/labels.jsonl").open()]
