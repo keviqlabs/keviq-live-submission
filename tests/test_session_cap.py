@@ -202,3 +202,53 @@ async def test_the_runner_skips_the_model_for_a_capped_session_and_keeps_going(m
     assert runner.failures == 2 and len(transport.requests) == 1
     assert [c.get("error") for c in await calls_in(store, S)] == [None, "session_cap", "session_cap"]
     assert [c["ok"] for c in await calls_in(store, T)] == [True]
+
+
+@pytest.mark.parametrize(
+    "daily_cap, total_cap, earlier_days, first, at_step, warnings",
+    [
+        (30.0, 300.0, 0.0, "session_cap", 8, 1),
+        (5.0, 300.0, 0.0, "daily_cap", 5, 0),
+        (30.0, 300.0, 296.0, "total_cap", 4, 0),
+    ],
+    ids=["session-first", "daily-first", "total-first"],
+)
+async def test_with_all_three_caps_set_the_cap_reached_first_is_the_error(
+    mem_app, caplog, daily_cap, total_cap, earlier_days, first, at_step, warnings
+):
+    """Session cap 8.00 (warning 6.00), daily and total caps set too. Each step another 1.00 USD is spent in S, then
+    S asks for a call: every call before the first cap goes out (the 6.00 warning does not stop one), the first
+    refusal names the cap reached first, and nothing is sent for it."""
+    app, store, client = mem_app
+    today: list[float] = []
+
+    async def spend() -> tuple[float, float]:
+        return sum(today), earlier_days + sum(today)
+
+    session_spend = meta.meter.http_session_spend("http://test", transport=httpx.ASGITransport(app=app))
+    meter = Meter(
+        spend, daily_cap=daily_cap, total_cap=total_cap, warn_at=20, session_spend=session_spend,
+        session_cap=8.0, session_warn_at=6.0,
+    )  # fmt: skip
+    trigger = comment(S, 1)
+    assert (await client.post(f"/api/sessions/{S}/events", json=[trigger])).status_code == 200
+    transport = FakeTransport([reply() for _ in range(10)])
+    runner = Runner("http://test", {}, http=client)
+    runner._meta = (transport, meter)
+    caplog.set_level(logging.WARNING, logger="meta.meter")
+
+    refused = None
+    for step in range(1, 11):
+        await store.append(model_call(S, step, 1.0))
+        today.append(1.0)
+        try:
+            await runner.client_for(trigger).responses(input="x", schema=SCHEMA, purpose="label_comments")
+        except BudgetExceeded as exc:
+            refused = (step, exc.reason)
+            break
+    assert refused == (at_step, first)
+    assert len(transport.requests) == at_step - 1
+    made = [c for c in await calls_in(store, S) if c["purpose"] == "label_comments"]
+    assert [c["ok"] for c in made] == [True] * (at_step - 1) + [False]
+    assert made[-1]["error"] == first and made[-1]["cost_usd"] == 0
+    assert sum(1 for r in caplog.records if r.name == "meta.meter" and S in r.getMessage()) == warnings
