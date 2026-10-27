@@ -1,6 +1,7 @@
 """Per-session spend cap (MODEL_SESSION_CAP_USD, warning MODEL_SESSION_WARN_USD). A session at its cap makes no more
-model calls: the refusal is a model_call with ok false in that session, and nothing reaches the transport. Other
-sessions still call, the runner keeps going, and with the variables unset nothing changes."""
+model calls: the refusal is a model_call with ok false in that session, its error naming the spend, and nothing
+reaches the transport. Other sessions still call, the runner keeps going, and with the variables unset nothing
+changes."""
 
 import json
 import logging
@@ -32,6 +33,8 @@ OLD_COST_KEYS = {
     "total_cap_usd",
     "test_sessions",
 }
+# the refused model_call's error with 8.00 spent and the cap at 8.00
+AT_CAP = "session_cap: spent 8.0000 USD, cap 8.0 USD"
 
 
 def model_call(sid: str, n: int, usd: float) -> dict:
@@ -84,10 +87,10 @@ async def test_a_session_at_its_cap_sends_nothing_and_logs_the_refusal_in_that_s
     with pytest.raises(BudgetExceeded) as exc:
         await runner.client_for(trigger).responses(input="x", schema=SCHEMA, purpose="label_comments")
     assert exc.value.reason == "session_cap"
-    assert exc.value.spent == pytest.approx(8.0) and exc.value.cap == 8.0
+    assert exc.value.spent == pytest.approx(8.0) and exc.value.cap == 8.0 and str(exc.value) == AT_CAP
     assert transport.requests == []
     refused = (await calls_in(store, S))[-1]
-    assert refused["ok"] is False and refused["error"] == "session_cap" and refused["cost_usd"] == 0
+    assert refused["ok"] is False and refused["error"] == AT_CAP and refused["cost_usd"] == 0
     assert refused["caused_by"] == [trigger["event_id"]]
 
 
@@ -155,24 +158,32 @@ async def test_with_the_variables_unset_no_session_spend_is_read(monkeypatch):
     assert exc.value.reason == "daily_cap" and asked == [] and len(transport.requests) == 1
 
 
-async def session_usd_is_that_session_only(client, store, s: str, t: str) -> None:
+async def session_usd_is_that_session_only(client, store, s: str, t: str, monkeypatch) -> None:
+    """With `?session=`, the session's spend and the cap and warning this process has (null when unset)."""
+    monkeypatch.setenv("MODEL_SESSION_CAP_USD", "8.00")
+    monkeypatch.setenv("MODEL_SESSION_WARN_USD", "6.00")
     await spent(store, s, 0.25, 0.5)
     await spent(store, t, 1.0)
     await spent(store, s + "-2", 2.0)  # an id that starts with s is another session
     body = (await client.get("/api/cost", params={"session": s})).raise_for_status().json()
     assert body["session_usd"] == pytest.approx(0.75)
-    assert set(body) == OLD_COST_KEYS | {"session_usd"}
+    assert body["session_cap_usd"] == 8.0 and body["session_warn_usd"] == 6.0
+    assert set(body) == OLD_COST_KEYS | {"session_usd", "session_cap_usd", "session_warn_usd"}
     assert (await client.get("/api/cost", params={"session": t})).json()["session_usd"] == pytest.approx(1.0)
     assert (await client.get("/api/cost", params={"session": s + "-x"})).json()["session_usd"] == 0
     assert set((await client.get("/api/cost")).json()) == OLD_COST_KEYS
+    monkeypatch.delenv("MODEL_SESSION_CAP_USD")
+    monkeypatch.setenv("MODEL_SESSION_WARN_USD", "")
+    off = (await client.get("/api/cost", params={"session": s})).json()
+    assert off["session_cap_usd"] is None and off["session_warn_usd"] is None
 
 
-async def test_memory_cost_by_session_sums_only_that_session(mem_app):
+async def test_memory_cost_by_session_sums_only_that_session(mem_app, monkeypatch):
     _, store, client = mem_app
-    await session_usd_is_that_session_only(client, store, S, T)
+    await session_usd_is_that_session_only(client, store, S, T, monkeypatch)
 
 
-async def test_pg_cost_by_session_sums_only_that_session(pg_url):
+async def test_pg_cost_by_session_sums_only_that_session(pg_url, monkeypatch):
     store = PgStore(pg_url)
     await store.open()
     app = create_app(store)
@@ -183,7 +194,7 @@ async def test_pg_cost_by_session_sums_only_that_session(pg_url):
             transport=httpx.ASGITransport(app=app), base_url="http://test"
         ) as client:
             await session_usd_is_that_session_only(
-                client, store, f"pytest-cap-s{stamp}", f"pytest-cap-t{stamp}"
+                client, store, f"pytest-cap-s{stamp}", f"pytest-cap-t{stamp}", monkeypatch
             )
     finally:
         await store.close()
@@ -200,25 +211,26 @@ async def test_the_runner_skips_the_model_for_a_capped_session_and_keeps_going(m
         assert (await client.post(f"/api/sessions/{e['session_id']}/events", json=[e])).status_code == 200
         assert await runner.handle(e) == []
     assert runner.failures == 2 and len(transport.requests) == 1
-    assert [c.get("error") for c in await calls_in(store, S)] == [None, "session_cap", "session_cap"]
+    assert [c.get("error") for c in await calls_in(store, S)] == [None, AT_CAP, AT_CAP]
     assert [c["ok"] for c in await calls_in(store, T)] == [True]
 
 
 @pytest.mark.parametrize(
-    "daily_cap, total_cap, earlier_days, first, at_step, warnings",
+    "daily_cap, total_cap, earlier_days, first, error, at_step, warnings",
     [
-        (30.0, 300.0, 0.0, "session_cap", 8, 1),
-        (5.0, 300.0, 0.0, "daily_cap", 5, 0),
-        (30.0, 300.0, 296.0, "total_cap", 4, 0),
+        (30.0, 300.0, 0.0, "session_cap", "session_cap: spent {spent:.4f} USD, cap 8.0 USD", 8, 1),
+        (5.0, 300.0, 0.0, "daily_cap", "daily_cap", 5, 0),
+        (30.0, 300.0, 296.0, "total_cap", "total_cap", 4, 0),
     ],
     ids=["session-first", "daily-first", "total-first"],
 )
 async def test_with_all_three_caps_set_the_cap_reached_first_is_the_error(
-    mem_app, caplog, daily_cap, total_cap, earlier_days, first, at_step, warnings
+    mem_app, caplog, daily_cap, total_cap, earlier_days, first, error, at_step, warnings
 ):
     """Session cap 8.00 (warning 6.00), daily and total caps set too. Each step another 1.00 USD is spent in S, then
     S asks for a call: every call before the first cap goes out (the 6.00 warning does not stop one), the first
-    refusal names the cap reached first, and nothing is sent for it."""
+    refusal names the cap reached first, and nothing is sent for it. Daily and total keep the bare error the console
+    matches; the session cap's error names the spend."""
     app, store, client = mem_app
     today: list[float] = []
 
@@ -250,5 +262,6 @@ async def test_with_all_three_caps_set_the_cap_reached_first_is_the_error(
     assert len(transport.requests) == at_step - 1
     made = [c for c in await calls_in(store, S) if c["purpose"] == "label_comments"]
     assert [c["ok"] for c in made] == [True] * (at_step - 1) + [False]
-    assert made[-1]["error"] == first and made[-1]["cost_usd"] == 0
+    spent_in_s = sum(c["cost_usd"] for c in await calls_in(store, S))  # 8 x 1.00 and the calls that went out
+    assert made[-1]["error"] == error.format(spent=spent_in_s) and made[-1]["cost_usd"] == 0
     assert sum(1 for r in caplog.records if r.name == "meta.meter" and S in r.getMessage()) == warnings
