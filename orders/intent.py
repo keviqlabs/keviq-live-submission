@@ -15,7 +15,7 @@ REDUCTION = re.compile(r"\b(?:giảm|bớt|bot)\s+(\d[\d.,]*)" + UNIT, re.I)
 
 YES = {"ok", "oke", "okie", "dong y", "chot", "yes", "xac nhan", "co", "uh", "u", "dc", "duoc"}
 NO = {"huy", "khong", "ko", "thoi", "no", "cancel"}
-QUICK_REPLIES = {"CONFIRM": "yes", "CANCEL": "no", "KEEP": "keep"}
+QUICK_REPLIES = {"CONFIRM": "yes", "CANCEL": "no", "KEEP": "keep", "PICK": "pick"}
 
 # Read on the lowercased text with its diacritics: "huỷ"/"hủy" is cancel, the name "Huy" and "chuyển" are not.
 # Without diacritics only "huy đơn" counts. Punctuation is kept, so "không, huỷ đi" is a cancel.
@@ -89,8 +89,9 @@ def fold(text: str) -> str:
 
 
 def customer_reply(template: str | None, payload: dict) -> tuple[str | None, str | None]:
-    """('yes' | 'no' | 'keep' | None, order_id | None) from a message_in: template, quick reply, or a short
-    exact text. A plain-text 'no' carries no order_id unless the payload names one."""
+    """('yes' | 'no' | 'keep' | 'pick' | None, order_id | None) from a message_in: template, quick reply, or a
+    short exact text. A plain-text 'no' carries no order_id unless the payload names one. 'pick' is the answer to
+    an ask_variant question (PICK:<order_id>#<i>); orders/variants.py reads which variant."""
     order_id = payload.get("order_id")
     if template == "confirm_yes":
         return "yes", order_id
@@ -98,9 +99,11 @@ def customer_reply(template: str | None, payload: dict) -> tuple[str | None, str
         return "no", order_id
     if template == "keep_order":
         return "keep", order_id
+    if template == "pick_variant":
+        return "pick", order_id
     kind, _, qr_order = (payload.get("quick_reply") or "").partition(":")
     if kind in QUICK_REPLIES and qr_order:
-        return QUICK_REPLIES[kind], qr_order
+        return QUICK_REPLIES[kind], qr_order.partition("#")[0]
     words = fold(payload.get("text") or "")
     if words in YES:
         return "yes", order_id

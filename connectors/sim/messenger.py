@@ -9,7 +9,12 @@ the PSID in the sim is the user_ref. Quick reply payloads are `CONFIRM:<order_id
 
 from connectors.facebook.interface import Messenger
 
-QUICK_REPLY_TEMPLATES = {"CONFIRM": "confirm_yes", "CANCEL": "confirm_no", "KEEP": "keep_order"}
+QUICK_REPLY_TEMPLATES = {
+    "CONFIRM": "confirm_yes",
+    "CANCEL": "confirm_no",
+    "KEEP": "keep_order",
+    "PICK": "pick_variant",  # PICK:<order_id>#<variant index>; order ids never contain "#"
+}
 
 
 def psid(thread_ref: str) -> str:
@@ -77,7 +82,7 @@ def parse_webhook(body: dict) -> list[dict]:
             kind, _, order_id = qr.partition(":")
             if kind in QUICK_REPLY_TEMPLATES and order_id:
                 template = QUICK_REPLY_TEMPLATES[kind]
-                payload |= {"order_id": order_id, "quick_reply": qr}
+                payload |= {"order_id": order_id.partition("#")[0], "quick_reply": qr}
             out.append(
                 {
                     "type": "message_in",
