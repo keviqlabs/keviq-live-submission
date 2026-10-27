@@ -64,7 +64,7 @@ def evaluate_draft(
     discount_requested: bool = False,
     threshold: int = SELLER_THRESHOLD_VND,
 ) -> Decision:
-    """Checks for an assistant-drafted order line. Agent 3 extends this; keep the decision shape."""
+    """Checks for an assistant-drafted order line. The orders stream extends this; keep the decision shape."""
     if card_price is None:
         return Decision(False, True, "card has no price yet")
     if discount_requested:
