@@ -1,0 +1,56 @@
+{
+ "session": "demo1",
+ "note": "Hand-written labels for the synthetic demo1 session; n is small, the 50-comment reference set is data/comments/ (to come).",
+ "comments": {
+  "cm-01": {
+   "label": "price_question"
+  },
+  "cm-02": {
+   "label": "stock_question"
+  },
+  "cm-03": {
+   "label": "other"
+  },
+  "cm-04": {
+   "label": "scam",
+   "has_phone": true
+  },
+  "cm-05": {
+   "label": "order",
+   "referenced_card_id": "card-a"
+  },
+  "cm-06": {
+   "label": "order",
+   "referenced_card_id": "card-b"
+  },
+  "cm-07": {
+   "label": "order",
+   "referenced_card_id": "card-a"
+  },
+  "cm-08": {
+   "label": "order",
+   "referenced_card_id": "card-b"
+  },
+  "cm-09": {
+   "label": "order",
+   "referenced_card_id": null
+  },
+  "cm-10": {
+   "label": "complaint"
+  },
+  "cm-11": {
+   "label": "order",
+   "referenced_card_id": "card-d"
+  },
+  "cm-12": {
+   "label": "spam"
+  },
+  "cm-13": {
+   "label": "price_question"
+  },
+  "cm-14": {
+   "label": "order",
+   "referenced_card_id": "card-b"
+  }
+ }
+}
