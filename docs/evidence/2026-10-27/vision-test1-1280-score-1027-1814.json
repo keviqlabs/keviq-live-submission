@@ -1,0 +1,294 @@
+{
+ "scored_against": "data/local/test1/labels.json (not in git)",
+ "method": "test1_score.py: effective category in the label's accepted set; changes caught = an is_new emit within 3 s, or on the exact second",
+ "default_77_8_run": {
+  "frames": "720x1280",
+  "n": 351,
+  "category_correct": "273/351 = 77.8%",
+  "category_correct_outside_change_band": "213/246 = 86.6%",
+  "new_product_per_frame_correct": "322/351 = 91.7%",
+  "changes_detected_within_3s": "5/11",
+  "missed_changes": [
+   [
+    13,
+    "SP01"
+   ],
+   [
+    125,
+    "SP04"
+   ],
+   [
+    226,
+    "SP07"
+   ],
+   [
+    265,
+    "SP09"
+   ],
+   [
+    312,
+    "SP10"
+   ],
+   [
+    326,
+    "SP01"
+   ]
+  ],
+  "new_emitted": 20,
+  "new_emitted_with_no_change_within_3s": 14,
+  "errors": 0,
+  "by_kind": {
+   "none": {
+    "ok": 15,
+    "n": 29,
+    "answers": {
+     "none": 15,
+     "tshirt": 14
+    }
+   },
+   "giày": {
+    "ok": 108,
+    "n": 129,
+    "answers": {
+     "tshirt": 4,
+     "sneaker": 84,
+     "none": 12,
+     "sandal": 24,
+     "other": 5
+    }
+   },
+   "áo": {
+    "ok": 78,
+    "n": 93,
+    "answers": {
+     "none": 15,
+     "tshirt": 60,
+     "shirt": 18
+    }
+   },
+   "tay cầm": {
+    "ok": 29,
+    "n": 39,
+    "answers": {
+     "tshirt": 1,
+     "none": 8,
+     "other": 29,
+     "sneaker": 1
+    }
+   },
+   "bàn phím": {
+    "ok": 43,
+    "n": 61,
+    "answers": {
+     "other": 43,
+     "none": 17,
+     "bag": 1
+    }
+   }
+  },
+  "spark_ms": {
+   "n": 351,
+   "p50": 7737,
+   "p95": 16353
+  },
+  "cost_usd": 2.027509,
+  "calls": 351,
+  "usd_per_frame": 0.00578,
+  "tokens_in_per_call": 1331,
+  "tokens_out_per_call": 991,
+  "changes_detected_exact_second": "1/11",
+  "missed_exact": [
+   [
+    13,
+    "SP01"
+   ],
+   [
+    59,
+    "SP02"
+   ],
+   [
+    93,
+    "SP03"
+   ],
+   [
+    125,
+    "SP04"
+   ],
+   [
+    170,
+    "SP05"
+   ],
+   [
+    190,
+    "SP06"
+   ],
+   [
+    226,
+    "SP07"
+   ],
+   [
+    265,
+    "SP09"
+   ],
+   [
+    312,
+    "SP10"
+   ],
+   [
+    326,
+    "SP01"
+   ]
+  ]
+ },
+ "minimal_6a": {
+  "frames": "720x1280",
+  "n": 351,
+  "category_correct": "200/351 = 57.0%",
+  "category_correct_outside_change_band": "156/246 = 63.4%",
+  "new_product_per_frame_correct": "330/351 = 94.0%",
+  "changes_detected_within_3s": "5/11",
+  "missed_changes": [
+   [
+    13,
+    "SP01"
+   ],
+   [
+    125,
+    "SP04"
+   ],
+   [
+    226,
+    "SP07"
+   ],
+   [
+    265,
+    "SP09"
+   ],
+   [
+    312,
+    "SP10"
+   ],
+   [
+    326,
+    "SP01"
+   ]
+  ],
+  "new_emitted": 10,
+  "new_emitted_with_no_change_within_3s": 5,
+  "errors": 0,
+  "by_kind": {
+   "none": {
+    "ok": 14,
+    "n": 29,
+    "answers": {
+     "none": 14,
+     "tshirt": 15
+    }
+   },
+   "giày": {
+    "ok": 108,
+    "n": 129,
+    "answers": {
+     "tshirt": 4,
+     "sneaker": 84,
+     "none": 17,
+     "sandal": 24
+    }
+   },
+   "áo": {
+    "ok": 78,
+    "n": 93,
+    "answers": {
+     "none": 15,
+     "tshirt": 60,
+     "shirt": 18
+    }
+   },
+   "tay cầm": {
+    "ok": 0,
+    "n": 39,
+    "answers": {
+     "tshirt": 4,
+     "none": 34,
+     "sneaker": 1
+    }
+   },
+   "bàn phím": {
+    "ok": 0,
+    "n": 61,
+    "answers": {
+     "none": 61
+    }
+   }
+  },
+  "spark_ms": {
+   "n": 351,
+   "p50": 1884,
+   "p95": 3254
+  },
+  "cost_usd": 0.818093,
+  "calls": 351,
+  "usd_per_frame": 0.00233,
+  "tokens_in_per_call": 1331,
+  "tokens_out_per_call": 180,
+  "changes_detected_exact_second": "0/11",
+  "missed_exact": [
+   [
+    13,
+    "SP01"
+   ],
+   [
+    59,
+    "SP02"
+   ],
+   [
+    93,
+    "SP03"
+   ],
+   [
+    125,
+    "SP04"
+   ],
+   [
+    170,
+    "SP05"
+   ],
+   [
+    190,
+    "SP06"
+   ],
+   [
+    226,
+    "SP07"
+   ],
+   [
+    250,
+    "SP08"
+   ],
+   [
+    265,
+    "SP09"
+   ],
+   [
+    312,
+    "SP10"
+   ],
+   [
+    326,
+    "SP01"
+   ]
+  ]
+ },
+ "cost_check": {
+  "ledger_session": "probe-test1-6a-1814",
+  "api_today_usd_before": 5.173072,
+  "api_today_usd_after": 5.991165,
+  "api_delta_usd": 0.818093,
+  "sql_vn_day_calls_before": 1431,
+  "sql_vn_day_calls_after": 1782,
+  "sql_vn_day_usd_delta": "0.818093",
+  "sql_session_calls": 351,
+  "sql_session_usd": "0.81809300",
+  "run_cost_usd": 0.818093
+ }
+}

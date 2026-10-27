@@ -1,0 +1,5317 @@
+{
+ "ledger_session": "probe-test1-6a-1814",
+ "vision_session": "gate-test1",
+ "effort": "minimal",
+ "spark_py_sha256": "ed2949bc3f8e8e30d0120fd8e1df1e1728e8d7104a98c0619631e77c669da56a",
+ "frames": 351,
+ "frame_set_sha256": "26e7cbc7cf0f95d0ea0696483a3e28a2691922747b04a80bf58dff031882f78d",
+ "today_usd_before": 5.173072,
+ "long_side": 1280,
+ "stopped": null,
+ "frames_read": 351,
+ "errors": 0,
+ "wall_s": 735.4,
+ "calls": 351,
+ "calls_ok": 351,
+ "cost_usd": 0.818093,
+ "tokens_in": 467156,
+ "tokens_out": 63156,
+ "today_usd_after": 5.991165,
+ "rows": [
+  {
+   "t": 0,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 3268,
+   "error": null
+  },
+  {
+   "t": 1,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 3254,
+   "error": null
+  },
+  {
+   "t": 2,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1522,
+   "error": null
+  },
+  {
+   "t": 3,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.85,
+   "is_new": true,
+   "new": [
+    "tshirt",
+    "nâu"
+   ],
+   "ms": 2953,
+   "error": null
+  },
+  {
+   "t": 4,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 3128,
+   "error": null
+  },
+  {
+   "t": 5,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.92,
+   "is_new": false,
+   "new": null,
+   "ms": 1552,
+   "error": null
+  },
+  {
+   "t": 6,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1813,
+   "error": null
+  },
+  {
+   "t": 7,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1887,
+   "error": null
+  },
+  {
+   "t": 8,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2020,
+   "error": null
+  },
+  {
+   "t": 9,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 3370,
+   "error": null
+  },
+  {
+   "t": 10,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2711,
+   "error": null
+  },
+  {
+   "t": 11,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1585,
+   "error": null
+  },
+  {
+   "t": 12,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2091,
+   "error": null
+  },
+  {
+   "t": 13,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2324,
+   "error": null
+  },
+  {
+   "t": 14,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1992,
+   "error": null
+  },
+  {
+   "t": 15,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1915,
+   "error": null
+  },
+  {
+   "t": 16,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.85,
+   "is_new": false,
+   "new": null,
+   "ms": 2332,
+   "error": null
+  },
+  {
+   "t": 17,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": true,
+   "new": [
+    "sneaker",
+    "đen"
+   ],
+   "ms": 1281,
+   "error": null
+  },
+  {
+   "t": 18,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1328,
+   "error": null
+  },
+  {
+   "t": 19,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2561,
+   "error": null
+  },
+  {
+   "t": 20,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1743,
+   "error": null
+  },
+  {
+   "t": 21,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1257,
+   "error": null
+  },
+  {
+   "t": 22,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1699,
+   "error": null
+  },
+  {
+   "t": 23,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.96,
+   "is_new": false,
+   "new": null,
+   "ms": 2459,
+   "error": null
+  },
+  {
+   "t": 24,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1546,
+   "error": null
+  },
+  {
+   "t": 25,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 2708,
+   "error": null
+  },
+  {
+   "t": 26,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1992,
+   "error": null
+  },
+  {
+   "t": 27,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1421,
+   "error": null
+  },
+  {
+   "t": 28,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 1869,
+   "error": null
+  },
+  {
+   "t": 29,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.96,
+   "is_new": false,
+   "new": null,
+   "ms": 2415,
+   "error": null
+  },
+  {
+   "t": 30,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1757,
+   "error": null
+  },
+  {
+   "t": 31,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1520,
+   "error": null
+  },
+  {
+   "t": 32,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1919,
+   "error": null
+  },
+  {
+   "t": 33,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1545,
+   "error": null
+  },
+  {
+   "t": 34,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1752,
+   "error": null
+  },
+  {
+   "t": 35,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1882,
+   "error": null
+  },
+  {
+   "t": 36,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1736,
+   "error": null
+  },
+  {
+   "t": 37,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1635,
+   "error": null
+  },
+  {
+   "t": 38,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1855,
+   "error": null
+  },
+  {
+   "t": 39,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1261,
+   "error": null
+  },
+  {
+   "t": 40,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1811,
+   "error": null
+  },
+  {
+   "t": 41,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2078,
+   "error": null
+  },
+  {
+   "t": 42,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1825,
+   "error": null
+  },
+  {
+   "t": 43,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1587,
+   "error": null
+  },
+  {
+   "t": 44,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1679,
+   "error": null
+  },
+  {
+   "t": 45,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1346,
+   "error": null
+  },
+  {
+   "t": 46,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1904,
+   "error": null
+  },
+  {
+   "t": 47,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.92,
+   "is_new": false,
+   "new": null,
+   "ms": 1057,
+   "error": null
+  },
+  {
+   "t": 48,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2538,
+   "error": null
+  },
+  {
+   "t": 49,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 1149,
+   "error": null
+  },
+  {
+   "t": 50,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1467,
+   "error": null
+  },
+  {
+   "t": 51,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1260,
+   "error": null
+  },
+  {
+   "t": 52,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 2323,
+   "error": null
+  },
+  {
+   "t": 53,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1471,
+   "error": null
+  },
+  {
+   "t": 54,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1840,
+   "error": null
+  },
+  {
+   "t": 55,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2277,
+   "error": null
+  },
+  {
+   "t": 56,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1517,
+   "error": null
+  },
+  {
+   "t": 57,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1634,
+   "error": null
+  },
+  {
+   "t": 58,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.85,
+   "is_new": true,
+   "new": [
+    "sneaker",
+    "trắng"
+   ],
+   "ms": 1814,
+   "error": null
+  },
+  {
+   "t": 59,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 11153,
+   "error": null
+  },
+  {
+   "t": 60,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1504,
+   "error": null
+  },
+  {
+   "t": 61,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1701,
+   "error": null
+  },
+  {
+   "t": 62,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1688,
+   "error": null
+  },
+  {
+   "t": 63,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.96,
+   "is_new": false,
+   "new": null,
+   "ms": 1512,
+   "error": null
+  },
+  {
+   "t": 64,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2220,
+   "error": null
+  },
+  {
+   "t": 65,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2185,
+   "error": null
+  },
+  {
+   "t": 66,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1421,
+   "error": null
+  },
+  {
+   "t": 67,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1586,
+   "error": null
+  },
+  {
+   "t": 68,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1604,
+   "error": null
+  },
+  {
+   "t": 69,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1883,
+   "error": null
+  },
+  {
+   "t": 70,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1713,
+   "error": null
+  },
+  {
+   "t": 71,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1446,
+   "error": null
+  },
+  {
+   "t": 72,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1525,
+   "error": null
+  },
+  {
+   "t": 73,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 3322,
+   "error": null
+  },
+  {
+   "t": 74,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 1495,
+   "error": null
+  },
+  {
+   "t": 75,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1934,
+   "error": null
+  },
+  {
+   "t": 76,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1718,
+   "error": null
+  },
+  {
+   "t": 77,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1444,
+   "error": null
+  },
+  {
+   "t": 78,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1707,
+   "error": null
+  },
+  {
+   "t": 79,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 1840,
+   "error": null
+  },
+  {
+   "t": 80,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2160,
+   "error": null
+  },
+  {
+   "t": 81,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1033,
+   "error": null
+  },
+  {
+   "t": 82,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 1781,
+   "error": null
+  },
+  {
+   "t": 83,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 2646,
+   "error": null
+  },
+  {
+   "t": 84,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.96,
+   "is_new": false,
+   "new": null,
+   "ms": 1707,
+   "error": null
+  },
+  {
+   "t": 85,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.96,
+   "is_new": false,
+   "new": null,
+   "ms": 1626,
+   "error": null
+  },
+  {
+   "t": 86,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 2331,
+   "error": null
+  },
+  {
+   "t": 87,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1747,
+   "error": null
+  },
+  {
+   "t": 88,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 1664,
+   "error": null
+  },
+  {
+   "t": 89,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1708,
+   "error": null
+  },
+  {
+   "t": 90,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1618,
+   "error": null
+  },
+  {
+   "t": 91,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1924,
+   "error": null
+  },
+  {
+   "t": 92,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1752,
+   "error": null
+  },
+  {
+   "t": 93,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.65,
+   "is_new": false,
+   "new": null,
+   "ms": 2916,
+   "error": null
+  },
+  {
+   "t": 94,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.92,
+   "is_new": true,
+   "new": [
+    "sandal",
+    "trắng"
+   ],
+   "ms": 1690,
+   "error": null
+  },
+  {
+   "t": 95,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.92,
+   "is_new": false,
+   "new": null,
+   "ms": 1670,
+   "error": null
+  },
+  {
+   "t": 96,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1429,
+   "error": null
+  },
+  {
+   "t": 97,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1785,
+   "error": null
+  },
+  {
+   "t": 98,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1851,
+   "error": null
+  },
+  {
+   "t": 99,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1412,
+   "error": null
+  },
+  {
+   "t": 100,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1400,
+   "error": null
+  },
+  {
+   "t": 101,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1550,
+   "error": null
+  },
+  {
+   "t": 102,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1144,
+   "error": null
+  },
+  {
+   "t": 103,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2232,
+   "error": null
+  },
+  {
+   "t": 104,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1139,
+   "error": null
+  },
+  {
+   "t": 105,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2369,
+   "error": null
+  },
+  {
+   "t": 106,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1647,
+   "error": null
+  },
+  {
+   "t": 107,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1312,
+   "error": null
+  },
+  {
+   "t": 108,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1781,
+   "error": null
+  },
+  {
+   "t": 109,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1852,
+   "error": null
+  },
+  {
+   "t": 110,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1563,
+   "error": null
+  },
+  {
+   "t": 111,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1439,
+   "error": null
+  },
+  {
+   "t": 112,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2081,
+   "error": null
+  },
+  {
+   "t": 113,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1960,
+   "error": null
+  },
+  {
+   "t": 114,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1780,
+   "error": null
+  },
+  {
+   "t": 115,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2634,
+   "error": null
+  },
+  {
+   "t": 116,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1703,
+   "error": null
+  },
+  {
+   "t": 117,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.65,
+   "is_new": false,
+   "new": null,
+   "ms": 1274,
+   "error": null
+  },
+  {
+   "t": 118,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1907,
+   "error": null
+  },
+  {
+   "t": 119,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1953,
+   "error": null
+  },
+  {
+   "t": 120,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1665,
+   "error": null
+  },
+  {
+   "t": 121,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1743,
+   "error": null
+  },
+  {
+   "t": 122,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2269,
+   "error": null
+  },
+  {
+   "t": 123,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1726,
+   "error": null
+  },
+  {
+   "t": 124,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2013,
+   "error": null
+  },
+  {
+   "t": 125,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2103,
+   "error": null
+  },
+  {
+   "t": 126,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1881,
+   "error": null
+  },
+  {
+   "t": 127,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 3401,
+   "error": null
+  },
+  {
+   "t": 128,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2387,
+   "error": null
+  },
+  {
+   "t": 129,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2379,
+   "error": null
+  },
+  {
+   "t": 130,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2409,
+   "error": null
+  },
+  {
+   "t": 131,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1712,
+   "error": null
+  },
+  {
+   "t": 132,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1995,
+   "error": null
+  },
+  {
+   "t": 133,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": true,
+   "new": [
+    "tshirt",
+    "đen"
+   ],
+   "ms": 1606,
+   "error": null
+  },
+  {
+   "t": 134,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1956,
+   "error": null
+  },
+  {
+   "t": 135,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 1899,
+   "error": null
+  },
+  {
+   "t": 136,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1694,
+   "error": null
+  },
+  {
+   "t": 137,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2438,
+   "error": null
+  },
+  {
+   "t": 138,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1665,
+   "error": null
+  },
+  {
+   "t": 139,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1451,
+   "error": null
+  },
+  {
+   "t": 140,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1937,
+   "error": null
+  },
+  {
+   "t": 141,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1541,
+   "error": null
+  },
+  {
+   "t": 142,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1981,
+   "error": null
+  },
+  {
+   "t": 143,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.96,
+   "is_new": false,
+   "new": null,
+   "ms": 2167,
+   "error": null
+  },
+  {
+   "t": 144,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.96,
+   "is_new": false,
+   "new": null,
+   "ms": 1895,
+   "error": null
+  },
+  {
+   "t": 145,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1628,
+   "error": null
+  },
+  {
+   "t": 146,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2538,
+   "error": null
+  },
+  {
+   "t": 147,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1777,
+   "error": null
+  },
+  {
+   "t": 148,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1867,
+   "error": null
+  },
+  {
+   "t": 149,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1863,
+   "error": null
+  },
+  {
+   "t": 150,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.96,
+   "is_new": false,
+   "new": null,
+   "ms": 1751,
+   "error": null
+  },
+  {
+   "t": 151,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1879,
+   "error": null
+  },
+  {
+   "t": 152,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 3133,
+   "error": null
+  },
+  {
+   "t": 153,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1667,
+   "error": null
+  },
+  {
+   "t": 154,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1752,
+   "error": null
+  },
+  {
+   "t": 155,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1416,
+   "error": null
+  },
+  {
+   "t": 156,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1623,
+   "error": null
+  },
+  {
+   "t": 157,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 2403,
+   "error": null
+  },
+  {
+   "t": 158,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1873,
+   "error": null
+  },
+  {
+   "t": 159,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 2069,
+   "error": null
+  },
+  {
+   "t": 160,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1668,
+   "error": null
+  },
+  {
+   "t": 161,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1869,
+   "error": null
+  },
+  {
+   "t": 162,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2433,
+   "error": null
+  },
+  {
+   "t": 163,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1653,
+   "error": null
+  },
+  {
+   "t": 164,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.85,
+   "is_new": false,
+   "new": null,
+   "ms": 1975,
+   "error": null
+  },
+  {
+   "t": 165,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 6236,
+   "error": null
+  },
+  {
+   "t": 166,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2600,
+   "error": null
+  },
+  {
+   "t": 167,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1582,
+   "error": null
+  },
+  {
+   "t": 168,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.8,
+   "is_new": false,
+   "new": null,
+   "ms": 1884,
+   "error": null
+  },
+  {
+   "t": 169,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": true,
+   "new": [
+    "shirt",
+    "trắng"
+   ],
+   "ms": 2267,
+   "error": null
+  },
+  {
+   "t": 170,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1532,
+   "error": null
+  },
+  {
+   "t": 171,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1398,
+   "error": null
+  },
+  {
+   "t": 172,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2249,
+   "error": null
+  },
+  {
+   "t": 173,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1373,
+   "error": null
+  },
+  {
+   "t": 174,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2611,
+   "error": null
+  },
+  {
+   "t": 175,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1790,
+   "error": null
+  },
+  {
+   "t": 176,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1479,
+   "error": null
+  },
+  {
+   "t": 177,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 1811,
+   "error": null
+  },
+  {
+   "t": 178,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1401,
+   "error": null
+  },
+  {
+   "t": 179,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2146,
+   "error": null
+  },
+  {
+   "t": 180,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1903,
+   "error": null
+  },
+  {
+   "t": 181,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1773,
+   "error": null
+  },
+  {
+   "t": 182,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1652,
+   "error": null
+  },
+  {
+   "t": 183,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1980,
+   "error": null
+  },
+  {
+   "t": 184,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2376,
+   "error": null
+  },
+  {
+   "t": 185,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.96,
+   "is_new": false,
+   "new": null,
+   "ms": 2406,
+   "error": null
+  },
+  {
+   "t": 186,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.85,
+   "is_new": false,
+   "new": null,
+   "ms": 1753,
+   "error": null
+  },
+  {
+   "t": 187,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1757,
+   "error": null
+  },
+  {
+   "t": 188,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2487,
+   "error": null
+  },
+  {
+   "t": 189,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.9,
+   "is_new": true,
+   "new": [
+    "tshirt",
+    "xanh"
+   ],
+   "ms": 1719,
+   "error": null
+  },
+  {
+   "t": 190,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2326,
+   "error": null
+  },
+  {
+   "t": 191,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1748,
+   "error": null
+  },
+  {
+   "t": 192,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1975,
+   "error": null
+  },
+  {
+   "t": 193,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1731,
+   "error": null
+  },
+  {
+   "t": 194,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1804,
+   "error": null
+  },
+  {
+   "t": 195,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1360,
+   "error": null
+  },
+  {
+   "t": 196,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1961,
+   "error": null
+  },
+  {
+   "t": 197,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1881,
+   "error": null
+  },
+  {
+   "t": 198,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2991,
+   "error": null
+  },
+  {
+   "t": 199,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2488,
+   "error": null
+  },
+  {
+   "t": 200,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2039,
+   "error": null
+  },
+  {
+   "t": 201,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1723,
+   "error": null
+  },
+  {
+   "t": 202,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2226,
+   "error": null
+  },
+  {
+   "t": 203,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1736,
+   "error": null
+  },
+  {
+   "t": 204,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1859,
+   "error": null
+  },
+  {
+   "t": 205,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1385,
+   "error": null
+  },
+  {
+   "t": 206,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2380,
+   "error": null
+  },
+  {
+   "t": 207,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2642,
+   "error": null
+  },
+  {
+   "t": 208,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1463,
+   "error": null
+  },
+  {
+   "t": 209,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2069,
+   "error": null
+  },
+  {
+   "t": 210,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 6184,
+   "error": null
+  },
+  {
+   "t": 211,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1885,
+   "error": null
+  },
+  {
+   "t": 212,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2062,
+   "error": null
+  },
+  {
+   "t": 213,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1825,
+   "error": null
+  },
+  {
+   "t": 214,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1516,
+   "error": null
+  },
+  {
+   "t": 215,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1592,
+   "error": null
+  },
+  {
+   "t": 216,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 3274,
+   "error": null
+  },
+  {
+   "t": 217,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.85,
+   "is_new": false,
+   "new": null,
+   "ms": 1848,
+   "error": null
+  },
+  {
+   "t": 218,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2135,
+   "error": null
+  },
+  {
+   "t": 219,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1845,
+   "error": null
+  },
+  {
+   "t": 220,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1931,
+   "error": null
+  },
+  {
+   "t": 221,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.85,
+   "is_new": true,
+   "new": [
+    "tshirt",
+    "nâu"
+   ],
+   "ms": 3427,
+   "error": null
+  },
+  {
+   "t": 222,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2077,
+   "error": null
+  },
+  {
+   "t": 223,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.85,
+   "is_new": false,
+   "new": null,
+   "ms": 1670,
+   "error": null
+  },
+  {
+   "t": 224,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2597,
+   "error": null
+  },
+  {
+   "t": 225,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.85,
+   "is_new": false,
+   "new": null,
+   "ms": 1817,
+   "error": null
+  },
+  {
+   "t": 226,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2033,
+   "error": null
+  },
+  {
+   "t": 227,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1856,
+   "error": null
+  },
+  {
+   "t": 228,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2467,
+   "error": null
+  },
+  {
+   "t": 229,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1858,
+   "error": null
+  },
+  {
+   "t": 230,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 3467,
+   "error": null
+  },
+  {
+   "t": 231,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1809,
+   "error": null
+  },
+  {
+   "t": 232,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1834,
+   "error": null
+  },
+  {
+   "t": 233,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2794,
+   "error": null
+  },
+  {
+   "t": 234,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2269,
+   "error": null
+  },
+  {
+   "t": 235,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1886,
+   "error": null
+  },
+  {
+   "t": 236,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 3313,
+   "error": null
+  },
+  {
+   "t": 237,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2921,
+   "error": null
+  },
+  {
+   "t": 238,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2538,
+   "error": null
+  },
+  {
+   "t": 239,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2858,
+   "error": null
+  },
+  {
+   "t": 240,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2325,
+   "error": null
+  },
+  {
+   "t": 241,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1662,
+   "error": null
+  },
+  {
+   "t": 242,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2578,
+   "error": null
+  },
+  {
+   "t": 243,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2079,
+   "error": null
+  },
+  {
+   "t": 244,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1895,
+   "error": null
+  },
+  {
+   "t": 245,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1958,
+   "error": null
+  },
+  {
+   "t": 246,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.85,
+   "is_new": false,
+   "new": null,
+   "ms": 3895,
+   "error": null
+  },
+  {
+   "t": 247,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2153,
+   "error": null
+  },
+  {
+   "t": 248,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "nâu",
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1912,
+   "error": null
+  },
+  {
+   "t": 249,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.75,
+   "is_new": true,
+   "new": [
+    "sneaker",
+    "trắng"
+   ],
+   "ms": 2982,
+   "error": null
+  },
+  {
+   "t": 250,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1681,
+   "error": null
+  },
+  {
+   "t": 251,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 1.0,
+   "is_new": false,
+   "new": null,
+   "ms": 2125,
+   "error": null
+  },
+  {
+   "t": 252,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2014,
+   "error": null
+  },
+  {
+   "t": 253,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2062,
+   "error": null
+  },
+  {
+   "t": 254,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1602,
+   "error": null
+  },
+  {
+   "t": 255,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 2091,
+   "error": null
+  },
+  {
+   "t": 256,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2876,
+   "error": null
+  },
+  {
+   "t": 257,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2069,
+   "error": null
+  },
+  {
+   "t": 258,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2826,
+   "error": null
+  },
+  {
+   "t": 259,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1900,
+   "error": null
+  },
+  {
+   "t": 260,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1717,
+   "error": null
+  },
+  {
+   "t": 261,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2496,
+   "error": null
+  },
+  {
+   "t": 262,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2224,
+   "error": null
+  },
+  {
+   "t": 263,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1988,
+   "error": null
+  },
+  {
+   "t": 264,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2953,
+   "error": null
+  },
+  {
+   "t": 265,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2191,
+   "error": null
+  },
+  {
+   "t": 266,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2499,
+   "error": null
+  },
+  {
+   "t": 267,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1828,
+   "error": null
+  },
+  {
+   "t": 268,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1614,
+   "error": null
+  },
+  {
+   "t": 269,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.65,
+   "is_new": false,
+   "new": null,
+   "ms": 1901,
+   "error": null
+  },
+  {
+   "t": 270,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1954,
+   "error": null
+  },
+  {
+   "t": 271,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2952,
+   "error": null
+  },
+  {
+   "t": 272,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2566,
+   "error": null
+  },
+  {
+   "t": 273,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2604,
+   "error": null
+  },
+  {
+   "t": 274,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2760,
+   "error": null
+  },
+  {
+   "t": 275,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1671,
+   "error": null
+  },
+  {
+   "t": 276,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1703,
+   "error": null
+  },
+  {
+   "t": 277,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2716,
+   "error": null
+  },
+  {
+   "t": 278,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2299,
+   "error": null
+  },
+  {
+   "t": 279,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2891,
+   "error": null
+  },
+  {
+   "t": 280,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1655,
+   "error": null
+  },
+  {
+   "t": 281,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2704,
+   "error": null
+  },
+  {
+   "t": 282,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2363,
+   "error": null
+  },
+  {
+   "t": 283,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 1768,
+   "error": null
+  },
+  {
+   "t": 284,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1869,
+   "error": null
+  },
+  {
+   "t": 285,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1835,
+   "error": null
+  },
+  {
+   "t": 286,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2780,
+   "error": null
+  },
+  {
+   "t": 287,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 1.0,
+   "is_new": false,
+   "new": null,
+   "ms": 1934,
+   "error": null
+  },
+  {
+   "t": 288,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1405,
+   "error": null
+  },
+  {
+   "t": 289,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1684,
+   "error": null
+  },
+  {
+   "t": 290,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 3203,
+   "error": null
+  },
+  {
+   "t": 291,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 3235,
+   "error": null
+  },
+  {
+   "t": 292,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 2929,
+   "error": null
+  },
+  {
+   "t": 293,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2332,
+   "error": null
+  },
+  {
+   "t": 294,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2093,
+   "error": null
+  },
+  {
+   "t": 295,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "other",
+   "color": "xanh",
+   "confidence": 0.35,
+   "is_new": false,
+   "new": null,
+   "ms": 1999,
+   "error": null
+  },
+  {
+   "t": 296,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1833,
+   "error": null
+  },
+  {
+   "t": 297,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1876,
+   "error": null
+  },
+  {
+   "t": 298,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2089,
+   "error": null
+  },
+  {
+   "t": 299,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 1521,
+   "error": null
+  },
+  {
+   "t": 300,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1367,
+   "error": null
+  },
+  {
+   "t": 301,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 1748,
+   "error": null
+  },
+  {
+   "t": 302,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 1126,
+   "error": null
+  },
+  {
+   "t": 303,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 2128,
+   "error": null
+  },
+  {
+   "t": 304,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 2315,
+   "error": null
+  },
+  {
+   "t": 305,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 964,
+   "error": null
+  },
+  {
+   "t": 306,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 1635,
+   "error": null
+  },
+  {
+   "t": 307,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1635,
+   "error": null
+  },
+  {
+   "t": 308,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2042,
+   "error": null
+  },
+  {
+   "t": 309,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1649,
+   "error": null
+  },
+  {
+   "t": 310,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 4140,
+   "error": null
+  },
+  {
+   "t": 311,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2593,
+   "error": null
+  },
+  {
+   "t": 312,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 1801,
+   "error": null
+  },
+  {
+   "t": 313,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1554,
+   "error": null
+  },
+  {
+   "t": 314,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 1,
+   "is_new": false,
+   "new": null,
+   "ms": 5501,
+   "error": null
+  },
+  {
+   "t": 315,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 1917,
+   "error": null
+  },
+  {
+   "t": 316,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 3701,
+   "error": null
+  },
+  {
+   "t": 317,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2167,
+   "error": null
+  },
+  {
+   "t": 318,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 2415,
+   "error": null
+  },
+  {
+   "t": 319,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2083,
+   "error": null
+  },
+  {
+   "t": 320,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 2605,
+   "error": null
+  },
+  {
+   "t": 321,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2286,
+   "error": null
+  },
+  {
+   "t": 322,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2170,
+   "error": null
+  },
+  {
+   "t": 323,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 1417,
+   "error": null
+  },
+  {
+   "t": 324,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 2087,
+   "error": null
+  },
+  {
+   "t": 325,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 3376,
+   "error": null
+  },
+  {
+   "t": 326,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.99,
+   "is_new": false,
+   "new": null,
+   "ms": 3920,
+   "error": null
+  },
+  {
+   "t": 327,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 1,
+   "is_new": false,
+   "new": null,
+   "ms": 2081,
+   "error": null
+  },
+  {
+   "t": 328,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1876,
+   "error": null
+  },
+  {
+   "t": 329,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1897,
+   "error": null
+  },
+  {
+   "t": 330,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1645,
+   "error": null
+  },
+  {
+   "t": 331,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1821,
+   "error": null
+  },
+  {
+   "t": 332,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2652,
+   "error": null
+  },
+  {
+   "t": 333,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": true,
+   "new": [
+    "sneaker",
+    "đen"
+   ],
+   "ms": 2356,
+   "error": null
+  },
+  {
+   "t": 334,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1842,
+   "error": null
+  },
+  {
+   "t": 335,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2261,
+   "error": null
+  },
+  {
+   "t": 336,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2540,
+   "error": null
+  },
+  {
+   "t": 337,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1762,
+   "error": null
+  },
+  {
+   "t": 338,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.96,
+   "is_new": false,
+   "new": null,
+   "ms": 1752,
+   "error": null
+  },
+  {
+   "t": 339,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1880,
+   "error": null
+  },
+  {
+   "t": 340,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 2758,
+   "error": null
+  },
+  {
+   "t": 341,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 1753,
+   "error": null
+  },
+  {
+   "t": 342,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2634,
+   "error": null
+  },
+  {
+   "t": 343,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 1856,
+   "error": null
+  },
+  {
+   "t": 344,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2077,
+   "error": null
+  },
+  {
+   "t": 345,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 1350,
+   "error": null
+  },
+  {
+   "t": 346,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2002,
+   "error": null
+  },
+  {
+   "t": 347,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2095,
+   "error": null
+  },
+  {
+   "t": 348,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1564,
+   "error": null
+  },
+  {
+   "t": 349,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.92,
+   "is_new": false,
+   "new": null,
+   "ms": 2298,
+   "error": null
+  },
+  {
+   "t": 350,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2114,
+   "error": null
+  }
+ ]
+}
