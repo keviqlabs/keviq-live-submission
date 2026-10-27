@@ -82,6 +82,8 @@ def retire_events(feed, sid: str) -> list[dict]:
         if last["status"] == "retired":
             continue
         fields = {f: last[f] for f in CARD_FIELDS if f not in ("version", "status")}
+        # the runner closes it, not the seller: edited_by is not copied
+        fields["provenance"] = {**last["provenance"], "edited_by": None}
         v = last["version"] + 1
         out.append(make_event("card", sid, now_ms(), last["source"], event_id=f"{sid}.retire-{card_id}-v{v}",
                               caused_by=[last["event_id"]], version=v, status="retired", **fields))  # fmt: skip

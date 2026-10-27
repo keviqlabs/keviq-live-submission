@@ -2,9 +2,9 @@
 
 Shop, one tap each, `delay_s` after it sees the event:
 - price_proposal: accept it through the price route when the item in the host's hands at the line (windows.json)
-  is the card's item and the heard price is one of that item's gold prices; type the gold price when it is the
-  card's item but the heard price is not a gold price and the card does not hold the gold price; otherwise drop it
-  (no call). A 409 rereads the card and tries once more.
+  is the card's item and the heard price is right for it (Gold.right_price, the scorer's rule); type the gold price
+  at the end of the line when it is the card's item but the heard price is not right and the card does not hold
+  that price; otherwise drop it (no call). A 409 rereads the card and tries once more.
 - order in NEEDS_SELLER: reject it when the reason is stock; otherwise approve it at the live card price (the
   order's card version when the live one has no price), or at the gold price when neither has one.
 Customer: each messenger-k line goes out at t0 + not_before_ms, once the message it answers (`after`) was sent for
@@ -85,6 +85,19 @@ class Gold:
             return p["price_fixed"]
         return p.get("price_first")
 
+    def right_price(self, sku: str | None, heard: int | None, start: int, end: int) -> bool:
+        """The one rule the shop and the scorer share (HQ 03:48): the gold price at the end of the line, or either
+        gold price of the item when the line [start, end] overlaps the window where the host says the change."""
+        said = self.windows["price_changes"].get(sku)
+        return (
+            sku is not None
+            and heard is not None
+            and (
+                heard == self.price_at(sku, end)
+                or bool(said and start <= said[1] and end >= said[0] and heard in self.prices(sku))
+            )
+        )
+
 
 @dataclass
 class Feed:
@@ -139,6 +152,14 @@ class Loops:
         hit = self.of(ts)
         return ts - hit[1] if hit else None
 
+    def span(self, line: dict | None) -> tuple[int | None, int | None]:
+        """Loop offsets of a speech line's start and end (the end is the start when it has none)."""
+        if not line or line.get("start_ms") is None:
+            return None, None
+        start = self.offset(line["start_ms"])
+        end = self.offset(line["end_ms"]) if line.get("end_ms") is not None else None
+        return start, start if end is None else end
+
 
 @dataclass
 class Shop:
@@ -172,17 +193,16 @@ class Shop:
 
     def judge(self, p: dict) -> tuple[str, int | None, dict]:
         """("accept" | "type" | "drop", price, facts) for a proposal, from the gold only."""
-        line = self.feed.by_id.get(p["speech_event_id"])
-        line_off = self.loops.offset(line["start_ms"]) if line else None
+        start, end = self.loops.span(self.feed.by_id.get(p["speech_event_id"]))
         card_off = self.card_off(p["card_id"])
-        held = self.gold.held_at(line_off) if line_off is not None else None
+        held = self.gold.held_at(start) if start is not None else None
         item = self.gold.card_item(card_off) if card_off is not None else None
         facts = {"held": held, "card_item": item, "right_card": bool(held) and held == item}
         if not facts["right_card"]:
             return "drop", None, facts
-        if p["heard_price"] in self.gold.prices(held):
+        if self.gold.right_price(held, p["heard_price"], start, end):
             return "accept", p["heard_price"], facts
-        want = self.gold.price_at(held, line_off)
+        want = self.gold.price_at(held, end)
         latest = self.feed.latest(p["card_id"]) or {}
         if want is not None and latest.get("price") != want:
             return "type", want, facts

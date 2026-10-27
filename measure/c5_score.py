@@ -17,7 +17,8 @@ from orders.flow import order_id_for
 WAIT_LINE = re.compile(r"price wait: (\S+) reason (\S+) candidates (\S+); session (\S+) waits ?(.*)$")
 TARGETS = {"order_recall": 0.9, "reference": 0.9, "reference_n": 50, "phone_s": 5, "ask_s": 5, "iph": 10}
 DRAFTED = {"confirm_order", "needs_seller", "ask_customer"}  # gold actions that start an order or a question
-REFERENCES = ("current_card", "previous_card")  # the gold reference kinds core.c3 scores
+# the A2 denominator: current / previous with a gold item; unresolved is scored in order_ids
+REFERENCES = ("current_card", "previous_card")
 MISSED_MS = 60_000
 SITUATION_TESTS = {  # situation -> the test files of the "mã đã kiểm" column (pl-report-2026-10-27-2300)
     1: ["tests/test_card.py", "tests/test_card_handoff.py", "tests/test_store_sse.py"],
@@ -132,11 +133,12 @@ class Run:
 
 
 def references(run: Run, rows: list[dict]) -> dict:
-    """core.c3's definition on the C5 gold: the latest label's order_draft.referenced_card_id against the item the
-    gold row names. n is every posted order comment whose gold names an item and a current or previous card; a
-    comment with no card is wrong and stays in n. core.c3 is not called as-is: its gold holds a card id, the C5 gold
-    an item, so the card -> item map (Run._item) is this module's. `by_source` and `disagree` set the label's card
-    beside the one its order or ask_variant question carries (Run.card_of); they do not change the score."""
+    """core.c3's field, adapted to the C5 gold: the latest label's order_draft.referenced_card_id against the item
+    the gold row names. n (the A2 denominator) is every posted order comment whose gold names an item and a current
+    or previous card (unresolved is scored in order_ids); a comment with no card is wrong and stays in n. core.c3 is
+    not called as-is: its gold holds a card id, the C5 gold an item, so the card -> item map (Run._item) is this
+    module's. `by_source` and `disagree` set the label's card beside the one its order or ask_variant question
+    carries (Run.card_of); they do not change the score."""
     out = {
         "n": 0,
         "right": 0,
@@ -228,14 +230,9 @@ def proposals(run: Run) -> dict:
             )  # fmt: skip
             closed = c
             break
-        line = run.by_id.get(p["speech_event_id"]) or {}
-        off = run.clock.offset(line["start_ms"]) if line.get("start_ms") is not None else None
-        held = run.gold.held_at(off) if off is not None else None
-        said = run.gold.windows["price_changes"].get(held) or []
-        right_price = held is not None and (
-            p["heard_price"] == run.gold.price_at(held, off)
-            or (said and said[0] <= off <= said[1] and p["heard_price"] in run.gold.prices(held))
-        )
+        start, end = run.clock.span(run.by_id.get(p["speech_event_id"]))
+        held = run.gold.held_at(start) if start is not None else None
+        right_price = held is not None and run.gold.right_price(held, p["heard_price"], start, end)
         right_card = held is not None and run.item.get(p["card_id"]) == held
         rows.append({
             "event_id": p["event_id"], "loop": run.loop(p["ts_ms"]), "card_id": p["card_id"],
@@ -288,12 +285,28 @@ def needs_seller(run: Run, catalog: list[dict]) -> dict:
             "total": fmt(total), "reasons": dict(raw)}  # fmt: skip
 
 
+def seller_price(run: Run, e: dict) -> bool:
+    """A card version the seller made that changes the price: edited_by "seller" and a price other than the
+    version before it. Worker and retire versions copy edited_by (DECISIONS) at the same price, so they do not."""
+    if e["type"] != "card" or e["provenance"].get("edited_by") != "seller":
+        return False
+    before = run.version(e["card_id"], e["version"] - 1)
+    return before is None or before.get("price") != e.get("price")
+
+
+def intervention(run: Run, e: dict) -> bool:
+    return seller_price(run, e) or (e["type"] == "order" and e["actor"] == "seller")
+
+
 def interventions(run: Run, c5: dict) -> dict:
-    """core.c5's total, broken down by cause; system questions to the customer listed beside it, not in it."""
+    """The C5 interventions (HQ 03:48): a seller price version (seller_price) or a seller order decision, with the
+    breakdown by cause summing to the total. core.c5 counts every version with edited_by "seller", so it also
+    counts the copies; its number stays beside this one as `core_c5`. The 10 / h threshold is unchanged. System
+    questions to the customer are listed beside the total, not in it."""
     ids = {e["event_id"] for e in run.events if e["type"] == "price_proposal"}
     parts = Counter()
     for e in run.events:
-        if e["type"] == "card" and e["provenance"].get("edited_by") == "seller":
+        if seller_price(run, e):
             parts["price_used" if set(e.get("caused_by") or []) & ids else "price_typed"] += 1
         elif e["type"] == "order" and e["actor"] == "seller":
             before = [
@@ -303,9 +316,13 @@ def interventions(run: Run, c5: dict) -> dict:
             ]
             why = cause(before[-1].get("reason")) if before else "no_needs_seller"
             parts[f"order:{why}->{e['state']}"] += 1
+    total = sum(parts.values())
+    hours = (
+        (max(map(core.when, run.events)) - min(map(core.when, run.events))) / 3_600_000 if run.events else 0
+    )
     asks = sum(e["type"] == "message_out" and e["template"] == "ask_variant" for e in run.events)
-    return {"total": c5["interventions"], "per_hour": c5["interventions_per_hour"], "by_cause": dict(parts),
-            "sum_matches": sum(parts.values()) == c5["interventions"], "ask_customer_messages": asks}  # fmt: skip
+    return {"total": total, "per_hour": total / hours if hours else None, "by_cause": dict(parts),
+            "core_c5": c5["interventions"], "ask_customer_messages": asks}  # fmt: skip
 
 
 def missed(run: Run, rows: list[dict]) -> dict:

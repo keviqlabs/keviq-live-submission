@@ -9,6 +9,7 @@ from measure.c5_score import (
     TARGETS,
     WAIT_LINE,
     Run,
+    intervention,
     interventions,
     missed,
     needs_seller,
@@ -52,11 +53,14 @@ def situations(run: Run, rows: list[dict], msgs: list[dict], sent: dict, parts: 
             cases.append(("pass", run.cards[card][0]["event_id"]) if card else ("fail", None))
     out[1] = verdict(cases, f"items with a card per loop out of {len(items)}")
 
-    cases = []
+    cases, other = [], []  # HQ 03:48: a wrong proposal fails only when it is used; "other" is not scored
     for p in (p for p in parts["proposals"]["rows"] if p["had_price"]):
-        ok = p["outcome"] in ("used", "fixed") or (p["wrong"] and p["outcome"] == "dropped")
+        if p["outcome"] == "other":
+            other.append(p["event_id"])
+            continue
+        ok = p["outcome"] != "used" if p["wrong"] else p["outcome"] in ("used", "fixed", "replaced")
         cases.append(("pass" if ok else "fail", p["closed_by"] or p["event_id"]))
-    out[2] = verdict(cases, "proposals on a card that already had a price")
+    out[2] = verdict(cases, "proposals on a card that already had a price") | {"other": other}
 
     ref = parts["references"]
     prev = ref["by_kind"].get("previous_card", {"n": 0, "right": 0})
@@ -190,8 +194,7 @@ def per_loop(run: Run, rows: list[dict], parts: dict) -> list[dict]:
             "cancelled": sum(any(e["state"] == "CANCELLED" for e in run.orders[o]) for o in mine),
             "needs_seller": parts["needs_seller"]["per_loop"].get(k, {}).get("entries", 0),
             "would_be": parts["needs_seller"]["per_loop"].get(k, {}).get("would_be", 0),
-            "interventions": sum(in_k(e) and ((e["type"] == "card" and e["provenance"].get("edited_by") == "seller")
-                                              or (e["type"] == "order" and e["actor"] == "seller")) for e in run.events),
+            "interventions": sum(in_k(e) and intervention(run, e) for e in run.events),
             "proposals": sum(p["loop"] == k for p in parts["proposals"]["rows"]),
             "waits": sum(parts["waits"]["per_loop"].get(k, {}).get("lines", {}).values()),
             "missed": sum(run.loop(run.comments[c]["ts_ms"]) == k for c in missed_ids),
