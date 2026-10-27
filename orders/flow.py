@@ -561,10 +561,38 @@ def receipt_payload(order: dict, card: dict | None, receipt: dict, address: str 
     }
 
 
+def offers(card: dict, variant: dict) -> bool:
+    """The card lists the line's variant; a card without variants fits only a line without size and color."""
+    if not card.get("variants"):
+        return variant["size"] is None and variant["color"] is None
+    return bool(variants.hit_indexes(card, variant))
+
+
+def card_change(view: View, order: dict, at: int) -> tuple[dict | None, str | None]:
+    """The card version current at `at` and, when it differs in price from the version current when the
+    confirmation was sent (CONFIRM_SENT ts_ms, a seller approval included) or no longer lists the line's variant,
+    why the order goes back to the seller. A change between the comment and the send is not one: the order keeps
+    the comment-time price it was sent with."""
+    line = order["lines"][0]
+    card_id = line["card_id"]
+    seen = card_at(view.cards, card_id, order["ts_ms"]) or view.card(card_id, line["card_version"])
+    latest = card_at(view.cards, card_id, at)
+    if seen is None or latest is None or latest["version"] == seen["version"]:
+        return latest, None
+    changed = f"card {card_id} changed before the customer's ok"
+    old, new = f"v{seen['version']}", f"v{latest['version']}"
+    if latest["price"] != seen["price"]:
+        return latest, f"{changed}: {old} {vnd(seen['price'])} -> {new} {vnd(latest['price'])}"
+    if offers(seen, line["variant"]) and not offers(latest, line["variant"]):
+        return latest, f"{changed}: {new} no longer lists {variant_text(line['variant'])} ({old} did)"
+    return latest, None
+
+
 async def on_reply(trigger: dict, view: View, messenger, now: int) -> list[dict]:
     """The customer's yes / no / keep / variant pick in Messenger. Only the customer's own thread can confirm or
     cancel its order, and only a reply naming the order (CANCEL:<order_id>) cancels; a plain "huỷ" gets
-    ask_cancel. Other text may answer an open ask_variant question (on_variant_reply)."""
+    ask_cancel. Other text may answer an open ask_variant question (on_variant_reply). A yes after the card's
+    price changed, or after its new version dropped the line's variant, goes to the seller (card_change)."""
     payload = trigger.get("payload") or {}
     kind, order_id = customer_reply(trigger.get("template"), payload)
     thread = trigger["thread_ref"]
@@ -580,6 +608,7 @@ async def on_reply(trigger: dict, view: View, messenger, now: int) -> list[dict]
     if order is None or is_fixture(order["event_id"]) or thread_for(order["customer_ref"]) != thread:
         return []
     order_id, tid = order["order_id"], trigger["event_id"]
+    causes = [order["event_id"]]
     if kind == "no":
         if order["state"] in TERMINAL:
             return []  # a repeated CANCEL: no second transition, no second message
@@ -590,23 +619,35 @@ async def on_reply(trigger: dict, view: View, messenger, now: int) -> list[dict]
     elif order["state"] == "CONFIRM_SENT":
         line = order["lines"][0]
         card = view.card(line["card_id"], line["card_version"])
-        price = card["price"] if card and card["price"] is not None else line["unit_price"]
-        receipt = {
-            "card_id": line["card_id"],
-            "card_version": line["card_version"],
-            "image_url": (card or {}).get("image_url"),
-            "price": price,
-        }
-        ev = transition(order, "CONFIRMED", "customer", "customer confirmed in Messenger", receipt=receipt)
-        address = payload.get("address")
-        msg = await messenger.send(thread, "receipt", receipt_payload(ev, card, receipt, address))
+        # A change known when the ok is handled counts, even if written just after the customer's ok.
+        latest, changed = card_change(view, order, max(trigger["ts_ms"], now))
+        moved = latest is not None and latest["version"] != line["card_version"]
+        if moved:
+            causes.append(latest["event_id"])
+        if changed:
+            ev = transition(order, "NEEDS_SELLER", "assistant", f"{changed}; the customer confirms again")
+            msg = await messenger.send(thread, "waiting_for_shop", waiting_payload(ev, card, None))
+        else:
+            price = card["price"] if card and card["price"] is not None else line["unit_price"]
+            receipt = {
+                "card_id": line["card_id"],
+                "card_version": line["card_version"],
+                "image_url": (card or {}).get("image_url"),
+                "price": price,
+            }
+            reason = "customer confirmed in Messenger"
+            if moved:
+                reason += f" (order on card v{line['card_version']}, v{latest['version']} at the ok)"
+            ev = transition(order, "CONFIRMED", "customer", reason, receipt=receipt)
+            address = payload.get("address")
+            msg = await messenger.send(thread, "receipt", receipt_payload(ev, card, receipt, address))
     elif order["state"] == "NEEDS_SELLER":
         card = view.card(order["lines"][0]["card_id"], order["lines"][0]["card_version"])
         msg = await messenger.send(thread, "waiting_for_shop", waiting_payload(order, card, None))
         return [stamp(msg, step_id(tid, order_id, "msg"), now, [order["event_id"]])]
     else:
         return []
-    first = stamp(ev, step_id(tid, order_id, "reply"), now, [order["event_id"]])
+    first = stamp(ev, step_id(tid, order_id, "reply"), now, causes)
     return [first, stamp(msg, step_id(tid, order_id, "msg"), now + 1, [first["event_id"]])]
 
 
