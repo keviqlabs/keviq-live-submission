@@ -2,6 +2,28 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-27 — price proposals and the console price route
+
+**D-024 A different spoken price on a priced card becomes a `price_proposal` for the seller; a seller price reaches the card only through a console route.** Contract change: one new event type, and two refusals at `POST /api/sessions/{id}/events` that no current producer triggers (in the seed sessions no priced card changes price and no `(card_id, version)` repeats); `v` stays 1.
+
+- New event `price_proposal` (`contracts/events/price_proposal.schema.json`): `card_id`, `card_version`, `current_price`, `heard_price` (1000…100 000 000, which covers both speech paths: the rule reader takes 10 000 and up, the model reply 1000 and up), `speech_event_id`. `caused_by` is required and lists the speech. Added to the envelope `type` enum.
+- Who said it: `speech` carries no speaker identity, so the proposal names the speech event; there is no speaker field. When: the envelope `ts_ms` is the time of the speech.
+- New console route `POST /api/sessions/{id}/cards/{card_id}/price` (`contracts/README.md`, "Card versions"): writes `card` `version + 1` with status `edited` and `edited_by: "seller"`; the same price writes nothing and answers 200 before the version check, so a repeated tap is safe; 404, 409 and 422 as listed there.
+- `(card_id, version)` is unique in a session: the store refuses a card version that already exists (409), and the writer reads the latest version and applies its change on top, or drops it.
+- `POST /api/sessions/{id}/events` refuses (409) a `card` whose price differs from the card's latest non-null price. A priced card changes price only through the route, which writes through the store.
+- A proposal is open while the card is not retired, its latest price equals the proposal's `current_price`, and no seller version of the card is newer than the proposal's `card_version`. There is no dismiss event; a new seller price closes older proposals, also when the price later returns to the old value.
+- Proposals appear in the console only. The overlay and every customer message stay as they are.
+
+Why: after D-023 the shop's real price changes (3 in the test1 transcript) stay at the old price, with no way to apply them. This gives the seller one tap to apply a heard price (C4), while speech still never changes a priced card.
+
+Permissions: `contracts/permissions.json` does not change. The route is a seller action in the console, like the card edit in C4; a separate permission row for it is not part of this change. As with the order routes, anyone with console access decides; there is no seller identity.
+
+Why the two refusals: without them `POST …/events` could change a priced card's price outside the route, and a worker bump and a route write could take the same version, so an order pin would match two cards and the later `ts_ms` would hide the seller price (found in review of PR #19).
+
+Not in this change: the worker that emits the event, the route code, the two refusals in code and the console UI (they follow in separate PRs with tests); a dismiss button.
+
+Known limit: a worker version written just after a seller version can carry an earlier `ts_ms` (its speech or frame time). "Live at t" orders versions by `(ts_ms, version)`, so from the seller's `ts_ms` on, the seller version stays live and that worker version's other changes (sizes, colours) show only from the next version. Between that earlier `ts_ms` and the seller's, the worker version is live, so the seller price applies a moment before the tap. The price stays the seller's, because the worker version copies it and anything else is refused.
+
 ## 2026-10-27 — spoken price on a priced card
 
 **D-023 Speech never changes the price of a card that already has one.** A spoken price sets the price only on a card whose price is null, as before: the draft goes live. On a card with a price (live or edited), a different spoken price changes nothing on the card. `worker/brain/card.py` logs one `price proposal` line with the card id, version, current price, heard price and speech event id; the spoken text is not logged. Sizes and colours from the same speech still apply.

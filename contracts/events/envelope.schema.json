@@ -68,6 +68,7 @@
         "message_out",
         "model_call",
         "order",
+        "price_proposal",
         "product_seen",
         "speech"
       ]
