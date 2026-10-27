@@ -44,12 +44,14 @@ Order state machine (`states.py`), permission rules (`rules.py`), the order flow
    `PICK:<order_id>#<i>` (`i` indexes that version's variants; order ids never contain `#`). Only the missing part
    is asked (size, color, or both). Nothing is taken from a model, from "như bạn trên" or from another customer's
    order.
-2. A `PICK` from that thread, or text naming exactly one of the listed variants by its missing part ("39",
-   "size M", "màu đen"; whole words only), drafts the order at that version's price. Then the usual rules apply:
+2. A `PICK` from that thread, or text that plainly names exactly one of the listed variants by its missing part,
+   drafts the order at that version's price. Plain means whole words, the value right after its word ("size 39",
+   "cỡ 40", "màu đen") or a reply that is little more than the value ("Lấy 40 nha", "38"), no refusal
+   ("không lấy size 40", "ko lấy 39") and no second listed value. Then the usual rules apply:
    stock held by other orders, approval gates, `CONFIRM_SENT` + `confirm_order` (sent by PSID, since the comment
    already had its private reply) or `NEEDS_SELLER` + `waiting_for_shop`.
-3. A size not on the card, a bogus pick, "ok" or unclear text asks again, by PSID, up to 3 questions in all; no
-   order is made. Text never picks when the thread has two open questions. A cancel phrase ("thôi không lấy
+3. A size not on the card, a bogus pick, "ok", a refusal, a number that is an address or a question ("giao 40
+   Lê Lợi", "39 còn không") or other unclear text asks again, by PSID, up to 3 questions in all; no order is made. Text never picks when the thread has two open questions. A cancel phrase ("thôi không lấy
    nữa") ends it with no message. Another customer's reply is ignored.
 4. If the customer cannot be messaged (24 h) or no listed variant has stock left, nothing is asked: the order goes
    to the seller (`NEEDS_SELLER`) as before.
