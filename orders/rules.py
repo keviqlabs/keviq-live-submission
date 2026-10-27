@@ -56,6 +56,19 @@ def can_message(last_customer_message_ms: int | None, now_ms: int) -> Decision:
     return Decision(True, False, "within 24h window")
 
 
+def price_change(new_unit_price: int | None, card_price: int | None, actor: str) -> Decision:
+    """A line price other than the card price is a discount or price change: only the seller sets it."""
+    if not isinstance(new_unit_price, int) or isinstance(new_unit_price, bool) or new_unit_price < 0:
+        return Decision(False, False, f"unit price {new_unit_price!r} is not a non-negative integer")
+    if new_unit_price == card_price:
+        return Decision(True, False, f"unit price {new_unit_price} = card price")
+    if authorize("discount", actor=actor).allowed:
+        return Decision(True, False, f"seller set unit price {new_unit_price} (card price {card_price})")
+    return Decision(
+        False, True, f"unit price {new_unit_price} != card price {card_price}: needs seller approval"
+    )
+
+
 def evaluate_draft(
     unit_price: int | None,
     card_price: int | None,
