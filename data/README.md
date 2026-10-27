@@ -34,12 +34,7 @@ Labeling guide: `complaint` includes problems with the stream itself (lag, froze
 
 ## comments/c5/ (test1 played 5 times)
 
-- `stream-{1..5}.jsonl`: 100 synthetic comments per loop of test1 (351.5 s). `comment_id` is `c5-<k>-NNN`, `ts_ms` counts from the loop start, `arrives_ms` marks a late comment. Gold per row: `label`, `has_phone`, `has_link`, and for an order `order` (`product` SP01–SP10, `size`, `color`, `qty`, `reference_kind`) plus `expected_action`. `situations` lists which C5 situations the row is meant to trigger.
-- `messenger-{1..5}.jsonl`: the customer's Messenger replies for loop k: which order, after which shop message (`after`), not before `not_before_ms`, as a quick reply kind (`CONFIRM`/`CANCEL`, the runner appends `:<order_id>`) or a short text, and the order status expected after it.
-- `windows.json`: segment bounds, product codes and when a fixed price was said, copied from the local test1 gold (`data/local/test1`, not committed) by `python data/comments/c5/author_c5.py windows PATH`. Nothing heard in the video is copied.
-- `author_c5.py` writes the streams and scripts from `windows.json` alone, with no randomness. With the local gold present (`C5_GOLD` or the default path) it also checks the orders against its stock and prices. `tests/test_c5_streams.py` checks the minimum counts, the phone pattern, the windows and that the files match the generator.
-
-Timing: a comment about the item on screen sits from its window start + 8 s to its end − 5 s; a "vừa nãy" comment sits within 60 s after the switch, at least 8 s in. Labels are fixed by code, as in `author.py` (`label_source: template`). New `expected_action` values here: `confirm_order` (the customer confirms in Messenger), and on `other` rows `confirm_cancel` and `none`, as above.
+Simulated comment streams (100 per loop) and the customer's Messenger replies for 5 loops of test1, written by `author_c5.py`. Files, gold fields and timing: `comments/c5/README.md`.
 
 ## Local media (never committed)
 
