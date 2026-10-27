@@ -2,6 +2,7 @@
 
 Two implementations with one interface: MemoryStore (tests, no database) and PgStore (PostgreSQL).
 Every append is idempotent on event_id and projects into the read tables in the same transaction.
+A card version that the card already has under another event_id is refused (VersionTaken) and nothing is stored.
 """
 
 import asyncio
@@ -18,6 +19,10 @@ LIVE_STATUSES = ("live", "edited")
 # Sessions written by pytest and the smoke run (D-016). Their spend is shown apart but still counts toward
 # the caps: a model_call is money already billed, whichever session caused it.
 TEST_SESSION_PREFIXES = ("pytest", "smoke-")
+
+
+class VersionTaken(Exception):
+    """The card already has this version under another event_id (D-024)."""
 
 
 def vn_day_bounds(ms: int) -> tuple[int, int]:
@@ -89,6 +94,11 @@ class MemoryStore:
         body = _strip_meta(event)
         if body["event_id"] in self._by_id:
             return self._by_id[body["event_id"]], False
+        if body["type"] == "card" and any(
+            c["card_id"] == body["card_id"] and c["version"] == body["version"]
+            for c in self._cards.get(body["session_id"], [])
+        ):
+            raise VersionTaken(f"{body['card_id']} v{body['version']}")
         seq = len(self._events) + 1
         self._events.append(_with_meta(body, seq, now_ms()))
         self._by_id[body["event_id"]] = seq
@@ -233,9 +243,9 @@ class PgStore:
     async def _project(self, e: dict) -> None:
         sid, ex = e["session_id"], self._conn.execute
         if e["type"] == "card":
-            await ex(
+            cur = await ex(
                 "INSERT INTO cards (session_id, card_id, version, ts_ms, status, sku, price, event_id, body)"
-                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+                " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING RETURNING version",
                 (
                     sid,
                     e["card_id"],
@@ -248,6 +258,8 @@ class PgStore:
                     json.dumps(e),
                 ),
             )
+            if await cur.fetchone() is None:  # raising here rolls back the event insert too
+                raise VersionTaken(f"{e['card_id']} v{e['version']}")
         elif e["type"] == "comment":
             await ex(
                 "INSERT INTO comments (session_id, comment_id, ts_ms, user_ref, text) VALUES (%s,%s,%s,%s,%s)"
