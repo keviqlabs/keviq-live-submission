@@ -53,7 +53,7 @@ async def test_price_said_before_any_card_writes_nothing(mem_app):
     runner = runner_with(client, [])
     ts = now_ms()
     assert await hear(client, store, runner, said("sp-1", "đôi này 450 nghìn", ts)) == []
-    [draft] = await run(client, runner, seen("ps-a", "sneaker", "trắng", ts + 2000))
+    [draft] = await hear(client, store, runner, seen("ps-a", "sneaker", "trắng", ts + 2000))
     assert (draft["status"], draft["price"]) == ("draft", None)
 
 
@@ -114,7 +114,7 @@ async def test_seller_edited_price_is_not_repriced_by_speech(mem_app, caplog):
     _, store, client = mem_app
     runner = runner_with(client, model_down(1))
     ts = now_ms()
-    [draft] = await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
+    [draft] = await hear(client, store, runner, seen("ps-a", "sneaker", "trắng", ts))
     edit = {k: draft[k] for k in card.CARD_FIELDS} | {"version": 2, "price": 399000, "status": "edited"}
     await run(client, runner, make_event("card", SID, ts + 100, "replay", event_id="console-1", **edit))
     with caplog.at_level(logging.INFO, logger="worker.card"):

@@ -9,7 +9,7 @@
   becomes a `price_proposal` for the seller, once per heard price while the card's price stays the same
   (D-024). Each change is a new version whose provenance lists the speech event ids (C4).
 - A version another writer already took (409, D-024: the seller's price route) is applied on top of the card's
-  highest version once, or dropped; the number is never reused.
+  highest version once, or dropped; the number is never reused. product_seen's versions go the same way.
 - When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background; the frame
   cut to SAM's box with SAM's mask as alpha (real pixels, nothing retouched, D-020) arrives as the next version's
   image_url.
@@ -166,17 +166,17 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
     s = SESSIONS.setdefault(event["session_id"], Session())
     category, color = event["category"], (event.get("attributes") or {}).get("color")
     item = match(category, color)
-    out = []
+    out = []  # (version, its changes), in posting order
     async with s.lock:
         prev = s.cards.get(s.current) if s.current else None
         same = item and next(
             (c for c in s.cards.values() if c["sku"] == item["sku"] and c["status"] != "retired"), None
         )
         if prev and prev["status"] == "draft" and prev is not same and not s.reading.get(prev["card_id"]):
-            out.append(s.bump(prev["card_id"], status="retired"))
+            out.append((s.bump(prev["card_id"], status="retired"), {"status": "retired"}))
         if same:
             prov = {**same["provenance"], "frame_ts_ms": event["frame_ts_ms"]}
-            card = s.bump(same["card_id"], provenance=prov)
+            card, changes = s.bump(same["card_id"], provenance=prov), {"provenance": prov}
         else:
             cid = card_id_for(event["event_id"], s.cards)
             variants = variants_of(item, color)
@@ -199,7 +199,7 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
                     "edited_by": None,
                 },
             }
-            s.cards[cid] = copy.deepcopy(card)
+            s.cards[cid], changes = copy.deepcopy(card), {}
         s.meta[card["card_id"]] = {
             "category": category,
             "color": color,
@@ -207,9 +207,11 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
             "frame_event_id": (event.get("caused_by") or [None])[0],
         }
         s.current = card["card_id"]
-        out.append(card)
+        out.append((card, changes))
     infer = (start, now_ms())
-    return [partial(c, infer) for c in out]
+    for new, changes in out:  # one at a time, outside the lock: a 409 reads the store and takes the lock
+        await post_version(event, ctx, s, new, changes, infer)
+    return []
 
 
 def speech_input(text: str, card: dict) -> list[dict]:
@@ -343,8 +345,8 @@ async def attach_cutout(event: dict, ctx, s: Session, cid: str) -> None:
 
 
 async def post_version(event, ctx, s: Session, new: dict, changes: dict, infer, extra=None) -> dict | None:
-    """Post a bumped version. On 409 another writer has the number (D-024): read the card's highest version,
-    apply `changes` on top of it once, or drop them. Returns the version stored, or None."""
+    """Post a card version. On 409 another writer has the number or the price (D-024): follow the card's highest
+    version in the store, apply `changes` on top of it once, or drop them. Returns the version stored, or None."""
     cid = new["card_id"]
     for attempt in (1, 2):
         try:
@@ -360,7 +362,7 @@ async def post_version(event, ctx, s: Session, new: dict, changes: dict, infer, 
             break
         latest = await latest_card(ctx, event["session_id"], cid)
         async with s.lock:
-            if latest and latest["version"] >= s.cards[cid]["version"]:
+            if latest:  # also when it is below a number this worker holds but never stored
                 s.follow(latest)
             rest = on_top(s.cards[cid], changes)
             if not rest:
@@ -372,10 +374,11 @@ async def post_version(event, ctx, s: Session, new: dict, changes: dict, infer, 
 
 
 async def on_card(event: dict, ctx) -> list[dict]:
-    """Follow versions made elsewhere (console edits) so the next version number is right."""
+    """Follow versions made elsewhere (console edits) so the next version number is right. A stored version with
+    the number the worker holds wins: the worker's own comes back unchanged, another writer's took the number."""
     s = SESSIONS.get(event["session_id"])
     cid = event["card_id"]
-    if s and cid in s.cards and event["version"] > s.cards[cid]["version"]:
+    if s and cid in s.cards and event["version"] >= s.cards[cid]["version"]:
         s.follow(event)
     return []
 

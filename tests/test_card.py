@@ -71,7 +71,8 @@ async def settle() -> None:
 
 
 async def hear(client, store, runner: Runner, event: dict) -> list[dict]:
-    """Speech is read in the background: the handler returns nothing, the cards come once the read is done."""
+    """The handlers post their own versions (speech after a background read) and return nothing; the cards come
+    from the store once the reads are done."""
     assert await run(client, runner, event) == []
     await settle()
     return [c for c in await cards_in(store) if (c.get("caused_by") or [None])[0] == event["event_id"]]
@@ -80,7 +81,7 @@ async def hear(client, store, runner: Runner, event: dict) -> list[dict]:
 async def test_new_product_opens_a_draft_from_the_catalog(mem_app):
     _, store, client = mem_app
     ts = now_ms()
-    [out] = await run(client, runner_with(client, []), seen("ps-a", "sneaker", "trắng", ts))
+    [out] = await hear(client, store, runner_with(client, []), seen("ps-a", "sneaker", "trắng", ts))
     assert out["card_id"] == "card-a" and out["version"] == 1 and out["status"] == "draft"
     assert out["sku"] == "GIAY-01" and out["price"] is None and out["stock"] == 6
     assert out["caused_by"] == ["ps-a"]
@@ -90,19 +91,19 @@ async def test_new_product_opens_a_draft_from_the_catalog(mem_app):
 
 
 async def test_unknown_item_gets_a_named_draft_without_sku(mem_app):
-    _, _, client = mem_app
-    [out] = await run(
-        client, runner_with(client, []), seen("ps-x", "sneaker", None, now_ms())
+    _, store, client = mem_app
+    [out] = await hear(
+        client, store, runner_with(client, []), seen("ps-x", "sneaker", None, now_ms())
     )  # two sneakers
     assert out["sku"] is None and out["name"] == "Giày sneaker" and out["variants"] == []
 
 
 async def test_replayed_product_seen_without_a_cause_needs_the_flag(mem_app, monkeypatch):
-    _, _, client = mem_app
+    _, store, client = mem_app
     runner = runner_with(client, [])
-    assert await run(client, runner, seen("ps-r", "boot", "đen", now_ms(), caused_by=None)) == []
+    assert await hear(client, store, runner, seen("ps-r", "boot", "đen", now_ms(), caused_by=None)) == []
     monkeypatch.setenv("CARDS_FROM_REPLAY", "1")
-    [out] = await run(client, runner, seen("ps-r2", "boot", "đen", now_ms(), caused_by=None))
+    [out] = await hear(client, store, runner, seen("ps-r2", "boot", "đen", now_ms(), caused_by=None))
     assert out["sku"] == "BOOT-02"
 
 
@@ -111,7 +112,7 @@ async def test_quick_switch_retires_the_unpriced_draft_instead_of_merging(mem_ap
     runner = runner_with(client, [])
     ts = now_ms()
     await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
-    retired, opened = await run(client, runner, seen("ps-b", "bag", "đỏ", ts + 2000))
+    retired, opened = await hear(client, store, runner, seen("ps-b", "bag", "đỏ", ts + 2000))
     assert (retired["card_id"], retired["version"], retired["status"]) == ("card-a", 2, "retired")
     assert (opened["card_id"], opened["sku"], opened["status"]) == ("card-b", "TUI-03", "draft")
     assert all(e["caused_by"][0] == "ps-b" for e in (retired, opened))
@@ -125,7 +126,7 @@ async def test_same_product_again_reopens_its_card(mem_app):
     await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
     await hear(client, store, runner, said("sp-1", "đôi này 450 nghìn", ts + 500))
     await run(client, runner, seen("ps-b", "bag", "đỏ", ts + 4000))
-    retired, back = await run(client, runner, seen("ps-c", "sneaker", "trắng", ts + 9000))
+    retired, back = await hear(client, store, runner, seen("ps-c", "sneaker", "trắng", ts + 9000))
     assert (retired["card_id"], retired["status"]) == ("card-b", "retired")
     assert (back["card_id"], back["status"], back["price"]) == ("card-a", "live", 450000)
     assert back["provenance"]["frame_ts_ms"] == ts + 9000
@@ -193,7 +194,7 @@ async def test_console_edit_is_followed_so_versions_keep_counting(mem_app):
     _, store, client = mem_app
     runner = runner_with(client, [Reply(400, {})])
     ts = now_ms()
-    [draft] = await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
+    [draft] = await hear(client, store, runner, seen("ps-a", "sneaker", "trắng", ts))
     edit = {k: draft[k] for k in card.CARD_FIELDS} | {"version": 2, "price": 399000, "status": "edited"}
     await run(client, runner, make_event("card", SID, ts + 100, "replay", event_id="console-1", **edit))
     [nxt] = await hear(client, store, runner, said("sp-1", "size 38 nhé", ts + 200))
@@ -213,7 +214,8 @@ async def test_a_slow_read_does_not_hold_up_the_next_product(mem_app, monkeypatc
     ts = now_ms()
     await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
     assert await run(client, runner, said("sp-1", "đôi này 450 nghìn", ts + 500)) == []
-    [opened] = await run(client, runner, seen("ps-b", "bag", "đỏ", ts + 1000))  # card-a is not retired
+    assert await run(client, runner, seen("ps-b", "bag", "đỏ", ts + 1000)) == []  # card-a is not retired
+    [opened] = [c for c in await cards_in(store) if c["caused_by"][0] == "ps-b"]  # sp-1 is still being read
     assert (opened["card_id"], opened["status"]) == ("card-b", "draft")
     assert await run(client, runner, said("sp-2", "túi này đẹp lắm", ts + 1500)) == []
     await run(client, runner, seen("ps-c", "boot", "đen", ts + 2000))
