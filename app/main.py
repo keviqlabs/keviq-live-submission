@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from app.contracts import ContractError, now_ms, validate_event
 from app.settings import ROOT, database_url, env_float
-from app.store import live_cards_from, make_store, session_state, vn_day_bounds
+from app.store import TEST_SESSION_PREFIXES, live_cards_from, make_store, session_state, vn_day_bounds
 
 log = logging.getLogger("app")
 STATIC = ROOT / "app" / "static"
@@ -113,13 +113,20 @@ def create_app(store=None) -> FastAPI:
 
     @app.get("/api/cost")
     async def cost(request: Request):
+        """Spend the caps check (all model_call rows), plus the part caused by test sessions, shown apart."""
         start, end = vn_day_bounds(now_ms())
+        store = st(request)
         return {
-            "today_usd": round(await st(request).cost_usd(start, end), 6),
-            "total_usd": round(await st(request).cost_usd(), 6),
+            "today_usd": round(await store.cost_usd(start, end), 6),
+            "total_usd": round(await store.cost_usd(), 6),
             "daily_cap_usd": env_float("MODEL_DAILY_CAP_USD", 30),
             "daily_warn_usd": env_float("MODEL_DAILY_WARN_USD", 20),
             "total_cap_usd": env_float("MODEL_TOTAL_CAP_USD", 300),
+            "test_sessions": {
+                "prefixes": list(TEST_SESSION_PREFIXES),
+                "today_usd": round(await store.cost_usd(start, end, test_only=True), 6),
+                "total_usd": round(await store.cost_usd(test_only=True), 6),
+            },
         }
 
     @app.get("/")
