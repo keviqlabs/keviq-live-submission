@@ -69,13 +69,17 @@ def test_price_proposal_names_the_card_version_and_the_speech():
         heard_price=220000,
         speech_event_id="sp1",
     )
-    for field in ("caused_by", "card_version", "current_price", "heard_price", "speech_event_id"):
+    for field in ("caused_by", "card_id", "card_version", "current_price", "heard_price", "speech_event_id"):
         with pytest.raises(ContractError):
             validate_event({k: v for k, v in e.items() if k != field})
     with pytest.raises(ContractError):
         validate_event({**e, "speaker": "seller"})
     with pytest.raises(ContractError):
         validate_event({**e, "heard_price": 999})
+    with pytest.raises(ContractError):
+        validate_event({**e, "heard_price": 100_000_001})
+    with pytest.raises(ContractError):
+        validate_event({**e, "card_version": 0})
     with pytest.raises(ContractError):
         validate_event({**e, "current_price": None})
     with pytest.raises(ContractError):
