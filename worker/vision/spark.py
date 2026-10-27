@@ -14,8 +14,8 @@ from worker.vision import frames
 
 log = logging.getLogger("worker.vision")
 MIN_CONFIDENCE = 0.5
-# Lowest effort Muse Spark accepts. Measured with this prompt on the 351 test1 frames
-# (85.2 % category, p95 3.2 s): docs/evidence/2026-10-27/vision-test1-6b-score-1027-1950.json.
+# Lowest effort Muse Spark accepts. Measured with this prompt on the 351 test1 frames, ledger p95 3168 ms:
+# run probe-test1-6b-1950, docs/evidence/2026-10-27/vision-test1-6b-score-1027-1950.json.
 EFFORT = "minimal"
 SCHEMA = {
     "type": "object",
