@@ -8,7 +8,7 @@ SESSION ?= demo1
 SPEED ?= 1
 COMPOSE = docker compose -f deploy/compose.yml
 
-.PHONY: infra-up infra-down app worker replay lint fmt test measure-quick check smoke secrets
+.PHONY: infra-up infra-down app worker replay lint fmt test measure-quick check smoke integration secrets
 
 infra-up:
 	$(COMPOSE) up -d --wait postgres
@@ -44,6 +44,9 @@ check: lint test measure-quick
 
 smoke:
 	bash tests/smoke.sh
+
+integration:
+	bash tests/integration.sh
 
 secrets:
 	gitleaks detect --source . --no-banner --redact
