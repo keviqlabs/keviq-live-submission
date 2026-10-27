@@ -1,0 +1,323 @@
+{
+ "run": "probe-test1-6b-1950.json",
+ "ledger_session": "probe-test1-6b-1950",
+ "effort": "minimal",
+ "criteria": {
+  "E1 >= 72/100": [
+   "82/100",
+   true
+  ],
+  "giày >= 105/129": [
+   "109/129",
+   true
+  ],
+  "áo >= 75/93": [
+   "79/93",
+   true
+  ],
+  "total >= 77 %": [
+   "299/351 = 85.2%",
+   true
+  ],
+  "spark p95 <= 4749 ms": [
+   3196,
+   true
+  ]
+ },
+ "decision": "keep minimal + 6b prompt",
+ "score_6b_minimal": {
+  "frames": "720x1280",
+  "n": 351,
+  "category_correct": "299/351 = 85.2%",
+  "category_correct_outside_change_band": "230/246 = 93.5%",
+  "new_product_per_frame_correct": "330/351 = 94.0%",
+  "changes_detected_within_3s": "6/11",
+  "missed_changes": [
+   [
+    13,
+    "SP01"
+   ],
+   [
+    125,
+    "SP04"
+   ],
+   [
+    265,
+    "SP09"
+   ],
+   [
+    312,
+    "SP10"
+   ],
+   [
+    326,
+    "SP01"
+   ]
+  ],
+  "new_emitted": 12,
+  "new_emitted_with_no_change_within_3s": 5,
+  "errors": 0,
+  "by_kind": {
+   "none": {
+    "ok": 29,
+    "n": 29,
+    "answers": {
+     "none": 29
+    }
+   },
+   "giày": {
+    "ok": 109,
+    "n": 129,
+    "answers": {
+     "none": 13,
+     "sneaker": 85,
+     "sandal": 24,
+     "other": 7
+    }
+   },
+   "áo": {
+    "ok": 79,
+    "n": 93,
+    "answers": {
+     "none": 14,
+     "tshirt": 61,
+     "shirt": 18
+    }
+   },
+   "tay cầm": {
+    "ok": 36,
+    "n": 39,
+    "answers": {
+     "none": 2,
+     "other": 36,
+     "sneaker": 1
+    }
+   },
+   "bàn phím": {
+    "ok": 46,
+    "n": 61,
+    "answers": {
+     "other": 46,
+     "none": 15
+    }
+   }
+  },
+  "spark_ms": {
+   "n": 351,
+   "p50": 1879,
+   "p95": 3196
+  },
+  "cost_usd": 0.822575,
+  "calls": 351,
+  "usd_per_frame": 0.00234,
+  "tokens_in_per_call": 1398,
+  "tokens_out_per_call": 173,
+  "changes_detected_exact_second": "1/11",
+  "missed_exact": [
+   [
+    13,
+    "SP01"
+   ],
+   [
+    59,
+    "SP02"
+   ],
+   [
+    93,
+    "SP03"
+   ],
+   [
+    125,
+    "SP04"
+   ],
+   [
+    170,
+    "SP05"
+   ],
+   [
+    190,
+    "SP06"
+   ],
+   [
+    226,
+    "SP07"
+   ],
+   [
+    265,
+    "SP09"
+   ],
+   [
+    312,
+    "SP10"
+   ],
+   [
+    326,
+    "SP01"
+   ]
+  ],
+  "E1_electronics_answered_other": 82,
+  "E1_electronics_answered_none": 17,
+  "E1_n": 100,
+  "E2_no_product_answered_tshirt": 0,
+  "E2_n": 29,
+  "E3_non_shirt_product_answered_tshirt": 0,
+  "is_new_emitted_vs_real_changes": "12 emitted / 11 real changes"
+ },
+ "score_6a_minimal_reference": {
+  "frames": "720x1280",
+  "n": 351,
+  "category_correct": "200/351 = 57.0%",
+  "category_correct_outside_change_band": "156/246 = 63.4%",
+  "new_product_per_frame_correct": "330/351 = 94.0%",
+  "changes_detected_within_3s": "5/11",
+  "missed_changes": [
+   [
+    13,
+    "SP01"
+   ],
+   [
+    125,
+    "SP04"
+   ],
+   [
+    226,
+    "SP07"
+   ],
+   [
+    265,
+    "SP09"
+   ],
+   [
+    312,
+    "SP10"
+   ],
+   [
+    326,
+    "SP01"
+   ]
+  ],
+  "new_emitted": 10,
+  "new_emitted_with_no_change_within_3s": 5,
+  "errors": 0,
+  "by_kind": {
+   "none": {
+    "ok": 14,
+    "n": 29,
+    "answers": {
+     "none": 14,
+     "tshirt": 15
+    }
+   },
+   "giày": {
+    "ok": 108,
+    "n": 129,
+    "answers": {
+     "tshirt": 4,
+     "sneaker": 84,
+     "none": 17,
+     "sandal": 24
+    }
+   },
+   "áo": {
+    "ok": 78,
+    "n": 93,
+    "answers": {
+     "none": 15,
+     "tshirt": 60,
+     "shirt": 18
+    }
+   },
+   "tay cầm": {
+    "ok": 0,
+    "n": 39,
+    "answers": {
+     "tshirt": 4,
+     "none": 34,
+     "sneaker": 1
+    }
+   },
+   "bàn phím": {
+    "ok": 0,
+    "n": 61,
+    "answers": {
+     "none": 61
+    }
+   }
+  },
+  "spark_ms": {
+   "n": 351,
+   "p50": 1884,
+   "p95": 3254
+  },
+  "cost_usd": 0.818093,
+  "calls": 351,
+  "usd_per_frame": 0.00233,
+  "tokens_in_per_call": 1331,
+  "tokens_out_per_call": 180,
+  "changes_detected_exact_second": "0/11",
+  "missed_exact": [
+   [
+    13,
+    "SP01"
+   ],
+   [
+    59,
+    "SP02"
+   ],
+   [
+    93,
+    "SP03"
+   ],
+   [
+    125,
+    "SP04"
+   ],
+   [
+    170,
+    "SP05"
+   ],
+   [
+    190,
+    "SP06"
+   ],
+   [
+    226,
+    "SP07"
+   ],
+   [
+    250,
+    "SP08"
+   ],
+   [
+    265,
+    "SP09"
+   ],
+   [
+    312,
+    "SP10"
+   ],
+   [
+    326,
+    "SP01"
+   ]
+  ],
+  "E1_electronics_answered_other": 0,
+  "E1_electronics_answered_none": 95,
+  "E1_n": 100,
+  "E2_no_product_answered_tshirt": 15,
+  "E2_n": 29,
+  "E3_non_shirt_product_answered_tshirt": 8,
+  "is_new_emitted_vs_real_changes": "10 emitted / 11 real changes"
+ },
+ "cost_check": {
+  "api_cost_today_usd_before": 6.151306,
+  "api_cost_today_usd_after": 6.973881,
+  "api_cost_delta_usd": 0.822575,
+  "sql_model_call_session": {
+   "like": "probe-test1-6b-1950",
+   "n": 351,
+   "usd": "0.82257485"
+  },
+  "run_cost_usd": 0.822575
+ }
+}

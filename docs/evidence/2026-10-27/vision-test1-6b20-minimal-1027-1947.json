@@ -1,0 +1,425 @@
+{
+ "ledger_session": "probe-test1-6b20-1947-minimal",
+ "vision_session": "gate-test1-6b",
+ "effort": "minimal",
+ "reasoning_param": "minimal",
+ "spark_py_sha256": "2dc2b934af45c7acaafa8925b4d301aa3a1aa6a2cc09b0fbce9370af853fb849",
+ "prompt_first_frame": "Đây là một khung hình từ livestream bán hàng. Món người bán đang cầm hoặc giới thiệu là gì? category chọn trong danh sách; danh sách không đầy đủ: món không có trong danh sách (ví dụ đồ điện tử, đồ gia dụng, phụ kiện) thì chọn 'other'; chỉ chọn 'none' khi người bán không cầm và không giới thiệu món nào. Quần áo người bán đang mặc trên người không phải sản phẩm đang giới thiệu. color: tiếng Việt thường, chọn trong ['be', 'hồng', 'kem', 'nâu', 'trắng', 'xanh', 'xám', 'đen', 'đỏ'] nếu khớp. size/material: chỉ khi nhìn thấy rõ, không thì null. Món thấy ở khung trước: chưa có. Nếu món đang cầm vẫn là món ở khung trước thì giữ đúng category và color của khung trước. confidence: mức chắc chắn 0..1.",
+ "frames": 20,
+ "frame_ts": [
+  3,
+  6,
+  14,
+  16,
+  60,
+  62,
+  94,
+  96,
+  126,
+  128,
+  171,
+  173,
+  191,
+  193,
+  227,
+  229,
+  251,
+  253,
+  266,
+  268
+ ],
+ "frame_set_sha256": "f1292d891ce50850c40fb1fc17940261bab1421d0394579f7d1d0c6046d97476",
+ "cap_usd_all_efforts": 0.2,
+ "today_usd_before": 5.991165,
+ "long_side": 1280,
+ "stopped": null,
+ "frames_read": 20,
+ "errors": 0,
+ "wall_s": 48.5,
+ "calls": 20,
+ "calls_ok": 20,
+ "cost_usd": 0.048304,
+ "tokens_in": 27959,
+ "tokens_out": 3557,
+ "today_usd_after": 6.039469,
+ "rows": [
+  {
+   "t": 3,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2606,
+   "error": null,
+   "tokens_in": 1397,
+   "tokens_out": 124,
+   "cost_usd": 0.002273
+  },
+  {
+   "t": 6,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 3477,
+   "error": null,
+   "tokens_in": 1397,
+   "tokens_out": 213,
+   "cost_usd": 0.002554
+  },
+  {
+   "t": 14,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 3598,
+   "error": null,
+   "tokens_in": 1397,
+   "tokens_out": 158,
+   "cost_usd": 0.00232
+  },
+  {
+   "t": 16,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2905,
+   "error": null,
+   "tokens_in": 1397,
+   "tokens_out": 199,
+   "cost_usd": 0.002494
+  },
+  {
+   "t": 60,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.75,
+   "is_new": true,
+   "new": [
+    "sneaker",
+    "trắng"
+   ],
+   "ms": 1771,
+   "error": null,
+   "tokens_in": 1397,
+   "tokens_out": 132,
+   "cost_usd": 0.002209
+  },
+  {
+   "t": 62,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sneaker",
+   "color": "trắng",
+   "confidence": 0.97,
+   "is_new": false,
+   "new": null,
+   "ms": 3322,
+   "error": null,
+   "tokens_in": 1399,
+   "tokens_out": 126,
+   "cost_usd": 0.002284
+  },
+  {
+   "t": 94,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": true,
+   "new": [
+    "sandal",
+    "trắng"
+   ],
+   "ms": 1887,
+   "error": null,
+   "tokens_in": 1399,
+   "tokens_out": 152,
+   "cost_usd": 0.002297
+  },
+  {
+   "t": 96,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "sandal",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1793,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 155,
+   "cost_usd": 0.002308
+  },
+  {
+   "t": 126,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 3010,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 191,
+   "cost_usd": 0.002461
+  },
+  {
+   "t": 128,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1844,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 207,
+   "cost_usd": 0.002529
+  },
+  {
+   "t": 171,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": true,
+   "new": [
+    "shirt",
+    "trắng"
+   ],
+   "ms": 3013,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 169,
+   "cost_usd": 0.002368
+  },
+  {
+   "t": 173,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "shirt",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1750,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 204,
+   "cost_usd": 0.002517
+  },
+  {
+   "t": 191,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": true,
+   "new": [
+    "tshirt",
+    "xanh"
+   ],
+   "ms": 2128,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 232,
+   "cost_usd": 0.002636
+  },
+  {
+   "t": 193,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "tshirt",
+   "color": "xanh",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 2077,
+   "error": null,
+   "tokens_in": 1399,
+   "tokens_out": 169,
+   "cost_usd": 0.002369
+  },
+  {
+   "t": 227,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "other",
+   "color": "đen",
+   "confidence": 0.97,
+   "is_new": true,
+   "new": [
+    "other",
+    "đen"
+   ],
+   "ms": 3090,
+   "error": null,
+   "tokens_in": 1399,
+   "tokens_out": 198,
+   "cost_usd": 0.002492
+  },
+  {
+   "t": 229,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "other",
+   "color": "đen",
+   "confidence": 0.98,
+   "is_new": false,
+   "new": null,
+   "ms": 1695,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 117,
+   "cost_usd": 0.002147
+  },
+  {
+   "t": 251,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "other",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": true,
+   "new": [
+    "other",
+    "trắng"
+   ],
+   "ms": 1744,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 143,
+   "cost_usd": 0.002257
+  },
+  {
+   "t": 253,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": true,
+   "category": "other",
+   "color": "trắng",
+   "confidence": 0.95,
+   "is_new": false,
+   "new": null,
+   "ms": 1734,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 205,
+   "cost_usd": 0.002521
+  },
+  {
+   "t": 266,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 2908,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 242,
+   "cost_usd": 0.002678
+  },
+  {
+   "t": 268,
+   "size": [
+    720,
+    1280
+   ],
+   "has_product": false,
+   "category": "none",
+   "color": null,
+   "confidence": 0.9,
+   "is_new": false,
+   "new": null,
+   "ms": 1672,
+   "error": null,
+   "tokens_in": 1398,
+   "tokens_out": 221,
+   "cost_usd": 0.002589
+  }
+ ]
+}

@@ -1,0 +1,875 @@
+{
+ "frames": [
+  3,
+  6,
+  14,
+  16,
+  60,
+  62,
+  94,
+  96,
+  126,
+  128,
+  171,
+  173,
+  191,
+  193,
+  227,
+  229,
+  251,
+  253,
+  266,
+  268
+ ],
+ "rule": "    score_6b20.py <labels.json> <manifest.json> <name>=<run json> [<name>=<run json> ...]",
+ "runs": {
+  "old_default": {
+   "by_kind": {
+    "tay cầm": "2/4",
+    "bàn phím": "0/2",
+    "giày": "4/6",
+    "áo": "4/6",
+    "không món": "0/2"
+   },
+   "total": "10/20",
+   "frames": [
+    {
+     "t": 3,
+     "kind": null,
+     "boundary": false,
+     "category": "tshirt",
+     "color": "nâu",
+     "has_product": true,
+     "right": false,
+     "is_new": true
+    },
+    {
+     "t": 6,
+     "kind": null,
+     "boundary": false,
+     "category": "tshirt",
+     "color": "nâu",
+     "has_product": true,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 14,
+     "kind": "giày",
+     "boundary": true,
+     "category": "tshirt",
+     "color": "nâu",
+     "has_product": true,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 16,
+     "kind": "giày",
+     "boundary": false,
+     "category": "tshirt",
+     "color": "nâu",
+     "has_product": true,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 60,
+     "kind": "giày",
+     "boundary": true,
+     "category": "sneaker",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 62,
+     "kind": "giày",
+     "boundary": false,
+     "category": "sneaker",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 94,
+     "kind": "giày",
+     "boundary": true,
+     "category": "sandal",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 96,
+     "kind": "giày",
+     "boundary": false,
+     "category": "sandal",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 126,
+     "kind": "áo",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 128,
+     "kind": "áo",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 171,
+     "kind": "áo",
+     "boundary": true,
+     "category": "shirt",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 173,
+     "kind": "áo",
+     "boundary": false,
+     "category": "shirt",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 191,
+     "kind": "áo",
+     "boundary": true,
+     "category": "tshirt",
+     "color": "xanh",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 193,
+     "kind": "áo",
+     "boundary": false,
+     "category": "tshirt",
+     "color": "xanh",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 227,
+     "kind": "tay cầm",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 229,
+     "kind": "tay cầm",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 251,
+     "kind": "tay cầm",
+     "boundary": true,
+     "category": "other",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 253,
+     "kind": "tay cầm",
+     "boundary": false,
+     "category": "other",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 266,
+     "kind": "bàn phím",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 268,
+     "kind": "bàn phím",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    }
+   ]
+  },
+  "6a_minimal": {
+   "by_kind": {
+    "tay cầm": "0/4",
+    "bàn phím": "0/2",
+    "giày": "4/6",
+    "áo": "4/6",
+    "không món": "0/2"
+   },
+   "total": "8/20",
+   "frames": [
+    {
+     "t": 3,
+     "kind": null,
+     "boundary": false,
+     "category": "tshirt",
+     "color": "nâu",
+     "has_product": true,
+     "right": false,
+     "is_new": true
+    },
+    {
+     "t": 6,
+     "kind": null,
+     "boundary": false,
+     "category": "tshirt",
+     "color": "nâu",
+     "has_product": true,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 14,
+     "kind": "giày",
+     "boundary": true,
+     "category": "tshirt",
+     "color": "nâu",
+     "has_product": true,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 16,
+     "kind": "giày",
+     "boundary": false,
+     "category": "tshirt",
+     "color": "nâu",
+     "has_product": true,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 60,
+     "kind": "giày",
+     "boundary": true,
+     "category": "sneaker",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 62,
+     "kind": "giày",
+     "boundary": false,
+     "category": "sneaker",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 94,
+     "kind": "giày",
+     "boundary": true,
+     "category": "sandal",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 96,
+     "kind": "giày",
+     "boundary": false,
+     "category": "sandal",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 126,
+     "kind": "áo",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 128,
+     "kind": "áo",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 171,
+     "kind": "áo",
+     "boundary": true,
+     "category": "shirt",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 173,
+     "kind": "áo",
+     "boundary": false,
+     "category": "shirt",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 191,
+     "kind": "áo",
+     "boundary": true,
+     "category": "tshirt",
+     "color": "xanh",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 193,
+     "kind": "áo",
+     "boundary": false,
+     "category": "tshirt",
+     "color": "xanh",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 227,
+     "kind": "tay cầm",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 229,
+     "kind": "tay cầm",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 251,
+     "kind": "tay cầm",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 253,
+     "kind": "tay cầm",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 266,
+     "kind": "bàn phím",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 268,
+     "kind": "bàn phím",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    }
+   ]
+  },
+  "new_minimal": {
+   "by_kind": {
+    "tay cầm": "4/4",
+    "bàn phím": "0/2",
+    "giày": "4/6",
+    "áo": "4/6",
+    "không món": "2/2"
+   },
+   "total": "14/20",
+   "frames": [
+    {
+     "t": 3,
+     "kind": null,
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 6,
+     "kind": null,
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 14,
+     "kind": "giày",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 16,
+     "kind": "giày",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 60,
+     "kind": "giày",
+     "boundary": true,
+     "category": "sneaker",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 62,
+     "kind": "giày",
+     "boundary": false,
+     "category": "sneaker",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 94,
+     "kind": "giày",
+     "boundary": true,
+     "category": "sandal",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 96,
+     "kind": "giày",
+     "boundary": false,
+     "category": "sandal",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 126,
+     "kind": "áo",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 128,
+     "kind": "áo",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 171,
+     "kind": "áo",
+     "boundary": true,
+     "category": "shirt",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 173,
+     "kind": "áo",
+     "boundary": false,
+     "category": "shirt",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 191,
+     "kind": "áo",
+     "boundary": true,
+     "category": "tshirt",
+     "color": "xanh",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 193,
+     "kind": "áo",
+     "boundary": false,
+     "category": "tshirt",
+     "color": "xanh",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 227,
+     "kind": "tay cầm",
+     "boundary": true,
+     "category": "other",
+     "color": "đen",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 229,
+     "kind": "tay cầm",
+     "boundary": false,
+     "category": "other",
+     "color": "đen",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 251,
+     "kind": "tay cầm",
+     "boundary": true,
+     "category": "other",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 253,
+     "kind": "tay cầm",
+     "boundary": false,
+     "category": "other",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 266,
+     "kind": "bàn phím",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 268,
+     "kind": "bàn phím",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    }
+   ]
+  },
+  "new_default": {
+   "by_kind": {
+    "tay cầm": "4/4",
+    "bàn phím": "0/2",
+    "giày": "4/6",
+    "áo": "4/6",
+    "không món": "2/2"
+   },
+   "total": "14/20",
+   "frames": [
+    {
+     "t": 3,
+     "kind": null,
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 6,
+     "kind": null,
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 14,
+     "kind": "giày",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 16,
+     "kind": "giày",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 60,
+     "kind": "giày",
+     "boundary": true,
+     "category": "sneaker",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 62,
+     "kind": "giày",
+     "boundary": false,
+     "category": "sneaker",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 94,
+     "kind": "giày",
+     "boundary": true,
+     "category": "sandal",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 96,
+     "kind": "giày",
+     "boundary": false,
+     "category": "sandal",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 126,
+     "kind": "áo",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 128,
+     "kind": "áo",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 171,
+     "kind": "áo",
+     "boundary": true,
+     "category": "shirt",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 173,
+     "kind": "áo",
+     "boundary": false,
+     "category": "shirt",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 191,
+     "kind": "áo",
+     "boundary": true,
+     "category": "tshirt",
+     "color": "xanh",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 193,
+     "kind": "áo",
+     "boundary": false,
+     "category": "tshirt",
+     "color": "xanh",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 227,
+     "kind": "tay cầm",
+     "boundary": true,
+     "category": "other",
+     "color": "đen",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 229,
+     "kind": "tay cầm",
+     "boundary": false,
+     "category": "other",
+     "color": "đen",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 251,
+     "kind": "tay cầm",
+     "boundary": true,
+     "category": "other",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": true
+    },
+    {
+     "t": 253,
+     "kind": "tay cầm",
+     "boundary": false,
+     "category": "other",
+     "color": "trắng",
+     "has_product": true,
+     "right": true,
+     "is_new": false
+    },
+    {
+     "t": 266,
+     "kind": "bàn phím",
+     "boundary": true,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    },
+    {
+     "t": 268,
+     "kind": "bàn phím",
+     "boundary": false,
+     "category": "none",
+     "color": null,
+     "has_product": false,
+     "right": false,
+     "is_new": false
+    }
+   ]
+  }
+ }
+}
