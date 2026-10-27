@@ -114,12 +114,13 @@ def create_app(store=None) -> FastAPI:
         return {"ts_ms": ts_ms, "cards": live_cards_from(await st(request).card_versions(session_id), ts_ms)}
 
     @app.get("/api/cost")
-    async def cost(request: Request):
+    async def cost(request: Request, session: str | None = None):
         """Spend the caps check (all model_call rows; today = recorded today, VN day), plus the part caused by
-        test sessions, shown apart."""
+        test sessions, shown apart. With `?session=<id>`, also `session_usd`: that session's spend, all time, which
+        the per-session cap checks."""
         start, end = vn_day_bounds(now_ms())
         store = st(request)
-        return {
+        body = {
             "today_usd": round(await store.cost_usd(start, end), 6),
             "total_usd": round(await store.cost_usd(), 6),
             "daily_cap_usd": env_float("MODEL_DAILY_CAP_USD", 30),
@@ -131,6 +132,9 @@ def create_app(store=None) -> FastAPI:
                 "total_usd": round(await store.cost_usd(test_only=True), 6),
             },
         }
+        if session is not None:
+            body["session_usd"] = round(await store.cost_usd(session_id=session), 6)
+        return body
 
     @app.get("/")
     async def demo():

@@ -130,8 +130,11 @@ class MetaClient:
         meter: Meter,
         emit: Callable[[dict], Awaitable[None]],
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+        session_id: str | None = None,
     ):
+        """`session_id` is the session the calls are made for; the meter checks its per-session cap."""
         self.transport, self.meter, self.emit, self.sleep = transport, meter, emit, sleep
+        self.session_id = session_id
         self.models = {
             "spark": env("MODEL_SPARK", "muse-spark-1.3"),
             "sam": env("MODEL_SAM", "sam-3.1"),
@@ -168,7 +171,7 @@ class MetaClient:
         if model in BLOCKED:
             raise ModelError(BLOCKED[model])
         try:
-            await self.meter.check()
+            await self.meter.check(self.session_id)
         except BudgetExceeded as exc:
             log.error("model call blocked (%s): %s", purpose, exc)
             await self._log(model, purpose, _ms(), ok=False, error=exc.reason)

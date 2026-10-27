@@ -75,17 +75,18 @@ class Runner:
 
     def client_for(self, event: dict):
         from meta.client import MetaClient
-        from meta.meter import Meter, http_spend
+        from meta.meter import Meter, http_session_spend, http_spend
         from meta.transport import HttpTransport
 
         if self._meta is None:
-            self._meta = (HttpTransport(), Meter(http_spend(self.base_url)))
+            meter = Meter(http_spend(self.base_url), session_spend=http_session_spend(self.base_url))
+            self._meta = (HttpTransport(), meter)
         transport, meter = self._meta
 
         async def emit(fields: dict) -> None:
             await self.post([build(event, {"type": "model_call", **fields}, now_ms())])
 
-        return MetaClient(transport, meter, emit)
+        return MetaClient(transport, meter, emit, session_id=event["session_id"])
 
     async def post(self, events: list[dict]) -> None:
         if not events:
