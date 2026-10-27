@@ -1,0 +1,597 @@
+{
+ "frames": [
+  3,
+  6,
+  14,
+  16,
+  60,
+  62,
+  94,
+  96,
+  126,
+  128,
+  171,
+  173,
+  191,
+  193,
+  227,
+  229,
+  251,
+  253,
+  266,
+  268
+ ],
+ "rule": "right = category in labels category_map[kind]; kind null is right when the answer is none or has_product is false; all 20 manifest frames count, boundary seconds included",
+ "by_kind": {
+  "old_default": {
+   "tay cầm": "2/4",
+   "bàn phím": "0/2",
+   "giày": "4/6",
+   "áo": "4/6",
+   "không món": "0/2"
+  },
+  "6a_minimal": {
+   "tay cầm": "0/4",
+   "bàn phím": "0/2",
+   "giày": "4/6",
+   "áo": "4/6",
+   "không món": "0/2"
+  },
+  "new_minimal": {
+   "tay cầm": "4/4",
+   "bàn phím": "0/2",
+   "giày": "4/6",
+   "áo": "4/6",
+   "không món": "2/2"
+  },
+  "new_default": {
+   "tay cầm": "4/4",
+   "bàn phím": "0/2",
+   "giày": "4/6",
+   "áo": "4/6",
+   "không món": "2/2"
+  }
+ },
+ "total": {
+  "old_default": "10/20",
+  "6a_minimal": "8/20",
+  "new_minimal": "14/20",
+  "new_default": "14/20"
+ },
+ "unlock_rule": "new_minimal tay cầm >= max(2, new_default tay cầm) and bàn phím >= max(0, new_default bàn phím)",
+ "unlock": true,
+ "new_minimal_vs_new_default_same_category_and_color": "20/20",
+ "latency_ledger_ms": {
+  "new_minimal": {
+   "n": 20,
+   "p50_ms": 2094,
+   "p95_ms": 3478,
+   "max_ms": 3589.0,
+   "usd": "0.04830380",
+   "not_ok": 0,
+   "json_ms_minus_ledger_ms": {
+    "min": 5.0,
+    "max": 50.0
+   }
+  },
+  "new_default": {
+   "n": 20,
+   "p50_ms": 4391,
+   "p95_ms": 5769,
+   "max_ms": 6042.0,
+   "usd": "0.11183705",
+   "not_ok": 0,
+   "json_ms_minus_ledger_ms": {
+    "min": 4.0,
+    "max": 18.0
+   }
+  }
+ },
+ "notes": [
+  "Latency is the ledger model_call latency_ms (percentile_cont). The run JSON 'ms' column is the client Result latency, which also counts posting the model_call event, so it runs a few ms higher per call (json_ms_minus_ledger_ms).",
+  "old_default and 6a_minimal rows are those 351-frame runs at these seconds (previous frame t-1); the two new runs chain the previous product over the 20 frames, as see_product does.",
+  "Measured on 20 frames: new minimal and new default answer the same; on 351 frames only new minimal ran."
+ ],
+ "per_second": [
+  {
+   "t": 3,
+   "kind": null,
+   "boundary": false,
+   "old_default": {
+    "category": "tshirt",
+    "color": "nâu",
+    "right": false
+   },
+   "6a_minimal": {
+    "category": "tshirt",
+    "color": "nâu",
+    "right": false
+   },
+   "new_minimal": {
+    "category": "none",
+    "color": null,
+    "right": true
+   },
+   "new_default": {
+    "category": "none",
+    "color": null,
+    "right": true
+   }
+  },
+  {
+   "t": 6,
+   "kind": null,
+   "boundary": false,
+   "old_default": {
+    "category": "tshirt",
+    "color": "nâu",
+    "right": false
+   },
+   "6a_minimal": {
+    "category": "tshirt",
+    "color": "nâu",
+    "right": false
+   },
+   "new_minimal": {
+    "category": "none",
+    "color": null,
+    "right": true
+   },
+   "new_default": {
+    "category": "none",
+    "color": null,
+    "right": true
+   }
+  },
+  {
+   "t": 14,
+   "kind": "giày",
+   "boundary": true,
+   "old_default": {
+    "category": "tshirt",
+    "color": "nâu",
+    "right": false
+   },
+   "6a_minimal": {
+    "category": "tshirt",
+    "color": "nâu",
+    "right": false
+   },
+   "new_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   }
+  },
+  {
+   "t": 16,
+   "kind": "giày",
+   "boundary": false,
+   "old_default": {
+    "category": "tshirt",
+    "color": "nâu",
+    "right": false
+   },
+   "6a_minimal": {
+    "category": "tshirt",
+    "color": "nâu",
+    "right": false
+   },
+   "new_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   }
+  },
+  {
+   "t": 60,
+   "kind": "giày",
+   "boundary": true,
+   "old_default": {
+    "category": "sneaker",
+    "color": "trắng",
+    "right": true
+   },
+   "6a_minimal": {
+    "category": "sneaker",
+    "color": "trắng",
+    "right": true
+   },
+   "new_minimal": {
+    "category": "sneaker",
+    "color": "trắng",
+    "right": true
+   },
+   "new_default": {
+    "category": "sneaker",
+    "color": "trắng",
+    "right": true
+   }
+  },
+  {
+   "t": 62,
+   "kind": "giày",
+   "boundary": false,
+   "old_default": {
+    "category": "sneaker",
+    "color": "trắng",
+    "right": true
+   },
+   "6a_minimal": {
+    "category": "sneaker",
+    "color": "trắng",
+    "right": true
+   },
+   "new_minimal": {
+    "category": "sneaker",
+    "color": "trắng",
+    "right": true
+   },
+   "new_default": {
+    "category": "sneaker",
+    "color": "trắng",
+    "right": true
+   }
+  },
+  {
+   "t": 94,
+   "kind": "giày",
+   "boundary": true,
+   "old_default": {
+    "category": "sandal",
+    "color": "trắng",
+    "right": true
+   },
+   "6a_minimal": {
+    "category": "sandal",
+    "color": "trắng",
+    "right": true
+   },
+   "new_minimal": {
+    "category": "sandal",
+    "color": "trắng",
+    "right": true
+   },
+   "new_default": {
+    "category": "sandal",
+    "color": "trắng",
+    "right": true
+   }
+  },
+  {
+   "t": 96,
+   "kind": "giày",
+   "boundary": false,
+   "old_default": {
+    "category": "sandal",
+    "color": "trắng",
+    "right": true
+   },
+   "6a_minimal": {
+    "category": "sandal",
+    "color": "trắng",
+    "right": true
+   },
+   "new_minimal": {
+    "category": "sandal",
+    "color": "trắng",
+    "right": true
+   },
+   "new_default": {
+    "category": "sandal",
+    "color": "trắng",
+    "right": true
+   }
+  },
+  {
+   "t": 126,
+   "kind": "áo",
+   "boundary": true,
+   "old_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "6a_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   }
+  },
+  {
+   "t": 128,
+   "kind": "áo",
+   "boundary": false,
+   "old_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "6a_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   }
+  },
+  {
+   "t": 171,
+   "kind": "áo",
+   "boundary": true,
+   "old_default": {
+    "category": "shirt",
+    "color": "trắng",
+    "right": true
+   },
+   "6a_minimal": {
+    "category": "shirt",
+    "color": "trắng",
+    "right": true
+   },
+   "new_minimal": {
+    "category": "shirt",
+    "color": "trắng",
+    "right": true
+   },
+   "new_default": {
+    "category": "shirt",
+    "color": "trắng",
+    "right": true
+   }
+  },
+  {
+   "t": 173,
+   "kind": "áo",
+   "boundary": false,
+   "old_default": {
+    "category": "shirt",
+    "color": "trắng",
+    "right": true
+   },
+   "6a_minimal": {
+    "category": "shirt",
+    "color": "trắng",
+    "right": true
+   },
+   "new_minimal": {
+    "category": "shirt",
+    "color": "trắng",
+    "right": true
+   },
+   "new_default": {
+    "category": "shirt",
+    "color": "trắng",
+    "right": true
+   }
+  },
+  {
+   "t": 191,
+   "kind": "áo",
+   "boundary": true,
+   "old_default": {
+    "category": "tshirt",
+    "color": "xanh",
+    "right": true
+   },
+   "6a_minimal": {
+    "category": "tshirt",
+    "color": "xanh",
+    "right": true
+   },
+   "new_minimal": {
+    "category": "tshirt",
+    "color": "xanh",
+    "right": true
+   },
+   "new_default": {
+    "category": "tshirt",
+    "color": "xanh",
+    "right": true
+   }
+  },
+  {
+   "t": 193,
+   "kind": "áo",
+   "boundary": false,
+   "old_default": {
+    "category": "tshirt",
+    "color": "xanh",
+    "right": true
+   },
+   "6a_minimal": {
+    "category": "tshirt",
+    "color": "xanh",
+    "right": true
+   },
+   "new_minimal": {
+    "category": "tshirt",
+    "color": "xanh",
+    "right": true
+   },
+   "new_default": {
+    "category": "tshirt",
+    "color": "xanh",
+    "right": true
+   }
+  },
+  {
+   "t": 227,
+   "kind": "tay cầm",
+   "boundary": true,
+   "old_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "6a_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_minimal": {
+    "category": "other",
+    "color": "đen",
+    "right": true
+   },
+   "new_default": {
+    "category": "other",
+    "color": "đen",
+    "right": true
+   }
+  },
+  {
+   "t": 229,
+   "kind": "tay cầm",
+   "boundary": false,
+   "old_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "6a_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_minimal": {
+    "category": "other",
+    "color": "đen",
+    "right": true
+   },
+   "new_default": {
+    "category": "other",
+    "color": "đen",
+    "right": true
+   }
+  },
+  {
+   "t": 251,
+   "kind": "tay cầm",
+   "boundary": true,
+   "old_default": {
+    "category": "other",
+    "color": "trắng",
+    "right": true
+   },
+   "6a_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_minimal": {
+    "category": "other",
+    "color": "trắng",
+    "right": true
+   },
+   "new_default": {
+    "category": "other",
+    "color": "trắng",
+    "right": true
+   }
+  },
+  {
+   "t": 253,
+   "kind": "tay cầm",
+   "boundary": false,
+   "old_default": {
+    "category": "other",
+    "color": "trắng",
+    "right": true
+   },
+   "6a_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_minimal": {
+    "category": "other",
+    "color": "trắng",
+    "right": true
+   },
+   "new_default": {
+    "category": "other",
+    "color": "trắng",
+    "right": true
+   }
+  },
+  {
+   "t": 266,
+   "kind": "bàn phím",
+   "boundary": true,
+   "old_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "6a_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   }
+  },
+  {
+   "t": 268,
+   "kind": "bàn phím",
+   "boundary": false,
+   "old_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "6a_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_minimal": {
+    "category": "none",
+    "color": null,
+    "right": false
+   },
+   "new_default": {
+    "category": "none",
+    "color": null,
+    "right": false
+   }
+  }
+ ]
+}
