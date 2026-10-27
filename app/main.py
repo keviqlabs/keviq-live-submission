@@ -8,6 +8,7 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 
 from app.contracts import ContractError, now_ms, validate_event
+from app.orders_api import router as orders_router
 from app.settings import ROOT, database_url, env_float
 from app.store import live_cards_from, make_store, session_state, vn_day_bounds
 
@@ -28,6 +29,7 @@ def create_app(store=None) -> FastAPI:
         await app.state.store.close()
 
     app = FastAPI(title="keviq-live-event", lifespan=lifespan)
+    app.include_router(orders_router)
 
     def st(request: Request):
         return request.app.state.store
