@@ -30,10 +30,12 @@ from worker.runner import Ctx, build, parse_sse
 
 log = logging.getLogger("worker.labels")
 BATCH_MAX, BATCH_WAIT_S = 20, 1.0
+# Lowest effort Muse Spark accepts ("none" is refused, dev.meta.ai/docs/reasoning); reasoning tokens are most of
+# the latency and the output bill.
+EFFORT = "minimal"
 LABELS = ["order", "price_question", "stock_question", "complaint", "spam", "scam", "other"]
 KINDS = ["explicit_sku", "current_card", "previous_card", "unresolved"]
-SIGNALS = ["phone_number", "link", "prize_lure", "impersonation", "advance_fee", "credential_request"]
-CONTACT = {"phone_number", "link"}
+SIGNALS = ["phone_number", "link"]
 
 SCHEMA = {
     "type": "object",
@@ -53,7 +55,7 @@ SCHEMA = {
                     "size",
                     "color",
                     "qty",
-                    "scam_signals",
+                    "contact",
                 ],
                 "properties": {
                     "comment_id": {"type": "string"},
@@ -63,7 +65,7 @@ SCHEMA = {
                     "size": {"type": ["string", "null"]},
                     "color": {"type": ["string", "null"]},
                     "qty": {"type": ["integer", "null"]},
-                    "scam_signals": {"type": "array", "items": {"type": "string", "enum": SIGNALS}},
+                    "contact": {"type": "string", "enum": ["none", *SIGNALS]},
                 },
             },
         }
@@ -92,8 +94,8 @@ sku: the catalog sku for explicit_sku, else null. size: as written, else null. c
 customer wrote, as the catalog value (black -> đen, white -> trắng, red -> đỏ, brown -> nâu, grey -> xám), else
 null. qty: the number written, else 1. For any other label: reference_kind "none", sku, size, color, qty null.
 
-scam_signals (any label): phone_number (also a number spelled out in words), link, prize_lure, impersonation,
-advance_fee, credential_request. Return exactly one item per comment_id."""
+contact (any label): phone_number if the text holds a phone number (also one spelled out in words), else link
+if it holds a link, else none. Return exactly one item per comment_id."""
 
 
 def load_catalog() -> list[dict]:
@@ -319,7 +321,9 @@ class Labeler:
             {"role": "user", "content": json.dumps(context, ensure_ascii=False)},
         ]
         try:
-            res = await self.client_for(batch[0].ctx).responses(prompt, SCHEMA, purpose="label_comments")
+            res = await self.client_for(batch[0].ctx).responses(
+                prompt, SCHEMA, purpose="label_comments", reasoning=EFFORT
+            )
         except Exception as exc:
             log.warning("labels: batch of %d not labeled (%s); labeling them other", len(batch), exc)
             return {}, None
@@ -330,11 +334,11 @@ class Labeler:
         if item is None:
             label, draft, model_signals = "other", None, []
         else:
-            label, model_signals = item["label"], item["scam_signals"]
+            label, model_signals = item["label"], [item["contact"]]
             draft = resolve(item, versions, event["ts_ms"], self.skus) if label == "order" else None
         signals = [s for s in SIGNALS if s in set(p.signals) | set(model_signals)]
         action = p.action
-        if action == "none" and CONTACT & set(model_signals):
+        if action == "none" and signals:
             action = await self._hide(event, signals)
         if action == "none" and label == "scam":
             action = "warn"
