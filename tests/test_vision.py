@@ -152,6 +152,21 @@ async def test_mask_rows_run_top_down_and_columns_left_to_right():
 
 
 @needs_ffmpeg
+async def test_box_with_odd_width_and_left_edge_keeps_its_mask():
+    w, h = 41, 21  # a 4:2:0 JPEG crops to even sizes unless the frame is RGBA first
+    left = bytes(1 if x < 20 else 0 for y in range(h) for x in range(w))
+    payload = _encode_raster(left, w, h)
+    text = (
+        f"<0f>0<|box;x1=11;y1=21;x2={10 + w};y2={20 + h};w=64;h=48|><|mask;x=0;y=0;data={h},{w},{payload}|>"
+    )
+    jpeg = _lavfi("color=c=gray:s=64x48", "-f", "mjpeg")
+    rw, rh, raw = _rgba(await _cut_out(text, jpeg))
+    assert (rw, rh) == (w, h) and raw[3::4] == bytes(255 * v for v in left)
+    plain = await sam.crop(jpeg, sam.frac(parse_segmentation(text)[0]["box"]))
+    assert (int.from_bytes(plain[16:20], "big"), int.from_bytes(plain[20:24], "big")) == (w, h)
+
+
+@needs_ffmpeg
 async def test_mask_that_does_not_decode_keeps_the_box_crop():
     png = await _cut_out(SAM_TEXT, _lavfi("testsrc=size=640x360", "-f", "mjpeg"))
     assert png[25] == 2  # RGB, background kept
