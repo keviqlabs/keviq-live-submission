@@ -1,21 +1,19 @@
 """worker/brain/card.py: which card a spoken price lands on when products change. Synthetic events only.
 
 Authority: a price is attached only when the card is certain; when it is not, nothing is written; a card that
-already has a price is not repriced by speech (a new price is a proposal for the shop). The two xfail(strict)
-tests encode that last rule and fail on the current code, which applies a speech to whatever card is current
-when it is handled:
-- the next product's price arrives before its product_seen, so it reprices the previous live card;
-- a clear new price for the live card replaces the price straight away.
+already has a price is not repriced by speech (a new price is a proposal for the shop, D-023). A speech still
+applies to whatever card is current when it is handled, so the price-keeping rule is what protects a priced card:
+- the next product's price arrives before its product_seen, while the previous live card is current;
+- a clear new price for a live or seller-edited card waits for the shop; sizes from the same speech still apply.
 Speech goes through the rule reader (the model reply is an error), so the wording is what the card reads.
 """
 
-import pytest
+import logging
 
-from app.contracts import now_ms
+from app.contracts import make_event, now_ms
 from meta.transport import Reply
-from tests.test_card import cards_in, fresh, hear, run, runner_with, said, seen, settle  # noqa: F401
-
-LIVE_REPRICED = "speech still reprices a live card; fix pending its own task spec and reviewer"
+from tests.test_card import SID, cards_in, fresh, hear, run, runner_with, said, seen, settle  # noqa: F401
+from worker.brain import card
 
 
 def model_down(n: int) -> list[Reply]:
@@ -88,7 +86,6 @@ async def test_stock_count_is_not_a_price(mem_app):
     assert await prices(store, "card-a") == [450000]
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE_REPRICED)
 async def test_next_price_before_its_product_seen_does_not_reprice_the_live_card(mem_app):
     _, store, client = mem_app
     runner = runner_with(client, model_down(2))
@@ -102,7 +99,6 @@ async def test_next_price_before_its_product_seen_does_not_reprice_the_live_card
     assert await prices(store, "card-a") == [450000]
 
 
-@pytest.mark.xfail(strict=True, reason=LIVE_REPRICED)
 async def test_clear_new_price_for_the_live_card_waits_for_the_shop(mem_app):
     _, store, client = mem_app
     runner = runner_with(client, model_down(2))
@@ -111,3 +107,28 @@ async def test_clear_new_price_for_the_live_card_waits_for_the_shop(mem_app):
     await hear(client, store, runner, said("sp-1", "đôi này 250 nghìn", ts + 1000))
     await hear(client, store, runner, said("sp-2", "đôi này 220 nghìn", ts + 15000))
     assert await prices(store, "card-a") == [250000]
+
+
+async def test_seller_edited_price_is_not_repriced_by_speech(mem_app, caplog):
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(1))
+    ts = now_ms()
+    [draft] = await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
+    edit = {k: draft[k] for k in card.CARD_FIELDS} | {"version": 2, "price": 399000, "status": "edited"}
+    await run(client, runner, make_event("card", SID, ts + 100, "replay", event_id="console-1", **edit))
+    with caplog.at_level(logging.INFO, logger="worker.card"):
+        assert await hear(client, store, runner, said("sp-1", "đôi này 450 nghìn", ts + 200)) == []
+    assert await prices(store, "card-a") == [399000]
+    [line] = [r.getMessage() for r in caplog.records if "price proposal" in r.getMessage()]
+    assert line == "price proposal: card card-a v2 price 399000 heard 450000 from sp-1"
+
+
+async def test_speech_with_size_and_a_new_price_changes_only_the_sizes(mem_app):
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(2))
+    ts = now_ms()
+    await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
+    await hear(client, store, runner, said("sp-1", "đôi này 450 nghìn", ts + 1000))
+    [nxt] = await hear(client, store, runner, said("sp-2", "đôi này 500 nghìn size 38 nhé", ts + 3000))
+    assert (nxt["status"], nxt["price"]) == ("live", 450000)
+    assert [v["size"] for v in nxt["variants"]] == ["38"]
