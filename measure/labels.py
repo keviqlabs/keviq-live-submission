@@ -132,7 +132,9 @@ def expected_action(events: list[dict], gold: dict[str, dict]) -> dict:
     """The model's part of each gold `expected_action`. ask_customer: an order whose size or item the comment
     leaves open; a size where gold has none, or another reference_kind where gold is unresolved, is a guess.
     needs_seller: an order the seller must decide on (discount, amount over the threshold); every order field
-    must be right. Whether the ask or the NEEDS_SELLER order then happens is measured on the orders side."""
+    must be right. confirm_cancel and none: `other` comments (contract v1 has no cancel label); the label is the
+    model's whole part. Whether the ask, the NEEDS_SELLER order or the cancel then happens is measured on the
+    orders side."""
     labels = latest_labels(events)
     out = {}
     for cid, g in sorted(gold.items()):
@@ -141,7 +143,7 @@ def expected_action(events: list[dict], gold: dict[str, dict]) -> dict:
             continue
         lab = labels.get(cid) or {}
         want, got = g["order"], draft_fields(lab.get("order_draft"))
-        if lab.get("label") != "order":
+        if lab.get("label") != g["label"]:
             why = f"label {lab.get('label') or 'missing'}"
         elif action == "ask_customer":
             guesses = []
@@ -150,9 +152,11 @@ def expected_action(events: list[dict], gold: dict[str, dict]) -> dict:
             if want["reference_kind"] == "unresolved" and got["reference_kind"] != "unresolved":
                 guesses.append(f"reference_kind {got['reference_kind']}")
             why = "guessed " + ", ".join(guesses) if guesses else None
-        else:
+        elif action == "needs_seller":
             bad = [f for f in FIELDS if got[f] != want[f]]
             why = "wrong " + ", ".join(bad) if bad else None
+        else:
+            why = None
         v = out.setdefault(action, {"n": 0, "ok": 0, "misses": []})
         v["n"] += 1
         v["ok"] += why is None
