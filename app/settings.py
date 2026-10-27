@@ -39,6 +39,11 @@ def env_int(name: str, default: int) -> int:
     return int(os.environ.get(name, default))
 
 
+def catalog_path() -> Path:
+    """The item catalog: CATALOG_PATH (absolute, or relative to the repo root), else data/catalog.json."""
+    return ROOT / (env("CATALOG_PATH") or "data/catalog.json")
+
+
 def database_url() -> str | None:
     return env("DATABASE_URL")
 
