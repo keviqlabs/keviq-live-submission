@@ -20,7 +20,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from app.contracts import new_id, now_ms
-from app.settings import ROOT
+from app.settings import catalog_path
 from app.store import live_cards_from
 from connectors.facebook.interface import CommentModerator
 from connectors.sim.moderator import SimModerator
@@ -99,7 +99,7 @@ if it holds a link, else none. Return exactly one item per comment_id."""
 
 
 def load_catalog() -> list[dict]:
-    return json.loads((ROOT / "data" / "catalog.json").read_text())
+    return json.loads(catalog_path().read_text())
 
 
 def is_fixture(event: dict) -> bool:

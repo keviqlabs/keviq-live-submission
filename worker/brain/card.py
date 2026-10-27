@@ -32,7 +32,7 @@ from dataclasses import dataclass, field
 import httpx
 
 from app.contracts import now_ms
-from app.settings import ROOT, env
+from app.settings import ROOT, catalog_path, env
 from meta.client import ModelError, SchemaError
 from meta.meter import BudgetExceeded
 from worker.brain import window
@@ -41,9 +41,11 @@ from worker.runner import build
 from worker.voice import vn
 
 log = logging.getLogger("worker.card")
-CATALOG: list[dict] = json.loads((ROOT / "data" / "catalog.json").read_text())
-CATEGORIES = sorted({i["category"] for i in CATALOG})
-COLORS = sorted({v["color"] for i in CATALOG for v in i["variants"]})
+CATALOG: list[dict] = json.loads(catalog_path().read_text())  # the items on sale (HQ417)
+# The words the vision and speech prompts and the transcriber use stay those of data/catalog.json (HQ417)
+WORDS: list[dict] = json.loads((ROOT / "data" / "catalog.json").read_text())
+CATEGORIES = sorted({i["category"] for i in WORDS})
+COLORS = sorted({v["color"] for i in WORDS for v in i["variants"]})
 CATEGORY_VI = {
     "bag": "Túi",
     "belt": "Thắt lưng",
@@ -89,12 +91,13 @@ SPEECH_SCHEMA = {
 
 def keywords() -> list[str]:
     """Catalog product names, for the transcriber's keyword list."""
-    return [i["name"] for i in CATALOG]
+    return [i["name"] for i in WORDS]
 
 
 def match(category: str, color: str | None) -> dict | None:
-    """The one catalog item of this category (and colour, when seen); None when it is not unique."""
-    same = [i for i in CATALOG if i["category"] == category]
+    """The one catalog item of this category (and colour, when seen); None when it is not unique. An item with
+    `categories` is of each of them; one without is of its `category` (HQ417)."""
+    same = [i for i in CATALOG if category in (i.get("categories") or [i["category"]])]
     if color:
         same = [i for i in same if any(v["color"] == color for v in i["variants"])]
     return same[0] if len(same) == 1 else None
