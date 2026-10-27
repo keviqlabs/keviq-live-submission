@@ -2,6 +2,20 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-27 — live product cards (worker/media, vision, voice, brain/card)
+
+Numbers continue after D-014/D-015 of the first-real-call entry (PR #4).
+
+**D-020 Frames, Spark latency, stream wiring.** Frames are cut at 1 fps with the long side at most 640 px (D-015: phone portrait 1080×1920 → 360×640). Spark frame reads with the current `meta/client.py`, measured on synthetic frames: p50 4782 ms / p95 6233 ms (n=20); card_from_speech 5–8 s. `worker/brain/__init__.py` merges each stream's HANDLERS per event type with one extend-safe line, so other streams append without editing card code. Events from `worker/media` (frame, speech) use `source: "replay"` because they come from a recording, and carry the four C8 timing keys on the session clock.
+
+**D-019 The card image is the frame cropped to SAM's box.** SAM's reply shape is in D-014. On this branch: 6 real calls, all ok, 892–1419 ms, 0.0025 USD each; in the 3 replies inspected the box matched a drawn circle (centre 320,180, r 80, 640×360 frame) exactly. We could not decode the mask from the docs pages we may read: base85 gives a 4-byte big-endian length, then bytes that are not zlib, deflate, lzma, bz2, brotli, zstd or lz4 for `~` (lossless); for `!` (one_bit) they are 98 bytes for a 159×159 mask, too few for a plain bit raster. The docs name `meta_sam_parser` as the decoder; it is not a dependency (installing it needs the Founder's approval). Until then `sam.cut_out` crops the frame to the first box: real pixels, background kept, nothing generated. No box → `image_url` stays null.
+
+**D-018 Voice runs in ENDPOINTING mode; one `speech` event per completed turn.** The handshake and message types are in D-014 (`meta/client.py`, PR #4; this branch does not change the client). `worker/voice` sends `mode: "ENDPOINTING"`, the catalog as `keywords` and `languageBias: ["Vietnamese"]`. Only `speechComplete` becomes a `speech` event; its span is the turn's `speechStart` → `speechComplete` `audioProcessedMs` (processing progress, not word times). An `error` message ends the stream. Real run on 300 s of synthetic Vietnamese speech (macOS TTS, 15 seller lines looped): 67 final turns, final-after-turn-end p50 1422 ms / p95 1504 ms (n=67), 0.015 USD. The 5 turns printed match the script except one doubled word, and one turn joins two lines; word error rate was not measured.
+
+**D-017 Speech is read in the background.** card_from_speech takes 5–8 s on Spark, and the worker handles events one at a time, so an inline read delayed the next `product_seen` card by up to 2.4 s on demo1. `on_speech` now pins the card that is current when the speech arrives and returns at once; the read finishes as a background task and posts its version then. A card with a read in flight is not retired by a product switch; if the read brings no price after the switch, the card is retired then. Cost: a card goes live about 5 s after the price is spoken, against ~0 ms for the rule reader alone.
+
+**D-016 Replayed product_seen needs a flag to open cards.** A `product_seen` without `caused_by` comes from a replay file, not from the vision worker. It opens cards only with `CARDS_FROM_REPLAY=1`, so a replay that still carries fixture cards does not get a second set. With `--no-fixtures` the vision worker makes `product_seen` from frames and sets `caused_by`.
+
 ## 2026-10-27 — scaffold + contracts
 
 **D-013 Acceptance criteria in English (v1).** `contracts/acceptance.md` is replaced by the Founder's English version of C1–C11 (27 October 2026); the Vietnamese copy of the day-1 table is retired. Changes in form: the "changed from v0.2" column becomes "how it is checked", the out-of-P0 row becomes a paragraph, and the C11 sourcing note is shortened. The criteria and targets are the same; no schema, measure or test change follows from it.
