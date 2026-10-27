@@ -36,7 +36,7 @@ How the pieces fit: `docs/architecture.md`. Why: `docs/DECISIONS.md`.
 
 ## Label latency (C8)
 
-One real run on 27 October: 200 synthetic comments from `data/comments/` posted at their own pace (`connectors.sim.comments --speed 1`, about 9 minutes), muse-spark-1.3 with `reasoning.effort=minimal`, session `comments200-s1-1027-123307`. The target is label p95 ≤ 1 s and it is **not met**. Why and what was tried: `docs/DECISIONS.md` D-021. Evidence: `docs/evidence/2026-10-27/measure-comments200-s1-1027-123307-124319.json` and the command output in PR #3.
+One real run on 27 October: 200 synthetic comments from `data/comments/` posted at their own pace (`connectors.sim.comments --speed 1`, about 9 minutes), muse-spark-1.3 with `reasoning.effort=minimal`, session `comments200-s1-1027-123307`. The target is label p95 ≤ 1 s and it is **not met**. Why and what was tried: `docs/DECISIONS.md` D-022. Evidence, both read from the stored events of the run: `docs/evidence/2026-10-27/measure-comments200-s1-1027-123307-124319.json` (`python -m measure`: the four stages, model_call) and `docs/evidence/2026-10-27/labels-comments200-s1-1027-123307.json` (`python -m measure.labels`: end to end, first hide, F1, order fields, cost). The command output is in PR #3.
 
 | comment_labeled, ms | p50 | p95 | n |
 |---|---|---|---|
