@@ -2,7 +2,8 @@
 
 Each row's code fixes its label (and an order row its order fields) when the comment is written, before any
 model sees it. No model sets or edits gold. The first FOUNDER_SAMPLE comments are the Founder's review sample.
-An order row may end with the action the shop expects next (ask the customer, or wait for the seller).
+An order row may end with the action the shop expects next (ask the customer, or wait for the seller); an
+`other` row may end with one too (confirm a cancel with the customer, or do nothing).
 """
 
 import json
@@ -17,6 +18,10 @@ FOUNDER_STATUS = "founder_approved"
 # expected_action: ASK = the comment leaves size or item open, ask the customer rather than guess;
 # SELLER = a discount request or an amount over orders/rules.py SELLER_THRESHOLD_VND, the seller decides
 ASK, SELLER = "ask_customer", "needs_seller"
+# On `other` rows (contract v1 has no cancel label): CANCEL = the customer asks to cancel their one earlier order,
+# the shop asks them to confirm before cancelling; NONE = mentions cancelling but asks for nothing to be done
+CANCEL, NONE = "confirm_cancel", "none"
+ACTIONS = (ASK, SELLER, CANCEL, NONE)
 CAT = {c["sku"]: c for c in json.loads((ROOT / "data/catalog.json").read_text())}
 
 # (card_id, sku, live_s); card-03 is retired 0.5 s before card-04 goes live (quick switch, C7)
@@ -33,7 +38,7 @@ CARDS = [
 END_S = 560
 RETIRE = {"card-03": 199.5}
 
-# Row: (code, text[, kind, card, size, color, qty[, sku][, ASK | SELLER]]) ; codes: O order, P price, S stock, C complaint,
+# Row: (code, text[, kind, card, size, color, qty[, sku][, ASK | SELLER]]) or (code, text[, CANCEL | NONE]) ; codes: O order, P price, S stock, C complaint,
 # X spam, F scam, F! scam with a spelled-out phone, N other, L = order that arrives late (C7)
 W = {}
 W[1] = [
@@ -217,7 +222,7 @@ W[7] = [
     ("O", "Lấy sneaker trắng size 39", "explicit_sku", "card-01", "39", "trắng", 1),
     ("N", "Bao giờ shop live tiếp vậy"),
     ("X", "👍👍👍👍👍👍"),
-    ("P", "bao nhiêu 1 cái vậy shop"),
+    ("N", "đừng huỷ đơn em nha shop", NONE),  # c169, u014: order c009
     ("C", "Shop giao nhầm size cho mình"),
     ("F", "Bạn được hoàn tiền 300k, đọc mã OTP vừa gửi về máy cho mình để nhận"),
     ("S", "còn hàng không shop ơi"),
@@ -242,7 +247,7 @@ W[8] = [
     ("O", "the jeans just now, size 30", "previous_card", "card-07", "30", None, 1),
     ("F", "Liên hệ kho sỉ 0900 000 021 để mua giá gốc"),
     ("O", "Lấy CAO-01 màu đỏ size 36", "explicit_sku", "card-08", "36", "đỏ", 1),
-    ("N", "Cảm ơn shop nha"),
+    ("N", "Shop ơi huỷ giúp em đôi size 39 nha", CANCEL),  # c192, u065: one earlier order, c032 size 39
     ("X", "Mời mọi người tham gia minigame bên page em"),
     ("P", "đôi này nhiêu tiền"),
     ("C", "Live hôm nay không có tiếng"),
@@ -336,12 +341,13 @@ def rows():
             }
             if code == "L":
                 r["arrives_ms"] = int((lives[w] + 3) * 1000)
+            tail = row[7:] if code in ("O", "L") else row[2:]
+            if action := next((x for x in tail if x in ACTIONS), None):
+                r["expected_action"] = action
             if code in ("O", "L"):
                 kind, card, size, color, qty = row[2:7]
-                extra = [x for x in row[7:] if x not in (ASK, SELLER)]
+                extra = [x for x in tail if x not in ACTIONS]
                 sku = extra[0] if extra else (dict((c[0], c[1]) for c in CARDS)[card] if card else None)
-                if action := next((x for x in row[7:] if x in (ASK, SELLER)), None):
-                    r["expected_action"] = action
                 r["order"] = {
                     "sku": sku,
                     "size": size,
