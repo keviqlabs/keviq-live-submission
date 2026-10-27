@@ -7,7 +7,8 @@
   in the background (D-018; the rule reader in worker/voice/vn.py when there is no key or the call fails).
   A price makes the card live. Each change is a new version whose provenance lists the speech event ids (C4).
 - When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background; the frame
-  cropped to SAM's box (real pixels, background kept, D-020) arrives as the next version's image_url.
+  cut to SAM's box with SAM's mask as alpha (real pixels, nothing retouched, D-020) arrives as the next version's
+  image_url.
 - product_seen replayed from a file (no `caused_by`) opens cards only with CARDS_FROM_REPLAY=1, so a replay that
   still carries fixture cards does not get a second set (docs/DECISIONS.md D-017).
 """
@@ -275,7 +276,7 @@ async def apply_speech(event: dict, ctx, s: Session, cid: str) -> None:
 
 
 async def attach_cutout(event: dict, ctx, s: Session, cid: str) -> None:
-    """SAM 3.1 crop of the card's frame -> next version with image_url (caused by the speech and frame)."""
+    """SAM 3.1 cut-out of the card's frame -> next version with image_url (caused by the speech and frame)."""
     from worker.vision import frames, sam
 
     meta = s.meta[cid]

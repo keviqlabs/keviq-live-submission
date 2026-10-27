@@ -94,7 +94,7 @@ async def probe(args) -> dict:
             sam_ms.append(end - start)
             sam_ok += 1
             (out / f"cut_{k:02d}.png").write_bytes(__import__("base64").b64decode(url.split(",", 1)[1]))
-        print(f"  sam  t={r['t_s']}s -> {'crop saved' if res else 'no box (see log)'}")
+        print(f"  sam  t={r['t_s']}s -> {'cut-out saved' if res else 'nothing found (see log)'}")
     report["sam"] = {"calls": sum(1 for c in calls if c["model"] == client.models["sam"]), "cut_outs": sam_ok,
                      "latency_ms": stats(sam_ms)}  # fmt: skip
 
