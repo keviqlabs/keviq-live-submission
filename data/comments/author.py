@@ -2,6 +2,7 @@
 
 Each row's code fixes its label (and an order row its order fields) when the comment is written, before any
 model sees it. No model sets or edits gold. The first FOUNDER_SAMPLE comments are the Founder's review sample.
+An order row may end with the action the shop expects next (ask the customer, or wait for the seller).
 """
 
 import json
@@ -11,8 +12,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 FOUNDER_SAMPLE = 30
-# "founder_approved" once the Founder has confirmed the first FOUNDER_SAMPLE labels; then re-run this script
-FOUNDER_STATUS = "founder_pending"
+# The Founder confirmed all FOUNDER_SAMPLE labels on 27 October 2026, none changed
+FOUNDER_STATUS = "founder_approved"
+# expected_action: ASK = the comment leaves size or item open, ask the customer rather than guess;
+# SELLER = a discount request or an amount over orders/rules.py SELLER_THRESHOLD_VND, the seller decides
+ASK, SELLER = "ask_customer", "needs_seller"
 CAT = {c["sku"]: c for c in json.loads((ROOT / "data/catalog.json").read_text())}
 
 # (card_id, sku, live_s); card-03 is retired 0.5 s before card-04 goes live (quick switch, C7)
@@ -29,7 +33,7 @@ CARDS = [
 END_S = 560
 RETIRE = {"card-03": 199.5}
 
-# Row: (code, text[, kind, card, size, color, qty, sku]) ; codes: O order, P price, S stock, C complaint,
+# Row: (code, text[, kind, card, size, color, qty[, sku][, ASK | SELLER]]) ; codes: O order, P price, S stock, C complaint,
 # X spam, F scam, F! scam with a spelled-out phone, N other, L = order that arrives late (C7)
 W = {}
 W[1] = [
@@ -51,10 +55,10 @@ W[1] = [
     ("X", "follow chéo không mọi người 🔥🔥🔥"),
     ("F", "Admin shop đây, inbox Zalo 0900 000 002 để được giảm 50%"),
     ("P", "đôi sneaker này bao tiền v"),
-    ("O", "lấy đôi này", "current_card", "card-01", None, None, 1),
+    ("O", "lấy đôi này", "current_card", "card-01", None, None, 1, ASK),
     ("S", "size 41 có không"),
     ("F", "Nhận 2 triệu tiền thưởng, bấm http://nhan-qua-tang.example/vn ngay"),
-    ("O", "Chốt cái áo hôm qua shop live nha", "unresolved", None, None, None, 1),
+    ("O", "Chốt cái áo hôm qua shop live nha", "unresolved", None, None, None, 1, ASK),
     ("C", "Live lag quá, hình bị đứng hoài"),
     ("L", "sneaker trắng size 38 x1", "current_card", "card-01", "38", "trắng", 1),
     ("F", "Phí ship đơn của bạn chưa thanh toán, chuyển 30k qua http://ship-fee.example/pay để nhận hàng"),
@@ -68,7 +72,7 @@ W[2] = [
     ("F", "Shop ơi mình là bên vận chuyển, đơn bị giữ ở kho, gọi 0900 000 003 để xử lý"),
     ("O", "Cho mình 1 đôi sneaker trắng size 39 nữa", "explicit_sku", "card-01", "39", "trắng", 1),
     ("O", "đôi giày lúc nãy còn size 39 không, lấy 1 đôi", "previous_card", "card-01", "39", None, 1),
-    ("X", "Mua sỉ quần áo giá gốc, ghé trang em nha"),
+    ("O", "Lấy 3 cái túi này nha shop", "current_card", "card-02", None, None, 3, SELLER),
     ("C", "Lần trước mua túi bị bong da sau 1 tuần"),
     ("P", "price for this bag?"),
     ("O", "lấy 2 cái túi này", "current_card", "card-02", None, None, 2),
@@ -130,7 +134,7 @@ W[4] = [
     ("O", "Lấy túi da đỏ, 1 cái", "explicit_sku", "card-02", None, "đỏ", 1),
     ("F", "Shop chính hãng chỉ bán qua số 0900 000 007, các nơi khác là giả"),
     ("O", "chốt 2 đôi", "current_card", "card-04", None, None, 2),
-    ("N", "chào cả nhà"),
+    ("O", "Chốt 1 đôi size 40, bớt 50k được không shop", "current_card", "card-04", "40", None, 1, SELLER),
     ("X", "Ai mua mỹ phẩm ib em nha"),
     ("P", "giá đôi này sao vậy shop"),
     ("C", "Đặt hàng 3 lần không thấy shop xác nhận"),
@@ -146,7 +150,7 @@ W[5] = [
     ("O", "Đôi boot nâu vừa rồi size 39 còn không, lấy 1", "previous_card", "card-04", "39", "nâu", 1),
     ("S", "size L còn không"),
     ("F", "Nhắn 0900 000 008 để nhận mã giảm giá độc quyền"),
-    ("N", "áo đẹp ghê"),
+    ("O", "size như bạn trên nha shop", "current_card", "card-05", None, None, 1, ASK),
     ("O", "I'll take this jacket in L", "current_card", "card-05", "L", None, 1),
     ("X", "Sub kênh YouTube mình nha mọi người"),
     ("C", "Áo mua lần trước giặt bị phai màu"),
@@ -334,7 +338,10 @@ def rows():
                 r["arrives_ms"] = int((lives[w] + 3) * 1000)
             if code in ("O", "L"):
                 kind, card, size, color, qty = row[2:7]
-                sku = row[7] if len(row) > 7 else (dict((c[0], c[1]) for c in CARDS)[card] if card else None)
+                extra = [x for x in row[7:] if x not in (ASK, SELLER)]
+                sku = extra[0] if extra else (dict((c[0], c[1]) for c in CARDS)[card] if card else None)
+                if action := next((x for x in row[7:] if x in (ASK, SELLER)), None):
+                    r["expected_action"] = action
                 r["order"] = {
                     "sku": sku,
                     "size": size,
@@ -370,6 +377,9 @@ def main():
     )
     print(
         "scam with contact", sum(r["label"] == "scam" and (r["has_phone"] or r["has_link"]) for r in labels)
+    )
+    print(
+        "expected_action", {r["comment_id"]: r["expected_action"] for r in labels if "expected_action" in r}
     )
 
 
