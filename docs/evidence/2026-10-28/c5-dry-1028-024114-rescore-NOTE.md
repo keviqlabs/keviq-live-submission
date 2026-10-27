@@ -253,3 +253,76 @@ The A2 replay's public note is referenced by hash only:
 - The shop and the customers are scripted (4.0 s per shop action), so the intervention count and the handling
   times follow the script.
 - Reference n is 28 per loop; the target needs at least 50, so one loop cannot meet it.
+
+## Addendum, 2026-10-28 03:50 VN
+
+The sections above are unchanged; their NOTE sha256 at `308fada` is
+`b0c3592c1bea3381d7b3c5b1eb2e61eba5eaf512bfc560ae31b6c4c966cd6e9c`. Nothing here changes a number above.
+
+### Reproduce the rescore from a commit
+
+Command, on a clean checkout of `30619c9` (it adds `measure/c5_rescore.py`):
+
+```
+MODEL_API_KEY= uv run python -m measure.c5 --rescore docs/evidence/2026-10-28/c5-dry-1028-024114-rescore.json --out <dir>
+```
+
+Output: rc 0, `events 466`, `ledger rows 0`, and the three files with the sha256 listed under Run. `cmp` against
+the committed files: 0 for each. The original run file (local, `c5-dry-1028-024114.json`, sha256 `bd3f4a25…`)
+as input gives the same three files. The rescore needs the session's events in `keviq_test` (they hold comment
+text, so they are not in git); if that database is reset, the committed files stay the record.
+
+The original run was not clean: at `9b863a3` the runner, scorer and report files were uncommitted, and no hash of
+them was recorded. What a commit reproduces is the scoring of the stored events, not the run itself.
+
+### Receipt with image 0 / 2: not run
+
+The store holds no image input for this session: 0 of 40 card versions have an `image_url`, the C5 catalog's 10
+items have no image key, and both receipts (the replies for `o-c5-1-016` and `o-c5-1-029`) carry an empty
+`image_url`. The dry run does not run media, so the image half of the receipt criterion reads NOT_RUN here; it is
+not a defect. The E2E after merge needs a media or image path before receipts can be scored with images.
+
+### Situations 1–5: measurement or product
+
+Real numbers kept. Ids are short for `c5-1-<id>`.
+
+| # | result | failing cases | class |
+|---|---|---|---|
+| 1 | 9 / 10 | SP03 has no card in the loop | product: vision gap on SP03 |
+| 2 | 5 / 8 | proposals 3a32, ee9d, ec1b read `replaced` | measurement, open question below |
+| 3 | 12 / 28 | 9 `item_card_live_after_comment` (016, 041, 043, 054, 060, 071, 078, 082, 091) | product: card hold (HOLD_MS), consistent, not proven |
+| | | 4 `no_card_for_item` (029, 032, 035, 045) | product: vision gap on SP03 |
+| | | 3 `item_card_live_before_comment` (031, 095, 098) | product: a returning item's card; 098 is an intended case and stays in |
+| | | n 28 below the 50 the target needs | measurement scope: one loop |
+| 4 | 1 / 4 | 010, 021, 048 went DRAFT → CONFIRM_SENT on the right card with no `ask_variant` | product chose the variant where gold asks; the gold premise is being traced |
+| 5 | 1 / 2 | 035, no SP03 card | product: same as 1 |
+
+- Situation 2: the scripted shop's "drop" makes no route call and D-024 has no dismiss event, so a dropped
+  proposal stays open until a sibling proposal's accept closes it; it then reads `replaced`. Also, the situation
+  passes a used proposal even when it is wrong: 2 of the 5 passes (ea0b, b34a) are wrong proposals the shop used.
+  The shop accepts any gold price of the held item (`measure/c5_shop.py` `judge`), while the scorer wants the
+  price at that time (`Gold.price_at`). Both are for the definitions review; the definition is unchanged here.
+- Situation 4: 032 passes on the 5 s ask, but the ask went to the SP02 card (gold SP03, which has no card). Stock
+  question answered 0 / 13 is shown and is not part of the verdict.
+
+### Interventions: what the measure counts
+
+Definition, unchanged (core.c5): a card version whose `provenance.edited_by` is `seller`, plus an order event whose
+actor is `seller`. Accepting a proposal ("dùng giá này") writes a seller card version, so it counts. The total
+stays 28; by event:
+
+| source | count | events |
+|---|---|---|
+| shop: proposal used | 3 | card_b54a45cd805e4187a85a, card_ce21b0d5ebab43478723, card_a54b9408528442388df4 |
+| shop: price typed | 1 | card_545458faf4b045ed8bde (card-1-00 v5; it fixed proposal 380e) |
+| shop: orders | 19 | variant then confirm sent 9, over stock then cancelled 8, price changed 1, discount 1 |
+| worker version that copied `edited_by` | 2 | card_93b17d7ca3bc4617983c (v6, after product_seen ps-1-11), card_e289fbdee4fa418bba92 (v7, after speech u1-62) |
+| runner retire version | 3 | retire-card-1-00-v9, retire-card-1-03-v5, retire-card-1-09-v4 |
+
+So the shop's own actions are 23 of the 28. The 2 worker versions follow DECISIONS (a worker version copies
+`edited_by` from the version before), which the definition does not separate: a SPEC_GAP for review. The 3 retire
+versions are a runner DEFECT: `measure/c5.py` `retire_events` copies the last version's provenance, so a retire
+after a seller version says a person edited it. Found by the author; not fixed in this commit, pending the
+reviewer's ruling. "Price typed 6" above is these 1 + 2 + 3.
+
+Proposal outcomes: used 3, fixed 1, replaced 3, dropped 1; NEEDS_SELLER 19.
