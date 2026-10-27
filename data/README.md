@@ -10,19 +10,21 @@ Synthetic data only: fake catalog, labeled comments, Messenger scripts. No video
 ## comments/ (labels stream gold)
 
 - `cards.jsonl`: 9 card events over about 9 minutes (8 cards, one retired 0.5 s before the next goes live).
-- `labels.jsonl`: 200 comments (Vietnamese and English) with the gold label, `has_phone`, `has_link` and, for orders, the order fields (`sku`, `size`, `color`, `qty`, `reference_kind`, `referenced_card_id`). `arrives_ms` marks a late comment. `expected_action` (optional, orders only) is what the shop should do next, below. `connectors.sim.comments` posts the comments without the gold fields; `measure.labels` scores against them.
+- `labels.jsonl`: 200 comments (Vietnamese and English) with the gold label, `has_phone`, `has_link` and, for orders, the order fields (`sku`, `size`, `color`, `qty`, `reference_kind`, `referenced_card_id`). `arrives_ms` marks a late comment. `expected_action` (optional, on some order and `other` rows) is what the shop should do next, below. `connectors.sim.comments` posts the comments without the gold fields; `measure.labels` scores against them.
 - `author.py` writes both files: `python data/comments/author.py`.
 
 How the labels are set: every comment is a hand-written row in `author.py` whose code (order, price, stock, complaint, spam, scam, other) fixes its label at the moment the comment is written, and an order row also fixes its order fields. The labels exist before any model call. No model sets, suggests or edits a gold label, so the F1 of the labels stream is never scored against the model's own output. The same person who wrote these rows also wrote the labeling prompt, so the Founder reviews a sample as an outside check.
 
 Labeling guide: `complaint` includes problems with the stream itself (lag, frozen picture, no sound), so the seller sees them.
 
-`expected_action` on an order row (data only, not part of `contracts/`):
+`expected_action` (data only, not part of `contracts/`):
 
 - `ask_customer`: the comment leaves the size or the item open; the shop asks rather than guesses. c019 "lấy đôi này" (no size), c022 "the shirt from yesterday's live" (`unresolved`), c106 "size như bạn trên" (size as the person above). The model guesses if it fills in a size where gold has none, or another `reference_kind` where gold is `unresolved`.
 - `needs_seller`: the order goes to the seller: c034, 3 bags at 690,000đ (over `SELLER_THRESHOLD_VND` 2,000,000đ in `orders/rules.py`), and c092, a discount request inside an order. The model's part is to fill in every order field right.
+- `confirm_cancel`, on an `other` row (contract v1 has no cancel label; decided 27 October): c192 "Shop ơi huỷ giúp em đôi size 39 nha", from customer u065, whose one earlier order is c032, size 39. The shop asks the customer to confirm in Messenger and cancels only after they do. The model's part is the label `other`.
+- `none`, on an `other` row: c169 "đừng huỷ đơn em nha shop" (don't cancel my order), from u014, who ordered in c009. Nothing should be cancelled; the model's part is the label `other`.
 
-`measure.labels` reports, per value, how many of these rows the model got right and why the others missed. Whether the ask or the NEEDS_SELLER order then happens is checked in the integration replay, not here. Other rows with no size or an unresolved item carry no `expected_action`. A cancel row is not in the set yet.
+`measure.labels` reports, per value, how many of these rows the model got right and why the others missed. Whether the ask, the NEEDS_SELLER order or the cancel then happens is checked in the integration replay, not here. Other rows with no size or an unresolved item carry no `expected_action`.
 
 `label_source` on each row:
 
