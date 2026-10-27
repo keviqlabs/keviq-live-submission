@@ -17,6 +17,11 @@ Labels in -orders and -load are the gold labels replayed, not model output, and 
 measured in -shield only); their cards are replayed as fx- so the labels and card brains leave those sessions
 alone. No model is called, so every time here is worker + store, not model latency. CHECK rows set the exit code
 (1 if one fails); MEASURE rows report numbers against targets and do not.
+
+Limit: the run shares the test database. An app + worker started on it during the run (`make smoke`, a second
+`make integration`, a replay script) reads the same event stream from the seq it starts at, has not seen a
+session's earlier fx- cards and labels its comments again. The "no second worker" CHECK in each session flags
+that run; rerun it alone. tests/integration.sh also refuses a port that another app already answers on.
 """
 
 import argparse
@@ -147,18 +152,50 @@ def sent(evs: list[dict], thread: str, template: str | None = None) -> list[dict
     ]
 
 
+def new_orders(before: list[dict], after: list[dict]) -> list[str]:
+    seen = {e["event_id"] for e in before}
+    return [e["event_id"] for e in after if e["type"] == "order" and e["event_id"] not in seen]
+
+
+def changed(before: list[dict], after: list[dict], mid: str) -> list[str]:
+    """What customer message `mid` changed: its consequences and any order event that was not there before."""
+    return sorted({e["event_id"] for e in caused(after, mid)} | set(new_orders(before, after)))
+
+
+def second_worker(evs: list[dict], sid: str, gold_only: bool) -> list[str]:
+    """Comments that another worker on the same database labeled (see the module limit).
+
+    In a gold-only session (-orders, -load) every label that is not a replayed gold label is one. Elsewhere a
+    comment gets at most one shield label and one batch label, so a comment with more than that was labeled twice."""
+    labels = [e for e in evs if e["type"] == "comment_labeled"]
+    if gold_only:
+        return sorted({e["comment_id"] for e in labels if not e["event_id"].startswith(f"{sid}.gl-")})
+    n = Counter(e["comment_id"] for e in labels)
+    signals = {e["comment_id"] for e in labels if e["scam_signals"]}
+    return sorted(c for c, k in n.items() if k > (2 if c in signals else 1))
+
+
 def invariants(evs: list[dict]) -> list[str]:
     """Order-layer invariants over one session's events; each string is a violation.
 
     - CONFIRMED only by the customer, caused by CONFIRM:<order_id> from the order's own thread;
     - a customer CANCELLED only caused by CANCEL:<order_id> from the order's own thread;
     - every message about an order goes to that order's customer;
-    - no model_call (the run has no key)."""
+    - no model_call (the run has no key).
+    The customer of o-<comment_id> is the comment's author, read from the comment, not from the order: the order
+    layer uses the order's customer_ref itself, so taking it from there would let the code grade itself. An order
+    whose customer_ref is not the author is a violation; an order with no comment in the session falls back to
+    its customer_ref."""
     by_id = {e["event_id"]: e for e in evs}
-    owner = {order_id_for(e["comment_id"]): thread_for(e["user_ref"]) for e in evs if e["type"] == "comment"}
-    owner |= {e["order_id"]: thread_for(e["customer_ref"]) for e in evs if e["type"] == "order"}
+    author = {order_id_for(e["comment_id"]): e["user_ref"] for e in evs if e["type"] == "comment"}
+    owner = {e["order_id"]: thread_for(e["customer_ref"]) for e in evs if e["type"] == "order"}
+    owner |= {oid: thread_for(u) for oid, u in author.items()}
     bad = []
     for e in evs:
+        if e["type"] == "order" and e["order_id"] in author and e["customer_ref"] != author[e["order_id"]]:
+            bad.append(
+                f"{e['event_id']}: {e['order_id']} for {e['customer_ref']}, comment by {author[e['order_id']]}"
+            )
         if e["type"] == "model_call":
             bad.append(f"{e['event_id']}: model_call in a run without a key")
         elif e["type"] == "order" and (
@@ -246,6 +283,14 @@ class Run:
         bad = invariants(evs)
         self.check(f"{label}: order-layer invariants hold on {len(evs)} events", not bad, "; ".join(bad[:3]))
 
+    def one_worker(self, label: str, sid: str, evs: list[dict], gold_only: bool) -> None:
+        extra = second_worker(evs, sid, gold_only)
+        self.check(
+            f"{label}: no second worker labeled the session (shared test database)",
+            not extra,
+            f"labeled again: {len(extra)} comments {extra[:5]}",
+        )
+
 
 async def orders(run: Run, sid: str) -> None:
     """Missing size, wrong customer, negated and real cancel, keep: the customers of c009, c019, c032."""
@@ -266,9 +311,13 @@ async def orders(run: Run, sid: str) -> None:
         "c009 'lấy 2 đôi size 40' drafts o-c009", states(evs, "o-c009"), "->".join(states(evs, "o-c009"))
     )
     c009_state = (last_order(evs, "o-c009") or {}).get("state")
+    c169 = [e["event_id"] for e in evs if e["type"] == "comment_labeled" and e["comment_id"] == "c169"]
     run.check(
         "c169 'đừng huỷ đơn em nha shop' (negated, label other): no message, o-c009 not cancelled",
-        not caused(evs, f"{sid}.gl-c169") and "CANCELLED" not in states(evs, "o-c009"),
+        not any(caused(evs, i) for i in c169)
+        and not sent(evs, u014, "ask_cancel")
+        and "CANCELLED" not in states(evs, "o-c009"),
+        f"{len(c169)} labels of c169",
     )
     cancel_ask = sent(evs, u065, "ask_cancel")
     replies = [
@@ -280,11 +329,14 @@ async def orders(run: Run, sid: str) -> None:
         f"{len(cancel_ask)} ask_cancel, quick replies {replies}",
     )
 
+    before = evs
     mid = await run.say(sid, u065, text="size 40 nha")
     evs = await run.settle(sid)
-    got = [e.get("template") or e.get("state") for e in caused(evs, mid)]
+    got = changed(before, evs, mid)
     run.check(
-        "another customer's 'size 40 nha' does not answer c019", not states(evs, "o-c019"), f"replies {got}"
+        "another customer's 'size 40 nha' with c019's question open changes nothing (no reply, no order event)",
+        not got,
+        f"changed {got}",
     )
 
     mid = await run.say(sid, u064, text="size 39 nha shop")
@@ -300,13 +352,13 @@ async def orders(run: Run, sid: str) -> None:
     )
 
     for thread, qr, oid in ((u065, "CONFIRM:o-c019", "o-c019"), (u065, "CANCEL:o-c009", "o-c009")):
-        before = states(evs, oid)
+        before = evs
         mid = await run.say(sid, thread, quick_reply=qr)
         evs = await run.settle(sid)
         got = [e.get("template") or e.get("state") for e in caused(evs, mid)]
         run.check(
-            f"{qr} from another customer ({thread}) is refused",
-            states(evs, oid) == before and not about(evs, mid, oid),
+            f"{qr} from another customer ({thread}) is refused: no order event, nothing about {oid}",
+            not new_orders(before, evs) and not about(evs, mid, oid),
             f"replies {got}",
         )
 
@@ -360,6 +412,7 @@ async def orders(run: Run, sid: str) -> None:
         "a repeated CANCEL:o-c032 makes no second transition", states(evs, "o-c032").count("CANCELLED") == 1
     )
     run.invariants("orders", evs)
+    run.one_worker("orders", sid, evs, gold_only=True)
 
 
 async def load(run: Run, sid: str) -> None:
@@ -378,9 +431,8 @@ async def load(run: Run, sid: str) -> None:
         after = [when(c) - when(lb) for c in caused(evs, lb["event_id"])]
         (dts.append(min(after)) if after else missing.append(lb["comment_id"]))
     within = sum(dt <= CYCLE_MS for dt in dts)
-    finals = Counter(
-        e["state"] for e in {e["order_id"]: e for e in evs if e["type"] == "order"}.values()
-    )  # last event per order
+    last = {e["order_id"]: e for e in evs if e["type"] == "order"}  # last event per order
+    finals = Counter(e["state"] for e in last.values())
     unresolved = sum(1 for e in evs if e["type"] == "comment_labeled" and e["label"] == "order") - len(labels)
     run.check(
         f"load: every order label with a card gets an orders-stream consequence ({len(labels)} labels)",
@@ -395,11 +447,27 @@ async def load(run: Run, sid: str) -> None:
         "card (the labels brain's question, not run here)",
         within == len(labels),
     )
+    waiting = [e for e in last.values() if e["state"] == "NEEDS_SELLER"]
+    run.measure(
+        f"load: why orders wait for the seller ({len(waiting)} of {len(last)} final states are NEEDS_SELLER)",
+        " | ".join(f"{n} x {r}" for r, n in Counter(e.get("reason") for e in waiting).most_common(8)),
+    )
+    ts = [r["ts_ms"] for r in jsonl(LABELS)]
+    span_min = (max(ts) - min(ts)) / 60000
+    seller = sum(e["type"] == "order" and e["actor"] == "seller" for e in evs)
+    run.measure(
+        "load: seller interventions per hour (C5) are not measured here",
+        f"seller order decisions in this replay: {seller} (nobody acts as the seller). NEEDS_SELLER is a raw state"
+        f" (a queue entry), not an intervention: {len(waiting)} entries over {span_min:.1f} min of gold source "
+        f"time would be {len(waiting) / span_min * 60:.0f}/h only if each took exactly one seller tap, which "
+        "nothing here measures",
+    )
     run.check(
         "load: no CONFIRMED and no CANCELLED without a customer reply",
         not ({"CONFIRMED", "CANCELLED"} & set(finals)),
     )
     run.invariants("load", evs)
+    run.one_worker("load", sid, evs, gold_only=True)
 
 
 async def shield(run: Run, sid: str) -> None:
@@ -439,6 +507,7 @@ async def shield(run: Run, sid: str) -> None:
         r["phone_visible_max_s"] is not None and r["phone_visible_max_s"] <= 5,
     )
     run.invariants("shield", evs)
+    run.one_worker("shield", sid, evs, gold_only=False)
 
 
 async def demo1(run: Run, sid: str) -> None:
@@ -458,6 +527,7 @@ async def demo1(run: Run, sid: str) -> None:
         f"{k['covered']}/{k['n']} (no cards without the model; not a model result); events {dict(types)}",
     )
     run.invariants("demo1", evs)
+    run.one_worker("demo1", sid, evs, gold_only=False)
 
 
 async def main_async(args, prefix: str) -> Run:
