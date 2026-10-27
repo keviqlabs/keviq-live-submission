@@ -2,6 +2,24 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-28 — which card a spoken price goes to
+
+**D-025 A final speech line goes to a card by media time and by the kind of item it names; any other heard price waits for the seller.** No contract change: no new field or event, `v` stays 1.
+
+- Span: each `is_new` product_seen opens a span on its card, `[frame_ts_ms − D, the next is_new product_seen's frame_ts_ms)`, with D = 1000 ms because frames are cut at 1 fps (D-021). A card reopened by SKU gets another span.
+- Candidates: the cards that are not retired and have a span overlapping the line's `[start_ms, end_ms]`.
+- Price: it goes to a card only when the line has a magnitude word (nghìn, ngàn, trăm, triệu, củ; k or tr right after a number), names a kind of item, and exactly one candidate fits every kind it names. On that card, no price → the price and live; another price → a proposal (D-024); the same price → nothing.
+- Kind words: giày and đôi → shoes; áo → tops; tay cầm and bàn phím → `other` (the vision category for items outside the catalogue). From the catalogue names, with no test1 line using them: túi, thắt lưng, váy, mũ, quần, dép, sandal, boot.
+- Otherwise the price is not applied. The card keeps "giá chưa có" and the console's price box, and the worker logs `price wait: <speech id> reason no_magnitude|no_kind|none|many candidates <card ids>`, without the text.
+- Sizes: applied when exactly one candidate fits the line's kind words (every candidate fits when it names none), also when the price waits.
+- Hold: a line is decided at max(read done, received + HOLD_MS), so a product_seen still being read can arrive first. HOLD_MS = D + H, and H = 3168 ms is the ledger p95 of product_seen latency in run probe-test1-6b-1950 (351 frame reads at the current prompt and effort, `worker/vision/spark.py`). Lines are decided in arrival order; their reads run in parallel.
+- Retire: at a switch, the previous draft is retired only when no undecided line overlaps its spans (this replaces the count of reads in flight). After each decision, an overlapping draft that is not current, has no price and has no other undecided overlapping line is retired by that speech.
+- Speech prompt: the card sentence is gone and "của món này" is now "được nói trong câu", because the line is read before it is known which card it goes to. Both prompts read 22/22 gold prices (`docs/evidence/2026-10-27/speech64-card-line-NOTE.md`).
+
+Why: a price said around a switch went to whichever card was current when the line arrived. In the D-024 replay of test1, 7 proposals carried a later product's price on an earlier card.
+
+Known limits: a price said before the session's first product_seen is not read. H holds only for the current vision prompt and effort, and was measured on files, not the live path; re-measure when either changes. Each line now waits up to HOLD_MS (4168 ms) before it is applied. A line that names no kind of item never sets a price, even with one card in view. The kind words cover the catalogue names and the words used in test1 only.
+
 ## 2026-10-27 — price proposals and the console price route
 
 **D-024 A different spoken price on a priced card becomes a `price_proposal` for the seller; a seller price reaches the card only through a console route.** Contract change: one new event type, and two refusals at `POST /api/sessions/{id}/events` that no current producer triggers (in the seed sessions no priced card changes price and no `(card_id, version)` repeats); `v` stays 1.
