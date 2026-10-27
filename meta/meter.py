@@ -1,4 +1,5 @@
-"""Daily and total spend caps. Spend comes from model_call events in the store (VN calendar day)."""
+"""Daily and total spend caps. Spend comes from model_call events in the store; "today" is the VN calendar day
+the store recorded the call (ingested_ms), whatever ts_ms the event carries."""
 
 import logging
 from collections.abc import Awaitable, Callable
