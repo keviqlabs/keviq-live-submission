@@ -18,6 +18,11 @@ Numbers continue after D-014/D-015 of the first-real-call entry (PR #4).
 
 ## 2026-10-27 — first real calls, input format
 
+**D-016 Tests and smoke use a separate `_test` database; the test rows already written stay.** Until now `test_pg_store_append_only` and `make smoke` wrote to the project database, and a labels worker running live on that database labeled one test comment for real: one billed Spark call, 0.003589 USD, session `pytest-pg`, 27 October. At 12:34 the project database held 566 rows from test sessions (`pytest-pg` 14, eight `smoke-*` 69 each); the log is append-only, so they stay, and branches without this change keep adding to them until they merge it. From now on:
+- pytest and smoke use `TEST_DATABASE_URL`, else `DATABASE_URL` with `_test` added to the database name (`keviq_test`), created and migrated on first use (`python -m app.migrate --test`). pytest exits with code 1 before any test runs if that name does not end in `_test`; smoke and `migrate --test` refuse the same way.
+- pytest and smoke run with `MODEL_API_KEY` set to empty, so no test makes a billed call (the voice tests set a fake key of their own).
+- `/api/cost` adds `test_sessions` (session ids starting `pytest` or `smoke-`): today's and total spend caused by test sessions. The caps still count every `model_call`, test or not: the 0.003589 USD was billed, and a cap that left it out would sit below the real bill.
+
 **D-015 Phone portrait is the default input.** The live source is a phone stream, 9:16 (1080×1920). The frame cutter, product card and overlay take portrait as the default; landscape from OBS is a later, secondary case. The Founder's test video goes in `data/local/test1/` (portrait). Spark's "640 px" frame means the long side (360×640, same token cost as planned); if product recognition on test1 misses the gate, try 720×1280 and record the cost next to the result.
 
 **D-014 Model API shapes checked with one real call per model (closes D-007).** `python -m meta.probe` on synthetic inputs (an ffmpeg-drawn image, 10 s of macOS speech), 27 October, three `model_call` events in session `probe-20261027`:

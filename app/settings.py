@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -34,3 +35,24 @@ def env_int(name: str, default: int) -> int:
 
 def database_url() -> str | None:
     return env("DATABASE_URL")
+
+
+def is_test_database(url: str | None) -> bool:
+    """True for a postgresql:// URL whose database name ends in `_test` (D-016)."""
+    if not url:
+        return False
+    parts = urlsplit(url)
+    return parts.scheme in ("postgres", "postgresql") and parts.path.lstrip("/").endswith("_test")
+
+
+def testing_database_url() -> str | None:
+    """Database for tests and smoke: TEST_DATABASE_URL, else DATABASE_URL with `_test` added to the name."""
+    url = env("TEST_DATABASE_URL")
+    if url:
+        return url
+    base = database_url()
+    if not base or is_test_database(base):
+        return base
+    parts = urlsplit(base)
+    name = parts.path.lstrip("/")
+    return urlunsplit(parts._replace(path=f"/{name}_test")) if name else None
