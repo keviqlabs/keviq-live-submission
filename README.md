@@ -9,6 +9,7 @@ Everything in this repository was written during the event (from 2026-10-26 23:2
 | Feature | Meta model | Commits | Measurement |
 |---|---|---|---|
 | Scaffold: event contracts, append-only store, SSE, replay on the session clock, cost-capped model client, measure | none called yet | branch `scaffold-contracts` | `make check` 58 tests; `make smoke` (real PostgreSQL) OK |
+| Labeled comment stream and contact shield (`worker/brain`), 200 synthetic labeled comments | muse-spark-1.3, `reasoning.effort=minimal` | PR #3 | 200 comments at live speed: template-gold F1 0.976 (n=170), order fields 71/71, label p95 3.9 s (C8 target 1 s, not met) |
 | _filled in daily_ | | | |
 
 **Prior work.** Before the event the author built an earlier prototype (a replay console) in a separate private repository. None of its code is in this repository.
@@ -33,11 +34,31 @@ For model calls, copy `deploy/.env.example` to `.env` at the repo root and set `
 
 How the pieces fit: `docs/architecture.md`. Why: `docs/DECISIONS.md`.
 
+## Label latency (C8)
+
+One real run on 27 October: 200 synthetic comments from `data/comments/` posted at their own pace (`connectors.sim.comments --speed 1`, about 9 minutes), muse-spark-1.3 with `reasoning.effort=minimal`, session `comments200-s1-1027-123307`. The target is label p95 ≤ 1 s and it is **not met**. Why and what was tried: `docs/DECISIONS.md` D-021. Evidence: `docs/evidence/2026-10-27/measure-comments200-s1-1027-123307-124319.json` and the command output in PR #3.
+
+| comment_labeled, ms | p50 | p95 | n |
+|---|---|---|---|
+| receive (comment stored → worker) | 7 | 13 | 233 |
+| wait (worker → model call starts; the 1 s batch window) | 1016 | 1026 | 233 |
+| infer (model call) | 1989 | 2879 | 200 |
+| display (worker emit → app store) | 3 | 4 | 233 |
+| **end to end, comment stored → model label stored** | **3007** | **3895** | 200 |
+| model_call latency_ms | 1983 | 2958 | 199 |
+| first hide, comment stored → hide label stored | 11 | 22 | 34 |
+
+- 199 calls for 200 comments: at live arrival rates each batch holds one comment (one batch held two).
+- receive, wait and display include the 33 shield labels; infer and end to end are model labels only.
+- 33 of the 34 hides come from the shield on receipt. The spelled-out phone number (c146) has no digits for the regex, so the model label hides it, at 3.7 s.
+- Spend: $0.2578 for 199 calls.
+- Earlier run, for comparison: sim speed 20, default effort, batches of 6–9 comments, label p95 21.4 s.
+
 ## Honest limits
 
-- In the scaffold no model is called yet. In `data/sessions/demo1`, the cards, labels and orders are hand-written stand-ins (`fx-` events), so the demo1 numbers check the measuring code, not the models. `uv run python -m connectors.sim.replay --session demo1 --no-fixtures` drops them.
-- C8 latency has no data yet. Its display stage counts worker emit to app store; console render time is not measured.
-- The labeled comment sets used for C3 and C5 (200 and 500 comments) are not built yet; demo1 has 14 comments.
+- In `data/sessions/demo1` no model is called: the cards, labels and orders are hand-written stand-ins (`fx-` events), so the demo1 numbers check the measuring code, not the models. `uv run python -m connectors.sim.replay --session demo1 --no-fixtures` drops them.
+- C8 label latency misses the 1 s target (table above). The display stage counts worker emit to app store; console render time is not measured.
+- The 200-comment labeled set is in `data/comments/` (how the gold is set: `data/README.md`); its Founder review sample, c001–c030, is not confirmed yet. The 500-comment set is not built yet.
 - Facebook is an interface only and Messenger is simulated: nothing is sent to real people and no real comment is hidden.
 - The request and response shapes for the Model API (structured output, SAM, voice stream) come from the docs and are not yet checked against live calls.
 
