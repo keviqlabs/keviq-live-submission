@@ -23,7 +23,7 @@ async def test_speech_read_keeps_the_default_effort():
     reply = responses_reply(json.dumps({"price_vnd": 450000, "sizes": [], "colors": []}))
     client, transport, _, _ = make([reply])
     ctx = SimpleNamespace(client=lambda: client)
-    spoken, _ = await card.read_speech("đôi này 450 nghìn", {"name": "Giày", "price": None}, ctx)
+    spoken, _ = await card.read_speech("đôi này 450 nghìn", ctx)
     [(_, body)] = transport.requests
     assert spoken.price == 450000 and body["text"]["format"]["name"] == "card_from_speech"
     assert "reasoning" not in body
