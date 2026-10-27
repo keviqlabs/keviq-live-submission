@@ -86,6 +86,10 @@ The Founder confirmed the review sample c001–c030 on 27 October (all 30, none 
 - Facebook is an interface only and Messenger is simulated: nothing is sent to real people and no real comment is hidden.
 - The request and response shapes for the Model API (structured output, SAM, voice stream) come from the docs and are not yet checked against live calls.
 
+## Next steps
+
+- Voice co-host: not part of P0 and not built before the 30 October gate; if C5 is met there, a narrow version for the video and demo would speak lines templated from seller-approved card data through local text-to-speech (the Model API has none), filter its own voice so it is never taken as the seller's words, have a pause button, pass every line through `orders/rules.py` and introduce itself as the shop's AI assistant.
+
 ## License
 
 Apache-2.0 — see `LICENSE`.
