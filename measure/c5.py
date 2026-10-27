@@ -6,6 +6,8 @@
   uv run python -m measure.c5 --base-url URL [--loops 5] [--out DIR] [--seconds N] [--paid]
       a running app: per loop the worker (--session) and media start under measure/c5_proc and stop after the
       loop; without --paid their MODEL_API_KEY is empty (0 USD, plumbing only). measure/c5_live
+  uv run python -m measure.c5 --rescore RUN_JSON [--out DIR]
+      a stored dry session scored again with the scorer at HEAD (events from keviq_test). measure/c5_rescore
 
 Per loop k, on the session clock from the loop's t0: the comments of stream-k at t0 + ts_ms (posted at
 t0 + arrives_ms when one arrives late), the shop and the customers of measure/c5_shop; at the loop end every
@@ -200,6 +202,7 @@ def main(argv=None) -> int:
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry", action="store_true", help="0 USD, in-process on keviq_test")
     mode.add_argument("--base-url", help="a running app (worker and media are started per loop)")
+    mode.add_argument("--rescore", metavar="RUN_JSON", help="score a stored dry session again (keviq_test)")
     p.add_argument("--loops", type=int, default=5)
     p.add_argument(
         "--run", help="run id = session id (default c5-test1x5-MMDD-HHMMSS, c5-dry-... with --dry)"
@@ -214,8 +217,12 @@ def main(argv=None) -> int:
     a = p.parse_args(argv)
     if not 1 <= a.loops <= 5:
         p.error("--loops is 1..5 (stream-1..5)")
-    if a.dry and (a.seconds or a.paid):
+    if not a.base_url and (a.seconds or a.paid):
         p.error("--seconds and --paid are for a live run")
+    if a.rescore:
+        from measure import c5_rescore
+
+        return c5_rescore.main(Path(a.rescore), Path(a.out))
     run_id = a.run or f"c5-{'dry' if a.dry else 'test1x5'}-{time.strftime('%m%d-%H%M%S')}"
     args = {"run": run_id, "loops": a.loops, "catalog": Path(a.catalog).resolve(), "out": Path(a.out),
             "check_code": not a.no_code_check}  # fmt: skip
