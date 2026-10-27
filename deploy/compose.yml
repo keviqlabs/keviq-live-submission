@@ -1,0 +1,32 @@
+name: keviq-live
+services:
+  postgres:
+    image: postgres:17-alpine
+    # Default bridge: no per-project network, so it starts on hosts whose address pools are used up.
+    network_mode: bridge
+    environment:
+      POSTGRES_DB: keviq
+      POSTGRES_USER: keviq
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-keviq_local_dev}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keviq -d keviq"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # RTMP ingest comes after the 30/10 gate: `docker compose --profile rtmp up -d mediamtx`
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    profiles: ["rtmp"]
+    network_mode: bridge
+    ports:
+      - "127.0.0.1:1935:1935"
+      - "127.0.0.1:8554:8554"
+      - "127.0.0.1:8888:8888"
+
+volumes:
+  pgdata:
