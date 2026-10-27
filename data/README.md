@@ -32,6 +32,10 @@ Labeling guide: `complaint` includes problems with the stream itself (lag, froze
 - `founder_approved`: c001–c030, the Founder's review sample, confirmed by the Founder on 27 October 2026 (all 30, none changed). Reports list them apart from template gold.
 - `founder_pending`: a sample label the Founder has not confirmed yet. Reports list these apart and do not count them as approved gold. None today.
 
+## comments/c5/ (test1 played 5 times)
+
+Simulated comment streams (100 per loop) and the customer's Messenger replies for 5 loops of test1, written by `author_c5.py`. Files, gold fields and timing: `comments/c5/README.md`.
+
 ## Local media (never committed)
 
 Founder test recordings (phone video, Vietnamese and English sessions) stay on the machine under `data/local/<session>/` (gitignored, along with `*.mp4`, `*.mov`, `*.wav`, `*.m4a`). Do not use anyone else's video without written permission. A replay file built from local media references it by path (`frame.jpeg_path`), never by embedding it.
