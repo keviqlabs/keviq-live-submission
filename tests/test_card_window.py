@@ -1,7 +1,7 @@
-"""worker/brain/card.py with window.py: a heard price goes to the one card whose media span overlaps the line and
-fits the kind of item the line names. Any other line leaves the price null for the seller, with a `price wait` log
-line (D-025, scenario 6). Synthetic text only. The model reply is an error unless a test says otherwise, so the
-rule reader reads the line.
+"""worker/brain/card.py with window.py: a heard price goes to the one card whose media span overlaps the line;
+the kind of item the line names picks between several. Any other line leaves the price null for the seller, with a
+`price wait` log line that counts the session's waits by reason (D-025, scenario 6). Synthetic text only. The
+model reply is an error unless a test says otherwise, so the rule reader reads the line.
 """
 
 import asyncio
@@ -36,7 +36,9 @@ def test_magnitude_and_kind_words():
     assert window.choose("đôi này 450k", cats) == (["card-a"], None)
     assert window.choose("đôi này giá 1tr2", cats) == (["card-a"], None)
     assert window.choose("còn 2 đôi nha", cats) == (["card-a"], "no_magnitude")
-    assert window.choose("giá 450 nghìn", cats) == (["card-a", "card-b"], "no_kind")
+    assert window.choose("giá 450 nghìn", cats) == (["card-a", "card-b"], "many")
+    assert window.choose("giá 450 nghìn", {"card-a": "sneaker"}) == (["card-a"], None)
+    assert window.choose("túi này 450 nghìn", {"card-a": "sneaker"}) == ([], "none")
     assert window.choose("đôi giày với túi 450 nghìn", cats) == ([], "none")
     assert window.choose("áo này 300 nghìn", {"card-a": "shirt", "card-b": "jacket"})[1] == "many"
     assert window.choose("tay cầm 300 nghìn", {"card-a": "other"}) == (["card-a"], None)
@@ -88,7 +90,9 @@ async def test_a_line_across_a_switch_between_two_shoes_waits(mem_app, caplog):
         assert (
             await hear(client, store, runner, line("sp-2", "đôi này 550 nghìn", ts + 5500, ts + 6500)) == []
         )
-    assert waits(caplog) == ["price wait: sp-2 reason many candidates card-a,card-b"]
+    assert waits(caplog) == [
+        "price wait: sp-2 reason many candidates card-a,card-b; session cards1 waits many=1"
+    ]
     assert await prices(store, "card-a") == [450000] and await prices(store, "card-b") == []
     assert await proposals(store) == []
 
@@ -100,19 +104,63 @@ async def test_a_price_read_from_a_line_without_a_magnitude_word_waits(mem_app, 
     await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
     with caplog.at_level(logging.INFO, logger="worker.card"):
         assert await hear(client, store, runner, said("sp-1", "đôi này 450 nha", ts + 1000)) == []
-    assert waits(caplog) == ["price wait: sp-1 reason no_magnitude candidates card-a"]
+    assert waits(caplog) == [
+        "price wait: sp-1 reason no_magnitude candidates card-a; session cards1 waits no_magnitude=1"
+    ]
     assert await prices(store, "card-a") == []
 
 
-async def test_a_price_without_a_kind_word_waits_and_the_card_stays_unpriced(mem_app, caplog):
+async def test_a_price_without_a_kind_word_goes_to_the_one_card_in_view(mem_app, caplog):
     _, store, client = mem_app
-    runner = runner_with(client, model_down(1))
+    runner = runner_with(client, model_down(2))
     ts = now_ms()
     await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
     with caplog.at_level(logging.INFO, logger="worker.card"):
-        assert await hear(client, store, runner, said("sp-1", "giá 450 nghìn nha", ts + 1000)) == []
-    assert waits(caplog) == ["price wait: sp-1 reason no_kind candidates card-a"]
-    assert (await latest(store))["card-a"]["price"] is None
+        await hear(client, store, runner, said("sp-1", "giá 450 nghìn nha", ts + 1000))
+        await hear(client, store, runner, said("sp-2", "giá 500 nghìn nha", ts + 2000))
+    assert waits(caplog) == []
+    now = await latest(store)
+    assert (now["card-a"]["status"], now["card-a"]["price"]) == ("live", 450000)
+    [p] = await proposals(store)
+    assert (p["card_id"], p["current_price"], p["heard_price"], p["speech_event_id"]) == (
+        "card-a",
+        450000,
+        500000,
+        "sp-2",
+    )
+
+
+async def test_a_price_without_a_kind_word_across_a_switch_waits(mem_app, caplog):
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(2))
+    ts = now_ms()
+    await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
+    await hear(client, store, runner, said("sp-1", "đôi này 450 nghìn", ts + 1000))
+    await run(client, runner, seen("ps-b", "bag", "đỏ", ts + 6000))
+    with caplog.at_level(logging.INFO, logger="worker.card"):
+        assert await hear(client, store, runner, line("sp-2", "giá 550 nghìn", ts + 5500, ts + 6500)) == []
+    assert waits(caplog) == [
+        "price wait: sp-2 reason many candidates card-a,card-b; session cards1 waits many=1"
+    ]
+    assert await prices(store, "card-a") == [450000] and await prices(store, "card-b") == []
+    assert await proposals(store) == []
+
+
+async def test_waits_are_counted_by_reason_for_the_session(mem_app, caplog):
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(3))
+    ts = now_ms()
+    await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
+    await hear(client, store, runner, said("sp-1", "đôi này 450 nghìn", ts + 1000))
+    with caplog.at_level(logging.INFO, logger="worker.card"):
+        await hear(client, store, runner, said("sp-2", "túi này 550 nghìn", ts + 2000))
+        await run(client, runner, seen("ps-b", "bag", "đỏ", ts + 6000))
+        await hear(client, store, runner, line("sp-3", "giá 300 nghìn", ts + 5500, ts + 6500))
+    assert waits(caplog) == [
+        "price wait: sp-2 reason none candidates card-a; session cards1 waits none=1",
+        "price wait: sp-3 reason many candidates card-a,card-b; session cards1 waits many=1 none=1",
+    ]
+    assert card.SESSIONS[SID].waits == {"none": 1, "many": 1}
 
 
 async def test_a_price_for_another_kind_of_item_waits(mem_app, caplog):
@@ -122,7 +170,7 @@ async def test_a_price_for_another_kind_of_item_waits(mem_app, caplog):
     await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
     with caplog.at_level(logging.INFO, logger="worker.card"):
         assert await hear(client, store, runner, said("sp-1", "túi này 550 nghìn", ts + 1000)) == []
-    assert waits(caplog) == ["price wait: sp-1 reason none candidates card-a"]
+    assert waits(caplog) == ["price wait: sp-1 reason none candidates card-a; session cards1 waits none=1"]
     assert await prices(store, "card-a") == []
 
 
@@ -187,7 +235,7 @@ async def test_a_card_seen_after_the_hold_does_not_get_the_waiting_price(mem_app
             await hear(client, store, runner, line("sp-1", "túi này 550 nghìn", ts + 3000, ts + 3500)) == []
         )
     await hear(client, store, runner, seen("ps-b", "bag", "đỏ", ts + 2500))
-    assert waits(caplog) == ["price wait: sp-1 reason none candidates card-a"]
+    assert waits(caplog) == ["price wait: sp-1 reason none candidates card-a; session cards1 waits none=1"]
     now = await latest(store)
     assert (now["card-b"]["status"], now["card-b"]["price"]) == ("draft", None)
     assert (now["card-a"]["status"], now["card-a"]["price"]) == ("retired", None)
