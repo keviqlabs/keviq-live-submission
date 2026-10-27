@@ -50,7 +50,7 @@ One real run on 27 October: 200 synthetic comments from `data/comments/` posted 
 
 - 199 calls for 200 comments: at live arrival rates each batch holds one comment (one batch held two).
 - receive, wait and event delivery include the 33 shield labels; infer and end to end are model labels only.
-- 33 of the 34 hides come from the shield on receipt. The spelled-out phone number (c146) has no digits for the regex, so the model label hides it: at 3.7 s in this run, 4.4 s in `comments200-s1-1027-135456` and 3.9 s in `comments200-v2-1027-141048` (first hide).
+- 33 of the 34 hides come from the shield on receipt. The spelled-out phone number (c146) has no digits for the regex, so the model label hides it: at 3.7 s in this run, 4.4 s in `comments200-s1-1027-135456` and 3.9 s in `comments200-v2-1027-141048` (first hide). The evidence files give 4.10 s, 8.14 s and 5.42 s for these runs as `core.c5.phone_visible_max_s`, measured at the latest hide label as `measure/core.py` on main does; measuring C5 at the first hide needs PR #9.
 - Spend: $0.2578 for 199 calls.
 - Earlier run, for comparison: sim speed 20, default effort, batches of 6–9 comments, label p95 21.4 s.
 - Two later runs with the same code and settings were slower: label p95 5.6 s and 5.3 s, model call p95 4.7 s and 4.3 s (`labels-comments200-s1-1027-135456.json`, and the next section). Session `comments200-s1-1027-135456` was made before two template rows were replaced by the cancel rows c169 and c192; its evidence file is kept as recorded and is not re-scored against the current gold.
