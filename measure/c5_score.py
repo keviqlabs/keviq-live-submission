@@ -210,7 +210,11 @@ def proposals(run: Run) -> dict:
 
     A proposal closes as D-024 says: at the first version newer than its card_version that is retired or has a
     price other than its current_price (worker versions copy edited_by, so that field does not tell; the proposal's
-    ts_ms is the time of its speech, so it does not order the proposal among the card's versions)."""
+    ts_ms is the time of its speech, so it does not order the proposal among the card's versions).
+
+    HQ 04:18: a proposal whose closing version was ingested before it is stale on arrival; the shop had no time to
+    act on it. Its raw handling time stays in its row and in `handling_ms_all`, and `handling_ms` is the median of
+    the others. A wrong proposal is counted under `card` when its card is not the held item, else under `price`."""
     props = [e for e in run.events if e["type"] == "price_proposal"]
     ids = {p["event_id"] for p in props}
     rows = []
@@ -234,24 +238,31 @@ def proposals(run: Run) -> dict:
         held = run.gold.held_at(start) if start is not None else None
         right_price = held is not None and run.gold.right_price(held, p["heard_price"], start, end)
         right_card = held is not None and run.item.get(p["card_id"]) == held
+        took = core.when(closed) - core.when(p) if closed else None
         rows.append({
             "event_id": p["event_id"], "loop": run.loop(p["ts_ms"]), "card_id": p["card_id"],
             "had_price": p.get("current_price") is not None, "outcome": outcome,
             "closed_by": closed["event_id"] if closed else None, "right_card": right_card,
-            "wrong": not (right_card and right_price),
-            "handling_ms": core.when(closed) - core.when(p) if closed and outcome in ("used", "fixed") else None,
+            "right_price": right_price, "wrong": not (right_card and right_price),
+            "stale": took is not None and took < 0,
+            "handling_ms": took if outcome in ("used", "fixed") else None,
         })  # fmt: skip
     wrong = [r for r in rows if r["wrong"]]
-    times = [r["handling_ms"] for r in rows if r["handling_ms"] is not None]
+    timed = [r for r in rows if r["handling_ms"] is not None]
+    acted = [r["handling_ms"] for r in timed if not r["stale"]]
     return {
         "n": len(rows),
         "outcomes": dict(Counter(r["outcome"] for r in rows)),
         "right_card": sum(r["right_card"] for r in rows),
         "wrong_card": sum(not r["right_card"] for r in rows),
-        "wrong": {"n": len(wrong), "outcomes": dict(Counter(r["outcome"] for r in wrong))},
-        "handling_ms": {"median": median(times) if times else None, "n": len(times)},
+        "wrong": {"n": len(wrong), "outcomes": dict(Counter(r["outcome"] for r in wrong)),
+                  "card": sum(not r["right_card"] for r in wrong), "price": sum(r["right_card"] for r in wrong)},
+        "stale": {"n": sum(r["stale"] for r in rows), "ids": [r["event_id"] for r in rows if r["stale"]],
+                  "reason": "closed by a version ingested before the proposal"},
+        "handling_ms": {"median": median(acted) if acted else None, "n": len(acted)},
+        "handling_ms_all": {"median": median([r["handling_ms"] for r in timed]) if timed else None, "n": len(timed)},
         "rows": rows,
-    }
+    }  # fmt: skip
 
 
 def needs_seller(run: Run, catalog: list[dict]) -> dict:
