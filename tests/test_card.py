@@ -8,7 +8,7 @@ from app.contracts import make_event, now_ms
 from measure.core import c1
 from meta.meter import Meter, memory_spend
 from meta.transport import FakeTransport, Reply, responses_reply
-from worker.brain import card
+from worker.brain import card, window
 from worker.runner import Runner
 from worker.vision import frames, sam
 from worker.voice import vn
@@ -19,6 +19,7 @@ SID = "cards1"
 @pytest.fixture(autouse=True)
 def fresh(monkeypatch):
     monkeypatch.delenv("CARDS_FROM_REPLAY", raising=False)
+    monkeypatch.setattr(window, "HOLD_MS", 0)  # no product_seen is still being read unless a test says so
     card.SESSIONS.clear()
     frames._CACHE.clear()
     yield
@@ -153,7 +154,7 @@ async def test_rule_reader_takes_over_when_the_model_fails(mem_app):
     runner = runner_with(client, [Reply(400, {"error": "bad"})])
     ts = now_ms()
     await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
-    [live] = await hear(client, store, runner, said("sp-1", "giá 1tr2 nha các chị", ts + 800))
+    [live] = await hear(client, store, runner, said("sp-1", "đôi này giá 1tr2 nha các chị", ts + 800))
     assert (live["status"], live["price"]) == ("live", 1_200_000)
 
 
@@ -183,7 +184,7 @@ async def test_live_card_gets_the_sam_cut_out_as_its_next_version(mem_app, monke
 
     monkeypatch.setattr(sam, "cut_out", fake_cut_out)
     await run(client, runner, seen("ps-a", "sneaker", "trắng", ts, caused_by=["fr-a"]))
-    await hear(client, store, runner, said("sp-1", "450 nghìn", ts + 800))
+    await hear(client, store, runner, said("sp-1", "đôi này 450 nghìn", ts + 800))
     last = (await cards_in(store))[-1]
     assert (last["version"], last["status"]) == (3, "live")
     assert last["image_url"].startswith("data:image/png") and last["caused_by"] == ["sp-1", "fr-a"]
@@ -206,7 +207,7 @@ async def test_a_slow_read_does_not_hold_up_the_next_product(mem_app, monkeypatc
     runner = runner_with(client, [])
     gate = asyncio.Event()
 
-    async def slow_read(text, current, ctx):
+    async def slow_read(text, ctx):
         await gate.wait()
         return vn.Spoken(450000 if "450" in text else None, [], []), (0, 0)
 
