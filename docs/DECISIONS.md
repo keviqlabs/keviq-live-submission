@@ -2,6 +2,16 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-27 — spoken price on a priced card
+
+**D-023 Speech never changes the price of a card that already has one.** A spoken price sets the price only on a card whose price is null, as before: the draft goes live. On a card with a price (live or edited), a different spoken price changes nothing on the card. `worker/brain/card.py` logs one `price proposal` line with the card id, version, current price, heard price and speech event id; the spoken text is not logged. Sizes and colours from the same speech still apply.
+
+Why: on the test1 mini probe replay (0 USD), all 5 times speech overwrote a price, it was the next product's price landing on the previous card (320→280, 180→150, 210→450, 450→550, 550→650). After this change those cards keep their first price.
+
+What it costs: the test1 transcript has 3 real price changes by the shop (SP01 250→220, SP04 180→160, SP09 650→600). They now stay at the old price until the shop edits the card, and there is no console route to edit a card's price yet. That route, and a place to keep a proposal (a new event or card field), need the contracts owner and the Founder; this change adds neither. Orders stay safe: a customer price different from the card goes to `NEEDS_SELLER` (`contracts/permissions.md`).
+
+Not covered here: attaching a spoken price only when the product is unambiguous (a price spoken before its product_seen still lands on the current draft).
+
 ## 2026-10-27 — label latency at live speed
 
 **D-022 Labels at minimal effort miss C8 (label p95 ≤ 1 s); the target stays.** `label_comments` now calls Spark with `reasoning.effort=minimal`, the lowest Spark accepts (`none` is refused), and a shorter output schema: 8 required fields, with contact signals as one enum (`none`, `phone_number`, `link`) instead of an optional list. On 200 synthetic comments posted at live speed (`connectors.sim.comments --speed 1`, session `comments200-s1-1027-123307`, 199 calls, $0.2578, 0 errors):
