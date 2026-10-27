@@ -1,9 +1,10 @@
 """python -m measure.labels --session <id> | --events-file FILE [--gold data/comments/labels.jsonl] [--json FILE]
 
 Labels-stream metrics against the hand-labeled comments of data/comments/: micro-F1 over the 7 labels (with
-per-label P/R/F1), order-field accuracy, label latency (first and final label, first hide), the scam shield
-(hide rate, legit orders hidden) and the cost of `label_comments` model calls. measure.core's C3/C5/labels
-are reported on the same gold. A comment with several comment_labeled events counts by its latest one.
+per-label P/R/F1, and split by the gold's `label_source`: template gold vs Founder samples, approved or not),
+order-field accuracy, label latency (first and final label, first hide), the scam shield (hide rate, legit
+orders hidden) and the cost of `label_comments` model calls. measure.core's C3/C5/labels are reported on the
+same gold. A comment with several comment_labeled events counts by its latest one.
 """
 
 import argparse
@@ -73,6 +74,18 @@ def label_f1(events: list[dict], gold: dict[str, dict]) -> dict:
         "per_label": per,
         "confusions": [{"want": w, "got": g, "n": n} for (w, g), n in confusions.most_common(10)],
     }
+
+
+def by_source(events: list[dict], gold: dict[str, dict]) -> dict:
+    """Micro-F1 per label_source, so template gold and Founder samples (approved or pending) are reported apart."""
+    groups = defaultdict(dict)
+    for cid, g in gold.items():
+        groups[g.get("label_source", "unspecified")][cid] = g
+    out = {}
+    for src, part in sorted(groups.items()):
+        r = label_f1(events, part)
+        out[src] = {"n": r["n"], "labeled": r["labeled"], "micro_f1": r["micro_f1"]}
+    return out
 
 
 def draft_fields(draft: dict | None) -> dict:
@@ -199,6 +212,7 @@ def report(events: list[dict], gold: dict[str, dict]) -> dict:
     return {
         "comments": len(gold),
         "labels": label_f1(events, gold),
+        "labels_by_source": by_source(events, gold),
         "order_fields": order_fields(events, gold),
         "latency": latency(events),
         "shield": shield(events, gold),
@@ -220,6 +234,14 @@ def table(r: dict) -> str:
         f"labels micro-F1: {fmt(lab['micro_f1'])} on n={lab['n']} ({lab['labeled']} labeled;"
         f" P={fmt(lab['micro_precision'])} R={fmt(lab['micro_recall'])}; target >= 0.85)",
     ]
+    pending = {"founder_pending": " (Founder review pending, not approved gold)"}
+    lines.append(
+        "  by label_source: "
+        + "; ".join(
+            f"{src} n={v['n']} F1={fmt(v['micro_f1'])}{pending.get(src, '')}"
+            for src, v in r["labels_by_source"].items()
+        )
+    )
     for name, v in lab["per_label"].items():
         lines.append(
             f"  {name:<15} n={v['n']:<3} P={fmt(v['precision'])} R={fmt(v['recall'])} F1={fmt(v['f1'])}"
