@@ -14,6 +14,8 @@ from worker.vision import frames
 
 log = logging.getLogger("worker.vision")
 MIN_CONFIDENCE = 0.5
+# Lowest effort Muse Spark accepts, as for the comment labels (worker/brain/labels.py); not measured here.
+EFFORT = "minimal"
 SCHEMA = {
     "type": "object",
     "additionalProperties": False,
@@ -60,7 +62,7 @@ def frame_input(jpeg: bytes, last: Seen | None) -> list[dict]:
 
 async def read_frame(client, jpeg: bytes, last: Seen | None):
     return await client.responses(
-        frame_input(jpeg, last), SCHEMA, purpose="product_seen", name="product_seen"
+        frame_input(jpeg, last), SCHEMA, purpose="product_seen", name="product_seen", reasoning=EFFORT
     )
 
 
