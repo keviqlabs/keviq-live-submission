@@ -1,0 +1,748 @@
+{
+ "run": "c5-test1x5-1028-1000",
+ "events": 4436,
+ "loops": [
+  {
+   "loop": 1,
+   "frames": 351,
+   "frames_lost": 1,
+   "lost": [
+    {
+     "role": "worker",
+     "handler": "see_product",
+     "frame": "frame_8d6c69314a9c465aad1e",
+     "exception": "httpx.ReadTimeout",
+     "timeout": true,
+     "at_ms": 95000,
+     "card_live_before": null,
+     "next_card_open": {
+      "card_id": "card-d6713485ab65",
+      "after_ms": 16970
+     }
+    }
+   ],
+   "timeouts": 1,
+   "product_seen": 6,
+   "model_calls": {
+    "card_cutout": {
+     "n": 2,
+     "ok": 2,
+     "cost_usd": 0.005
+    },
+    "card_from_speech": {
+     "n": 27,
+     "ok": 27,
+     "cost_usd": 0.074303
+    },
+    "label_comments": {
+     "n": 54,
+     "ok": 54,
+     "cost_usd": 0.072379
+    },
+    "product_seen": {
+     "n": 202,
+     "ok": 202,
+     "cost_usd": 0.274023
+    },
+    "transcribe": {
+     "n": 1,
+     "ok": 1,
+     "cost_usd": 0.01755
+    }
+   }
+  },
+  {
+   "loop": 2,
+   "frames": 351,
+   "frames_lost": 0,
+   "lost": [],
+   "timeouts": 0,
+   "product_seen": 6,
+   "model_calls": {
+    "card_cutout": {
+     "n": 2,
+     "ok": 2,
+     "cost_usd": 0.005
+    },
+    "card_from_speech": {
+     "n": 29,
+     "ok": 29,
+     "cost_usd": 0.074523
+    },
+    "label_comments": {
+     "n": 48,
+     "ok": 48,
+     "cost_usd": 0.067211
+    },
+    "product_seen": {
+     "n": 206,
+     "ok": 206,
+     "cost_usd": 0.224839
+    },
+    "transcribe": {
+     "n": 1,
+     "ok": 1,
+     "cost_usd": 0.01755
+    }
+   }
+  },
+  {
+   "loop": 3,
+   "frames": 351,
+   "frames_lost": 0,
+   "lost": [],
+   "timeouts": 0,
+   "product_seen": 6,
+   "model_calls": {
+    "card_cutout": {
+     "n": 2,
+     "ok": 2,
+     "cost_usd": 0.005
+    },
+    "card_from_speech": {
+     "n": 30,
+     "ok": 30,
+     "cost_usd": 0.085343
+    },
+    "label_comments": {
+     "n": 47,
+     "ok": 47,
+     "cost_usd": 0.067458
+    },
+    "product_seen": {
+     "n": 196,
+     "ok": 196,
+     "cost_usd": 0.206193
+    },
+    "transcribe": {
+     "n": 1,
+     "ok": 1,
+     "cost_usd": 0.01755
+    }
+   }
+  },
+  {
+   "loop": 4,
+   "frames": 351,
+   "frames_lost": 0,
+   "lost": [],
+   "timeouts": 0,
+   "product_seen": 6,
+   "model_calls": {
+    "card_cutout": {
+     "n": 2,
+     "ok": 2,
+     "cost_usd": 0.005
+    },
+    "card_from_speech": {
+     "n": 31,
+     "ok": 31,
+     "cost_usd": 0.079278
+    },
+    "label_comments": {
+     "n": 48,
+     "ok": 48,
+     "cost_usd": 0.06506
+    },
+    "product_seen": {
+     "n": 197,
+     "ok": 197,
+     "cost_usd": 0.196395
+    },
+    "transcribe": {
+     "n": 1,
+     "ok": 1,
+     "cost_usd": 0.01755
+    }
+   }
+  },
+  {
+   "loop": 5,
+   "frames": 351,
+   "frames_lost": 0,
+   "lost": [],
+   "timeouts": 0,
+   "product_seen": 6,
+   "model_calls": {
+    "card_cutout": {
+     "n": 2,
+     "ok": 2,
+     "cost_usd": 0.005
+    },
+    "card_from_speech": {
+     "n": 32,
+     "ok": 32,
+     "cost_usd": 0.083333
+    },
+    "label_comments": {
+     "n": 42,
+     "ok": 42,
+     "cost_usd": 0.062355
+    },
+    "product_seen": {
+     "n": 190,
+     "ok": 190,
+     "cost_usd": 0.184515
+    },
+    "transcribe": {
+     "n": 1,
+     "ok": 1,
+     "cost_usd": 0.01755
+    }
+   }
+  }
+ ],
+ "calls_outside_loops": {},
+ "cards_by_loop": {
+  "1": {
+   "opened": 2,
+   "versions": 11,
+   "versions_with_image": 7
+  },
+  "2": {
+   "opened": 2,
+   "versions": 11,
+   "versions_with_image": 7
+  },
+  "3": {
+   "opened": 2,
+   "versions": 11,
+   "versions_with_image": 7
+  },
+  "4": {
+   "opened": 2,
+   "versions": 14,
+   "versions_with_image": 9
+  },
+  "5": {
+   "opened": 2,
+   "versions": 11,
+   "versions_with_image": 7
+  }
+ },
+ "card_images": [
+  {
+   "card_id": "card-0245fd218818",
+   "version": 1,
+   "loop": 4,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-0245fd218818",
+   "version": 2,
+   "loop": 4,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-0245fd218818",
+   "version": 3,
+   "loop": 4,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 19133,
+   "image_sha256": "94224a51d5b7c6ae50e38db626f70d828fb1f23c69da61f21e6d399bd39d0543"
+  },
+  {
+   "card_id": "card-0245fd218818",
+   "version": 4,
+   "loop": 4,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 19133,
+   "image_sha256": "94224a51d5b7c6ae50e38db626f70d828fb1f23c69da61f21e6d399bd39d0543"
+  },
+  {
+   "card_id": "card-0245fd218818",
+   "version": 5,
+   "loop": 4,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 19133,
+   "image_sha256": "94224a51d5b7c6ae50e38db626f70d828fb1f23c69da61f21e6d399bd39d0543"
+  },
+  {
+   "card_id": "card-0e4677a27900",
+   "version": 1,
+   "loop": 3,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-0e4677a27900",
+   "version": 2,
+   "loop": 3,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-0e4677a27900",
+   "version": 3,
+   "loop": 3,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-0e4677a27900",
+   "version": 4,
+   "loop": 3,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-0e4677a27900",
+   "version": 5,
+   "loop": 3,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-0e4677a27900",
+   "version": 6,
+   "loop": 3,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-0e4677a27900",
+   "version": 7,
+   "loop": 3,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-6097814196e0",
+   "version": 1,
+   "loop": 3,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-6097814196e0",
+   "version": 2,
+   "loop": 3,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-6097814196e0",
+   "version": 3,
+   "loop": 3,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 3714,
+   "image_sha256": "9f15f3542c7c1f334ce6c6e277bb803ae4cfd54038ba24884ad4887a75072251"
+  },
+  {
+   "card_id": "card-6097814196e0",
+   "version": 4,
+   "loop": 3,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 3714,
+   "image_sha256": "9f15f3542c7c1f334ce6c6e277bb803ae4cfd54038ba24884ad4887a75072251"
+  },
+  {
+   "card_id": "card-6a56cd2677b6",
+   "version": 1,
+   "loop": 2,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-6a56cd2677b6",
+   "version": 2,
+   "loop": 2,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-6a56cd2677b6",
+   "version": 3,
+   "loop": 2,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 19132,
+   "image_sha256": "46915b2ef0fb420f6a68e409e90e4dbe46e284e48f2f9439a13b409a4203d1d8"
+  },
+  {
+   "card_id": "card-6a56cd2677b6",
+   "version": 4,
+   "loop": 2,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 19132,
+   "image_sha256": "46915b2ef0fb420f6a68e409e90e4dbe46e284e48f2f9439a13b409a4203d1d8"
+  },
+  {
+   "card_id": "card-6a56cd2677b6",
+   "version": 5,
+   "loop": 2,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 19132,
+   "image_sha256": "46915b2ef0fb420f6a68e409e90e4dbe46e284e48f2f9439a13b409a4203d1d8"
+  },
+  {
+   "card_id": "card-933420ac6ee8",
+   "version": 1,
+   "loop": 2,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-933420ac6ee8",
+   "version": 2,
+   "loop": 2,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-933420ac6ee8",
+   "version": 3,
+   "loop": 2,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-933420ac6ee8",
+   "version": 4,
+   "loop": 2,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-933420ac6ee8",
+   "version": 5,
+   "loop": 2,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-933420ac6ee8",
+   "version": 6,
+   "loop": 2,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-a0b568e3f20b",
+   "version": 1,
+   "loop": 5,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-a0b568e3f20b",
+   "version": 2,
+   "loop": 5,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-a0b568e3f20b",
+   "version": 3,
+   "loop": 5,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 19131,
+   "image_sha256": "eff444d795a9f0d2d5b572532256d47045e0d7aefc289c4a13340877379221ff"
+  },
+  {
+   "card_id": "card-a0b568e3f20b",
+   "version": 4,
+   "loop": 5,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 19131,
+   "image_sha256": "eff444d795a9f0d2d5b572532256d47045e0d7aefc289c4a13340877379221ff"
+  },
+  {
+   "card_id": "card-b5e9e908d76d",
+   "version": 1,
+   "loop": 4,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-b5e9e908d76d",
+   "version": 2,
+   "loop": 4,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-b5e9e908d76d",
+   "version": 3,
+   "loop": 4,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-b5e9e908d76d",
+   "version": 4,
+   "loop": 4,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-b5e9e908d76d",
+   "version": 5,
+   "loop": 4,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-b5e9e908d76d",
+   "version": 6,
+   "loop": 4,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-b5e9e908d76d",
+   "version": 7,
+   "loop": 4,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-b5e9e908d76d",
+   "version": 8,
+   "loop": 4,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-b5e9e908d76d",
+   "version": 9,
+   "loop": 4,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-c876e6e1ab67",
+   "version": 1,
+   "loop": 5,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-c876e6e1ab67",
+   "version": 2,
+   "loop": 5,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-c876e6e1ab67",
+   "version": 3,
+   "loop": 5,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34314,
+   "image_sha256": "95a8cb368128a1bb4b59e16982797d5cd9f9f00e90b26750ce42f24af5b053e2"
+  },
+  {
+   "card_id": "card-c876e6e1ab67",
+   "version": 4,
+   "loop": 5,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34314,
+   "image_sha256": "95a8cb368128a1bb4b59e16982797d5cd9f9f00e90b26750ce42f24af5b053e2"
+  },
+  {
+   "card_id": "card-c876e6e1ab67",
+   "version": 5,
+   "loop": 5,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34314,
+   "image_sha256": "95a8cb368128a1bb4b59e16982797d5cd9f9f00e90b26750ce42f24af5b053e2"
+  },
+  {
+   "card_id": "card-c876e6e1ab67",
+   "version": 6,
+   "loop": 5,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34314,
+   "image_sha256": "95a8cb368128a1bb4b59e16982797d5cd9f9f00e90b26750ce42f24af5b053e2"
+  },
+  {
+   "card_id": "card-c876e6e1ab67",
+   "version": 7,
+   "loop": 5,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34314,
+   "image_sha256": "95a8cb368128a1bb4b59e16982797d5cd9f9f00e90b26750ce42f24af5b053e2"
+  },
+  {
+   "card_id": "card-d6045e59f2c5",
+   "version": 1,
+   "loop": 1,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-d6045e59f2c5",
+   "version": 2,
+   "loop": 1,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-d6045e59f2c5",
+   "version": 3,
+   "loop": 1,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 3714,
+   "image_sha256": "2fd3b0db65688e7968286c389b1394eb42b3ad8c6948a900efe80a9468b53fb7"
+  },
+  {
+   "card_id": "card-d6045e59f2c5",
+   "version": 4,
+   "loop": 1,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 3714,
+   "image_sha256": "2fd3b0db65688e7968286c389b1394eb42b3ad8c6948a900efe80a9468b53fb7"
+  },
+  {
+   "card_id": "card-d6713485ab65",
+   "version": 1,
+   "loop": 1,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-d6713485ab65",
+   "version": 2,
+   "loop": 1,
+   "url_kind": null,
+   "mime": null,
+   "bytes": null,
+   "image_sha256": null
+  },
+  {
+   "card_id": "card-d6713485ab65",
+   "version": 3,
+   "loop": 1,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-d6713485ab65",
+   "version": 4,
+   "loop": 1,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-d6713485ab65",
+   "version": 5,
+   "loop": 1,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-d6713485ab65",
+   "version": 6,
+   "loop": 1,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  },
+  {
+   "card_id": "card-d6713485ab65",
+   "version": 7,
+   "loop": 1,
+   "url_kind": "data",
+   "mime": "image/png",
+   "bytes": 34320,
+   "image_sha256": "fb150924485f68714f4ea9da9c7908fb5633cca2a3ac30fa0075800ea73c385a"
+  }
+ ],
+ "receipts": []
+}

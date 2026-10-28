@@ -1,0 +1,306 @@
+{
+ "run": "c5-test1x5-1028-1000",
+ "loops": [
+  {
+   "loop": 1,
+   "order_comments": 30,
+   "with_gold_item": 28,
+   "unresolved": [
+    "c5-1-001",
+    "c5-1-036"
+   ],
+   "outcomes": {
+    "unresolved": 14,
+    "other": 16
+   },
+   "references": {
+    "right": 0,
+    "n": 28,
+    "by_kind": {
+     "current_card": {
+      "n": 24,
+      "right": 0
+     },
+     "previous_card": {
+      "n": 4,
+      "right": 0
+     }
+    },
+    "why_wrong": {
+     "no_card": 21,
+     "no_card_for_item": 7
+    }
+   },
+   "interventions": {
+    "n": 0,
+    "by_cause": {}
+   },
+   "proposals": {
+    "n": 3,
+    "right_card": 0,
+    "right_price": 3,
+    "both": 0,
+    "stale_on_arrival": [],
+    "outcomes": {
+     "dropped": 3
+    }
+   },
+   "receipts": {
+    "n": 0,
+    "version_ok": 0,
+    "right_item": 0,
+    "with_image": 0,
+    "rows": []
+   }
+  },
+  {
+   "loop": 2,
+   "order_comments": 30,
+   "with_gold_item": 28,
+   "unresolved": [
+    "c5-2-033",
+    "c5-2-067"
+   ],
+   "outcomes": {
+    "unresolved": 8,
+    "order": 1,
+    "other": 21
+   },
+   "references": {
+    "right": 0,
+    "n": 28,
+    "by_kind": {
+     "current_card": {
+      "n": 24,
+      "right": 0
+     },
+     "previous_card": {
+      "n": 4,
+      "right": 0
+     }
+    },
+    "why_wrong": {
+     "no_card": 18,
+     "item_card_live_after_comment": 2,
+     "no_card_for_item": 8
+    }
+   },
+   "interventions": {
+    "n": 1,
+    "by_cause": {
+     "order:item": 1
+    }
+   },
+   "proposals": {
+    "n": 3,
+    "right_card": 0,
+    "right_price": 3,
+    "both": 0,
+    "stale_on_arrival": [],
+    "outcomes": {
+     "dropped": 3
+    }
+   },
+   "receipts": {
+    "n": 0,
+    "version_ok": 0,
+    "right_item": 0,
+    "with_image": 0,
+    "rows": []
+   }
+  },
+  {
+   "loop": 3,
+   "order_comments": 30,
+   "with_gold_item": 28,
+   "unresolved": [
+    "c5-3-001",
+    "c5-3-066"
+   ],
+   "outcomes": {
+    "unresolved": 5,
+    "other": 25
+   },
+   "references": {
+    "right": 0,
+    "n": 28,
+    "by_kind": {
+     "current_card": {
+      "n": 24,
+      "right": 0
+     },
+     "previous_card": {
+      "n": 4,
+      "right": 0
+     }
+    },
+    "why_wrong": {
+     "no_card": 17,
+     "no_card_for_item": 11
+    }
+   },
+   "interventions": {
+    "n": 0,
+    "by_cause": {}
+   },
+   "proposals": {
+    "n": 3,
+    "right_card": 0,
+    "right_price": 3,
+    "both": 0,
+    "stale_on_arrival": [],
+    "outcomes": {
+     "dropped": 3
+    }
+   },
+   "receipts": {
+    "n": 0,
+    "version_ok": 0,
+    "right_item": 0,
+    "with_image": 0,
+    "rows": []
+   }
+  },
+  {
+   "loop": 4,
+   "order_comments": 30,
+   "with_gold_item": 28,
+   "unresolved": [
+    "c5-4-001",
+    "c5-4-035"
+   ],
+   "outcomes": {
+    "unresolved": 7,
+    "order": 1,
+    "other": 22
+   },
+   "references": {
+    "right": 2,
+    "n": 28,
+    "by_kind": {
+     "current_card": {
+      "n": 24,
+      "right": 0
+     },
+     "previous_card": {
+      "n": 4,
+      "right": 2
+     }
+    },
+    "why_wrong": {
+     "no_card": 13,
+     "no_card_for_item": 13
+    }
+   },
+   "interventions": {
+    "n": 1,
+    "by_cause": {
+     "order:error": 1
+    }
+   },
+   "proposals": {
+    "n": 3,
+    "right_card": 0,
+    "right_price": 3,
+    "both": 0,
+    "stale_on_arrival": [],
+    "outcomes": {
+     "dropped": 3
+    }
+   },
+   "receipts": {
+    "n": 0,
+    "version_ok": 0,
+    "right_item": 0,
+    "with_image": 0,
+    "rows": []
+   }
+  },
+  {
+   "loop": 5,
+   "order_comments": 30,
+   "with_gold_item": 28,
+   "unresolved": [
+    "c5-5-034",
+    "c5-5-064"
+   ],
+   "outcomes": {
+    "unresolved": 8,
+    "order": 1,
+    "other": 21
+   },
+   "references": {
+    "right": 0,
+    "n": 28,
+    "by_kind": {
+     "current_card": {
+      "n": 24,
+      "right": 0
+     },
+     "previous_card": {
+      "n": 4,
+      "right": 0
+     }
+    },
+    "why_wrong": {
+     "no_card": 20,
+     "item_card_live_after_comment": 2,
+     "no_card_for_item": 6
+    }
+   },
+   "interventions": {
+    "n": 1,
+    "by_cause": {
+     "order:item": 1
+    }
+   },
+   "proposals": {
+    "n": 3,
+    "right_card": 0,
+    "right_price": 3,
+    "both": 0,
+    "stale_on_arrival": [],
+    "outcomes": {
+     "dropped": 3
+    }
+   },
+   "receipts": {
+    "n": 0,
+    "version_ok": 0,
+    "right_item": 0,
+    "with_image": 0,
+    "rows": []
+   }
+  }
+ ],
+ "total": {
+  "order_comments": 150,
+  "with_gold_item": 140,
+  "unresolved": 10,
+  "references_right": 2,
+  "interventions": 3,
+  "stale_on_arrival": 0,
+  "receipts": 0,
+  "receipts_right_item": 0,
+  "receipts_with_image": 0,
+  "scorer": {
+   "order_ids_n": 150,
+   "order_ids_in_n": 140,
+   "references": {
+    "n": 140,
+    "right": 2,
+    "accuracy": 0.014285714285714285,
+    "gate": false
+   },
+   "interventions_total": 3,
+   "proposals_stale": 0,
+   "receipts": {
+    "n": 0,
+    "version_ok": 0,
+    "rate": null,
+    "with_image": 0,
+    "image_path_run": 0
+   }
+  }
+ }
+}

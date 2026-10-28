@@ -1,6 +1,6 @@
 # Scope of the C5 dry run c5-dry-1028-040116, rescored
 
-What this is: the dry session `c5-dry-1028-040116` scored again with the scorer in this PR after the HQ ruling of
+What this is: the dry session `c5-dry-1028-040116` scored again with the scorer in this PR after the review ruling of
 04:18 VN on price proposals. Nothing ran again; the stored events of the session were read from `keviq_test`. It is
 not the C5 measurement: the 5-loop live run with real vision and real speech has not run. Every number below is a
 dry-run number.
@@ -88,3 +88,6 @@ proposal is wrong. Gold is unchanged.
 - The caveats of the run's NOTE hold.
 - `c12f` stays in the proposal count (8) and in situation 2; only the handling median leaves it out.
 - The 22 interventions in 6.32 minutes (208.9/h) come from the scripted shop, not from a real host.
+
+wording edited 11:03: internal labels removed; numbers unchanged. The NOTE sha256 d66d96f7… above is the one before
+that wording edit, in both NOTEs; after it, c5-dry-1028-040116-NOTE.md is a01bd69c1aa9e7f660a41e1c619c1c61b13c279377fd1b87e55fe0042b1918ea.
