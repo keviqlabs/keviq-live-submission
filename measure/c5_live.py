@@ -5,10 +5,13 @@ runner checks /api/cost?session=<run> gives 8.0/6.0 and that the session is empt
 this process's env plus CATALOG_PATH and the cap 8 / warning 6 (CARDS_FROM_REPLAY removed); each prints a proof
 line of what it loaded and the runner stops if it differs (catalog sha256, the labels catalog, cap/warn, git sha,
 vision effort, the model key set or not). Without --paid the children run with MODEL_API_KEY empty: 0 USD, the
-vision and voice calls fail or are skipped, so it tests the plumbing only. The runner then posts the 6b vision rows
-(measure/c5_dry.media_items) as product_seen on the loop's clock, each caused by this run's frame at or just before
-its time, so cards open on the runtime path (caused_by, not CARDS_FROM_REPLAY). With no speech no card goes live,
-and the cut-out (a model call) needs the key: those cards have no image. These rows are stored output, not a model.
+vision call fails and media runs with --no-voice. The runner then posts the 6b vision rows (measure/c5_dry.media_items)
+as product_seen on the loop's clock, each caused by this run's frame at or just before its time, so cards open on
+the runtime path (caused_by, not CARDS_FROM_REPLAY), and the stored test1 lines as final speech when they end (the
+rule price reader reads them). The worker gets C5_OFFLINE=<k>: gold labels through the labels brain, the stored
+SAM cut-out of the same frame and noun (measure/c5_offline; never chosen by the gold), and no model client at all;
+a card with no such cut-out has no image (NOT_RUN). All of it is stored output of session test1, replayed, not a model result; the shop's route
+and the simulated Messenger are the real ones.
 
 Per loop: worker up (it reads from the head, as after a restart), media up; t0 = the first frame's ts_ms minus its
 index * 1000 (media posts frame i at t0 + i * 1000); comments and customers on that clock; at t0 + loop + tail
@@ -59,6 +62,7 @@ class Child:
         self.lines: list[str] = []
         self.said: dict[str, dict] = {}
         self.wait_lines: list[str] = []
+        self.cutouts: list[dict] = []
         self.failures, self.ready, self.summary = 0, asyncio.Event(), None
         self.proc = self.reader = None
 
@@ -76,6 +80,8 @@ class Child:
             if line.startswith(c5_proc.TAG):
                 said = json.loads(line[len(c5_proc.TAG) :])
                 self.said.setdefault(said["kind"], said)
+                if said["kind"] == "cutout":
+                    self.cutouts.append(said)
             elif "price wait:" in line:
                 self.wait_lines.append(line[line.index("price wait:") :])
             elif " handler " in line and " failed on " in line:
@@ -205,12 +211,15 @@ async def post_comments(http, sid: str, items: list[tuple[int, dict]]) -> int:
     return worst
 
 
-def replay_seen(sid: str, k: int, t0: int, loop_ms: int) -> list[tuple[int, dict]]:
-    """(post at, product_seen) for the 6b new rows that fall in the loop, on its clock t0."""
+def replay_seen(
+    sid: str, k: int, t0: int, loop_ms: int, etype: str = "product_seen"
+) -> list[tuple[int, dict]]:
+    """(post at, event) for the 6b new rows (or, etype "speech", the test1 lines) that start in the loop, on its
+    clock t0."""
     from measure import c5_dry
 
     return [(due, ev) for due, ev in c5_dry.media_items(sid, k, t0)
-            if ev["type"] == "product_seen" and ev["ts_ms"] - t0 < loop_ms]  # fmt: skip
+            if ev["type"] == etype and ev["ts_ms"] - t0 < loop_ms]  # fmt: skip
 
 
 def caused(ev: dict, frames: list[dict]) -> dict | None:
@@ -285,27 +294,32 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
         customers = Customers(http, run, feed)
         watch = Watch(http, run, feed, shop)
         watching = asyncio.create_task(watch.run())
-        seen = None
+        seen = speaking = None
         try:
             for k in range(1, loops + 1):
                 rows, msgs = c5.streams(k)
                 rows_by_loop[k], msgs_by_loop[k] = rows, msgs
-                worker = Child("worker", ["--base-url", base_url, "--session", run], env,
+                loop_env = env if paid else {**env, "C5_OFFLINE": str(k)}
+                loop_want = {**want, "offline_loop": None if paid else k}
+                worker = Child("worker", ["--base-url", base_url, "--session", run], loop_env,
                                out / f"{run}-loop{k}-worker.log")  # fmt: skip
                 children.append(worker)
                 await worker.start()
                 proofs = {"worker": await worker.said_kind("proof", 60)}
-                if bad := check_proof(proofs["worker"], want):
+                if not paid:
+                    proofs["offline"] = await worker.said_kind("offline", 60)
+                if bad := check_proof(proofs["worker"], loop_want):
                     raise SystemExit(f"worker, loop {k}: {bad}")
                 await asyncio.wait_for(worker.ready.wait(), 30)
                 media = Child("worker.media", ["--session", "test1", "--target", run, "--base-url", base_url,
-                                               *(["--seconds", str(seconds)] if seconds else [])], env,
+                                               *(["--seconds", str(seconds)] if seconds else []),
+                                               *([] if paid else ["--no-voice"])], loop_env,
                               out / f"{run}-loop{k}-media.log")  # fmt: skip
                 children.append(media)
                 n_frames = len(watch.frames)
                 await media.start()
                 proofs["media"] = await media.said_kind("proof", 60)
-                if bad := check_proof(proofs["media"], want):
+                if bad := check_proof(proofs["media"], loop_want):
                     raise SystemExit(f"media, loop {k}: {bad}")
                 t0 = t0_of(await watch.frame_after(n_frames, 120))
                 clock.t0.append(t0)
@@ -316,17 +330,21 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                 posting = asyncio.create_task(post_comments(http, run, c5.comment_schedule(due, run, t0)))
                 seen = None if paid else asyncio.create_task(post_seen(http, run, replay_seen(run, k, t0, loop_ms),
                                                                        watch.frames, n_frames))  # fmt: skip
+                speech = [] if paid else replay_seen(run, k, t0, loop_ms, "speech")
+                speaking = None if paid else asyncio.create_task(post_comments(http, run, speech))
                 try:  # the loop end, or a session_cap refusal
                     await asyncio.wait_for(watch.cap.wait(), max(end + c5.TAIL_MS - now_ms(), 0) / 1000)
                 except TimeoutError:
                     pass
                 media_rc, media_stopped = await media.stop(30.0 if not watch.capped else 0.0)
                 if watch.capped:
-                    posting.cancel()
-                    if seen:
-                        seen.cancel()
+                    for task in (posting, seen, speaking):
+                        if task:
+                            task.cancel()
                 late_ms = None if watch.capped else await posting
                 seen_log = None if watch.capped or not seen else await seen
+                speech_log = None if watch.capped or not speaking else {"posted": len(speech),
+                                                                         "late_max_ms": await speaking}  # fmt: skip
                 calm = await watch.quiet([shop.tasks, customers.tasks])
                 retired = c5.retire_events(feed, run)
                 if retired:
@@ -340,14 +358,16 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                                   "runner_failures": worker.failures, "comments_late_max_ms": late_ms,
                                   "media": {"rc": media_rc, "stopped": media_stopped, "summary": media.summary},
                                   "worker_rc": worker_rc, "proofs": proofs, "capped": watch.capped,
-                                  "replay_seen": seen_log})  # fmt: skip
+                                  "replay_seen": seen_log, "replay_speech": speech_log,
+                                  "cutouts": worker.cutouts})  # fmt: skip
                 print(f"loop {k}: done, retired {len(retired)}, waits {snapshot}, failures {worker.failures}")
                 if watch.capped:
                     print(f"loop {k}: session_cap refusal {watch.capped}, run stops")
                     break
         finally:
-            if seen and not seen.done():
-                seen.cancel()
+            for task in (seen, speaking):
+                if task and not task.done():
+                    task.cancel()
             await watch.halt(watching)  # not cancel(): the poll in flight ends before read_all queries
             for child in children:
                 if child.proc and child.proc.returncode is None:
@@ -359,11 +379,15 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
         "config": {"mode": "live", "base_url_port": urlsplit(base_url).port, "healthz": health,
                    "catalog_path": c5.repo_path(catalog), "catalog_sha256": want["catalog_sha256"],
                    "vision": "worker vision brain (spark), effort minimal", "effort": "minimal", "fps": 1,
-                   "product_seen": "worker vision" if paid else "6b rows (c5_dry.media_items) posted by the runner, "
-                   "caused by this run's frames",
-                   "cutout": "on a card gone live (model call)" if paid else "none: no speech, no live card, no key",
-                   "card_line": False, "labels": "labels brain with the model" if paid else "labels brain, no key",
-                   "speech": "media voice (Voice Transcribe)" if paid else "media voice skipped (no key)",
+                   "product_seen": "worker vision" if paid else "stored output of session test1 (6b rows, "
+                   "c5_dry.media_items), replayed by the runner, caused by this run's frames",
+                   "cutout": "on a card gone live (model call)" if paid else "stored output of session test1 "
+                   "(probe/sam cut-out of the same source frame and noun, not chosen by the gold), replayed; none: no "
+                   "image (NOT_RUN)", "model_client": "model client" if paid else "none (measure/c5_offline.NoModel)",
+                   "card_line": False, "labels": "labels brain with the model" if paid else "gold labels through "
+                   "the labels brain (GoldClient), stored gold of test1, replayed",
+                   "speech": "media voice (Voice Transcribe)" if paid else "stored output of session test1 "
+                   "(probe/voice.json), replayed on the loop clock; rule price reader (no key); media --no-voice",
                    "cap_usd": 8.0, "warn_usd": 6.0, "paid": paid, "seconds": seconds,
                    "restart": "worker and media processes per loop", "shop_delay_s": SHOP_DELAY_S,
                    "tail_ms": c5.TAIL_MS, "loop_ms": loop_ms},

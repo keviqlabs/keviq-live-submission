@@ -6,6 +6,8 @@ C5 streams and messenger rows; the gold (c5_shop.Gold) and the C5 catalog. Nothi
 an utterance or a phone number: rows are named by comment id, msg id and event id only.
 """
 
+import base64
+import hashlib
 import re
 from collections import Counter, defaultdict
 from statistics import median
@@ -14,6 +16,7 @@ from measure import core
 from measure.c5_shop import Gold, Loops, cause
 from orders.flow import order_id_for
 
+FRAME = re.compile(r"f_(\d{5})\.jpg$")
 WAIT_LINE = re.compile(r"price wait: (\S+) reason (\S+) candidates (\S+); session (\S+) waits ?(.*)$")
 TARGETS = {"order_recall": 0.9, "reference": 0.9, "reference_n": 50, "phone_s": 5, "ask_s": 5, "iph": 10}
 DRAFTED = {"confirm_order", "needs_seller", "ask_customer"}  # gold actions that start an order or a question
@@ -363,7 +366,8 @@ def receipts(run: Run) -> dict:
     for oid, evs in run.orders.items():
         for e in (e for e in evs if e["state"] == "CONFIRMED"):
             r = e.get("receipt") or {}
-            card = run.version(r.get("card_id") or e["lines"][0]["card_id"], r.get("card_version"))
+            r = {**r, "card_id": r.get("card_id") or e["lines"][0]["card_id"]}
+            card = run.version(r["card_id"], r.get("card_version"))
             asked = [
                 m
                 for m in run.out.get(oid, [])
@@ -374,10 +378,45 @@ def receipts(run: Run) -> dict:
                 "version_ok": bool(card and r.get("price") == card["price"]
                                    and asked and asked[-1]["payload"]["card_version"] == r.get("card_version")),
                 "image": bool(r.get("image_url")),
+                "image_source": image_source(run, r),
             })  # fmt: skip
     ok = sum(r["version_ok"] for r in rows)
     return {"n": len(rows), "version_ok": ok, "rate": ok / len(rows) if rows else None,
-            "with_image": sum(r["image"] for r in rows), "rows": rows}  # fmt: skip
+            "with_image": sum(r["image"] for r in rows),
+            "image_path_run": sum(r["image_source"]["image_path"] == "RUN" for r in rows), "rows": rows}  # fmt: skip
+
+
+def first_cause(event: dict | None) -> str | None:
+    return next(iter((event or {}).get("caused_by") or []), None)
+
+
+def image_source(run: Run, receipt: dict) -> dict:
+    """Where a receipt's image comes from: the card, the product_seen that opened it (its first version's cause),
+    that product_seen's frame (its cause, at its frame_ts_ms) and the frame's source file, then the cut-out the
+    worker logged for that source frame whose png has the image's sha256 (the run's loops, "cutouts"). Any field
+    missing: the image path is NOT_RUN. A paid run's image is a model output of the run, not joined here."""
+    cid = receipt.get("card_id")
+    first = min(run.cards.get(cid, []), key=lambda c: c["version"], default=None)
+    seen = run.by_id.get(first_cause(first))
+    seen = seen if seen and seen["type"] == "product_seen" else None
+    frame = run.by_id.get(first_cause(seen))
+    at = frame if frame and seen and frame.get("ts_ms") == seen.get("frame_ts_ms") else None
+    m = FRAME.search(str((at or {}).get("jpeg_path") or ""))
+    i = int(m.group(1)) if m else None
+    url = str(receipt.get("image_url") or "")
+    sha = (
+        hashlib.sha256(base64.b64decode(url.split(",", 1)[1])).hexdigest()
+        if url.startswith("data:")
+        else None
+    )
+    cut = next((c for lp in run.loops for c in lp.get("cutouts", [])
+                if sha and c.get("png_sha256") == sha and i is not None and c.get("frame") == i), None)  # fmt: skip
+    out = {"card_id": cid, "card_version": receipt.get("card_version"),
+           "product_seen": seen and seen["event_id"], "frame_ts_ms": seen and seen.get("frame_ts_ms"),
+           "frame_event": at and at["event_id"], "source_frame": i, "image_sha256": sha,
+           "source_session": cut and cut.get("source_session"), "source_t": cut and cut.get("source_t")}  # fmt: skip
+    missing = [k for k, v in out.items() if v is None]
+    return {**out, "image_path": "NOT_RUN" if missing else "RUN", "missing": missing}
 
 
 def waits(loops: list[dict]) -> dict:
