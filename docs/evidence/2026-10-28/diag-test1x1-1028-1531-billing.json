@@ -12,6 +12,6 @@
  "credit_change_usd": 0.52,
  "ledger_session_usd": 0.51845225,
  "matches_ledger_to_two_decimals": true,
- "evidence": "Screenshot values reported by the operator in this conversation; image files kept outside the repository",
+ "evidence": "Screenshot values reported by the operator; image files kept outside the repository",
  "limitation": "Rounded agreement does not prove the cancelled call was unbilled"
 }
