@@ -1,0 +1,3903 @@
+{
+  "baseline": "650fe39d73e48560187803da699088b3dfceb1d8",
+  "test_file": "tests/test_written_phone_shield.py",
+  "test_sha256": "b9080bf05ea8b495135263134766b1fc56c7bc2e8ef659e74a6644e6a9b25d45",
+  "reproduction_command": "MODEL_API_KEY= uv run pytest -q tests/test_written_phone_shield.py --tb=short",
+  "pytest_result": "39 failed, 514 passed in 0.25s",
+  "tests_total": 553,
+  "fixture_count_assertions_passed": 1,
+  "red_count": 39,
+  "setup_errors": 0,
+  "scope": "Pure scan() calls; no database fixture or Model API client is used.",
+  "raw_log_sha256": "369250d7a2bb881ebd8aa3eba333d53c96d6b5532ca20ce7b7e5b4564398bd88",
+  "source_hashes": {
+    "data/comments/c5/stream-1.jsonl": "9c259c030cda0e74a10b6bf725aededdb741d874a3c63ff6653e38c9edb9e79c",
+    "data/comments/c5/stream-2.jsonl": "adea20e712298d32650051e224d3e2cf16f376fc42d123bfea423bce270d3f40",
+    "data/comments/c5/stream-3.jsonl": "44a6eff0ae7566440d6f20b0029addd09c960d7ad358600a65b8982b8fcf9cc7",
+    "data/comments/c5/stream-4.jsonl": "9b2ffc721b40b7b1c3467347ac06455b2ec1807f091c210d664582ae9bc5e95d",
+    "data/comments/c5/stream-5.jsonl": "c8fa4c58fdd8adbc1b80074256a1792388d51093436ca20c8b615584faad3feb"
+  },
+  "group_counts": {
+    "c5_gold": {
+      "total": 500,
+      "passed": 495,
+      "failed": 5
+    },
+    "written_variants": {
+      "total": 30,
+      "passed": 0,
+      "failed": 30
+    },
+    "negative_controls": {
+      "total": 22,
+      "passed": 18,
+      "failed": 4
+    }
+  },
+  "cases": [
+    {
+      "id": "c5-1-001",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-002",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-1-003",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-004",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-005",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-006",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-007",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-1-008",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-009",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-010",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-011",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-012",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-1-013",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-014",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-015",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-016",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-017",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-018",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-019",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-020",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-021",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-022",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-023",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-024",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-025",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-026",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-027",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-028",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-029",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-030",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-031",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-032",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-033",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-034",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-035",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-036",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-037",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-038",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-039",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-040",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-041",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-1-042",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-043",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-044",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-045",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-046",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-047",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-048",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-049",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-050",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-051",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-052",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-053",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-054",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-055",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-056",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-057",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-058",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-059",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-060",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-061",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-062",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-063",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-064",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-065",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-066",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-067",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-068",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-069",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-070",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-071",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-072",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-073",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-074",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-075",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-076",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-077",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-078",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-079",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-080",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-081",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-082",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-083",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-084",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-085",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-086",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-087",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-088",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-089",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-090",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-091",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-092",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-093",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-094",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-095",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-096",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-097",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-098",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-099",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-100",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-001",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-2-002",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-003",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-004",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-005",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-006",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-2-007",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-008",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-009",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-010",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-011",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-2-012",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-013",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-014",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-015",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-016",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-017",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-018",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-019",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-020",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-021",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-022",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-023",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-024",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-025",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-026",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-027",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-028",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-029",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-030",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-031",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-032",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-033",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-034",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-035",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-036",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-037",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-038",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-039",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-040",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-041",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-042",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-2-043",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-044",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-045",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-046",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-047",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-048",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-049",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-050",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-051",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-052",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-053",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-054",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-055",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-056",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-057",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-058",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-059",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-060",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-061",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-062",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-063",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-064",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-065",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-066",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-067",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-068",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-069",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-070",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-071",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-072",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-073",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-074",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-075",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-076",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-077",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-078",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-079",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-080",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-081",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-082",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-083",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-084",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-085",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-086",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-087",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-088",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-089",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-090",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-091",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-092",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-093",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-094",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-095",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-096",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-097",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-098",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-099",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-2-100",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-001",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-002",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-003",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-3-004",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-005",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-006",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-007",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-008",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-009",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-3-010",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-011",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-012",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-3-013",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-014",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-015",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-016",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-017",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-018",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-019",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-020",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-021",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-022",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-023",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-024",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-025",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-026",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-027",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-028",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-029",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-030",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-031",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-032",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-033",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-034",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-3-035",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-036",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-037",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-038",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-039",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-040",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-041",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-042",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-043",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-044",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-045",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-046",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-047",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-048",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-049",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-050",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-051",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-052",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-053",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-054",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-055",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-056",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-057",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-058",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-059",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-060",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-061",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-062",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-063",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-064",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-065",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-066",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-067",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-068",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-069",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-070",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-071",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-072",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-073",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-074",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-075",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-076",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-077",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-078",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-079",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-080",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-081",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-082",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-083",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-084",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-085",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-086",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-087",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-088",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-089",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-090",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-091",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-092",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-093",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-094",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-095",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-096",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-097",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-098",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-099",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-3-100",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-001",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-002",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-003",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-4-004",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-005",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-006",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-007",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-008",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-009",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-4-010",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-011",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-012",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-013",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-4-014",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-015",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-016",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-017",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-018",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-019",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-020",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-021",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-022",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-023",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-024",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-025",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-026",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-027",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-028",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-029",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-030",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-031",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-032",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-033",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-034",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-035",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-036",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-037",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-4-038",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-039",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-040",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-041",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-042",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-043",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-044",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-045",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-046",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-047",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-048",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-049",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-050",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-051",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-052",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-053",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-054",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-055",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-056",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-057",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-058",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-059",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-060",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-061",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-062",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-063",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-064",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-065",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-066",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-067",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-068",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-069",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-070",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-071",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-072",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-073",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-074",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-075",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-076",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-077",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-078",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-079",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-080",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-081",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-082",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-083",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-084",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-085",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-086",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-087",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-088",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-089",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-090",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-091",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-092",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-093",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-094",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-095",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-096",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-097",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-098",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-099",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-4-100",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-001",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-002",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-003",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-5-004",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-005",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-006",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-007",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-008",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-009",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-010",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-5-011",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-012",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-013",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-5-014",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-015",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-016",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-017",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-018",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-019",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-020",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-021",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-022",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-023",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-024",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-025",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-026",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-027",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-028",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-029",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-030",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-031",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-032",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-033",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-034",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-035",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-036",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-037",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-038",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-039",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-040",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-041",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-042",
+      "group": "c5_gold",
+      "expected_phone": true,
+      "actual_phone": true,
+      "passed": true
+    },
+    {
+      "id": "c5-5-043",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-044",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-045",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-046",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-047",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-048",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-049",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-050",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-051",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-052",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-053",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-054",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-055",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-056",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-057",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-058",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-059",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-060",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-061",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-062",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-063",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-064",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-065",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-066",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-067",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-068",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-069",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-070",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-071",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-072",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-073",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-074",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-075",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-076",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-077",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-078",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-079",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-080",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-081",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-082",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-083",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-084",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-085",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-086",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-087",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-088",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-089",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-090",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-091",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-092",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-093",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-094",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-095",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-096",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-097",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-098",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-099",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-5-100",
+      "group": "c5_gold",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "c5-1-012-dots",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-1-012-mixed_chunk",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-1-012-mixed_dots",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-1-012-uppercase",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-1-012-nfd",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-1-012-international",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-2-011-dots",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-2-011-mixed_chunk",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-2-011-mixed_dots",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-2-011-uppercase",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-2-011-nfd",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-2-011-international",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-3-012-dots",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-3-012-mixed_chunk",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-3-012-mixed_dots",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-3-012-uppercase",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-3-012-nfd",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-3-012-international",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-4-013-dots",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-4-013-mixed_chunk",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-4-013-mixed_dots",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-4-013-uppercase",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-4-013-nfd",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-4-013-international",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-5-013-dots",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-5-013-mixed_chunk",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-5-013-mixed_dots",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-5-013-uppercase",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-5-013-nfd",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "c5-5-013-international",
+      "group": "written_variants",
+      "expected_phone": true,
+      "actual_phone": false,
+      "passed": false
+    },
+    {
+      "id": "price-words",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "price-short",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "price-digits",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "size-words",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "size-digits",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "quantity",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "quantity-color",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "color-short",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "color-code",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": true,
+      "passed": false
+    },
+    {
+      "id": "sku-code",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": true,
+      "passed": false
+    },
+    {
+      "id": "rgb",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "short-words",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "short-mixed",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "wrong-prefix",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "overflow-words",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "overflow-digits",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "overflow-spaces",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": true,
+      "passed": false
+    },
+    {
+      "id": "overflow-dots",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": true,
+      "passed": false
+    },
+    {
+      "id": "interrupted",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "magnitude-break",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "size-break",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    },
+    {
+      "id": "long-run",
+      "group": "negative_controls",
+      "expected_phone": false,
+      "actual_phone": false,
+      "passed": true
+    }
+  ]
+}
