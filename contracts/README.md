@@ -69,6 +69,12 @@ are inputs to this replay query. The labeler instead uses all versions known whe
 recognition written after t can therefore change its answer for that same media time. Both use the same rule.
 The console list and overlay use appearance order too; a seller price edit cannot move an old item to the top.
 
+Current/previous define the frame-time context, not a universal choice of current for every order. D-030 in
+`comment_attachment.md` preserves current_card → current, previous_card → previous and explicit_sku → exactly
+one proven matching real snapshot card. Unresolved, unavailable, ambiguous or out-of-snapshot references do
+not auto-select or fall back to current. Coverage and reference resolution are separate prerequisites; a
+referenced_card_id from a label/body must be checked and reconciled with canonical history/snapshot.
+
 Attachment readiness and its bounded wait are defined in `docs/specs/current-item-and-stock-rules.md`.
 An expiry snapshots current and previous at the comment's media time using versions known at expiry. With two
 known, priced candidates, an order line may carry `candidates: [current_card_id, previous_card_id]` as below.

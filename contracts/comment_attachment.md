@@ -51,10 +51,44 @@ tags replace the required session, epoch, cursor, provenance and source-transpor
 Distinct card_id values are required, even when their referenced versions differ. JSON Schema's uniqueItems
 only detects identical candidate objects; it cannot prove logical uniqueness or reference history.
 
-Version 1 has actor system. `action: ready` requires the specified frame-readiness evidence and at least one
-real card, outcome ready and the current candidate selected. No current card means the wait cannot become
-ready; it expires instead. `action: expire` has outcome expired and null selection, with 0, 1 or 2 candidates.
+Version 1 has actor system. `action: ready` requires the specified frame-readiness evidence and a uniquely
+resolved real snapshot card under the reference rules below; selected_card_id names that card, which need not
+be the first/current candidate. Coverage alone is not reference resolution. Without a provable target the
+wait cannot become ready; it expires instead. `action: expire` has outcome expired and null selection, with 0, 1 or 2 candidates.
 An unhandled lower frame prevents readiness even if a newer recognition has completed.
+
+### Eligible labels and reference resolution (D-030)
+
+An eligible label is a real final `comment_labeled` with label order, naming the original comment, with the
+existing order_draft/reference_kind vocabulary. The server validates source/session/history and resolves
+the reference against the same 0–2 current/previous snapshot and permitted appearance/card evidence. Snapshot
+order remains current then previous; choosing previous never reorders the array or invents another candidate.
+
+| reference_kind | Automatic target, after coverage and history checks |
+|---|---|
+| current_card | the actual current card at comment_ts_ms by frame-time appearance |
+| previous_card | the actual previous distinct card at comment_ts_ms by frame-time appearance |
+| explicit_sku | exactly one real card in the permitted frozen snapshot whose validated card version has the exact stated SKU |
+| unresolved | none; do not auto-select |
+
+No available current/previous target, zero or multiple explicit-SKU matches, or any unresolved reference means
+no automatic selection. Do not retrieve a matching card outside this snapshot, substitute a catalog item,
+infer a match from name/price, or fall back to current. A stored referenced_card_id must be checked against the
+actual source history, snapshot and deterministic reference result; it is not authority by itself. A stale or
+contradictory ID cannot override that result or justify a fallback. The producer/reader must reconcile the
+referenced ID with the proven target before using it for binding/materialization; if a unique target cannot
+be proved, the intent stays unresolved. Body fields, classification output and source tags grant no authority.
+
+Before the original deadline, both valid frame coverage and a uniquely resolved reference are required for
+ready. Unresolved references retain the original timer and become expired with the real frozen snapshot for
+seller choice; no extra wait budget or new snapshot is granted. Timing/reference/recall denominators retain
+these cases. A valid selected target lacking SKU or approved price stays selected while awaiting that same
+card's qualifying version; its reference is not resolved again when a different card appears.
+
+The same guard applies before any automatic order handoff, including the two-priced-candidate path. Its
+provisional first line is not a resolved choice and cannot bypass explicit seller selection on expiry.
+Pre-order and order seller decisions still require an explicit real snapshot member and the existing
+session/version/price/identity checks; neither path may substitute a model/body reference or default current.
 
 The initial snapshot, outcome, comment/source refs, worker epoch/evidence, session, original clocks and deadline are copied unchanged
 into every later version. Late recognition cannot add or replace candidates, change expired into ready,
@@ -78,7 +112,7 @@ historical order v1 shapes, including nullable line SKU, remain valid and unchan
 
 | Initial attachment situation | Proposed continuation |
 |---|---|
-| ready, current card lacks SKU or approved price | selected identity is fixed; no order yet; wait for that same card's qualifying version |
+| ready, reference-resolved card lacks SKU or approved price | selected identity is fixed; no order yet; wait for that same card's qualifying version |
 | expired, exactly two candidates whose frozen referenced versions both have SKU and approved live/edited price | preserve the existing two-candidate D-027 path: snapshot first, then DRAFT immediately to NEEDS_SELLER, using the first candidate's real version/price |
 | expired, 0/1 candidates, or either frozen candidate lacks SKU or approved price | show the actual snapshot before an order; no order, amount, stock hold, confirmation or receipt |
 | seller selects a candidate lacking SKU or approved price | record selection, hold that card identity, wait for its own qualifying version; do not resolve again when other cards arrive |
@@ -298,7 +332,8 @@ prefix/delta optimization requires a separate contract/product decision, not an 
 
 ### Deadline, timer and canonical initial outcome
 
-Before the original deadline, only fully validated readiness plus a real current card can produce ready.
+Before the original deadline, only fully validated coverage plus a uniquely reference-resolved real snapshot
+card under D-030 can produce ready. A valid source fence or complete terminal list alone cannot select an item.
 Otherwise return 202 pending without an attachment/order/message. Missing proof is not permission to expire
 early. The app's independent deadline task must use the original comment.ingested_ms plus the retained bound,
 not the request time or classifier completion. The app's new-flow deadline projector follows eligible final

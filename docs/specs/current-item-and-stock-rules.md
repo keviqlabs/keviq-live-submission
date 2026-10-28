@@ -21,11 +21,11 @@ current-item fix".
 
 The product owner set these rules on 28/10:
 
-1. **Current item.** A comment's item is the item shown most recently at the comment's time, by the frame time
+1. **Current item.** The current item is the item shown most recently at the comment's time, by the frame time
    (`frame_ts_ms`), not by when its recognition came back. The appearance history is kept by frame time; a price or
    size edit is not a new appearance. The worker tracks how far frames have been handled. A comment at t that comes
    before its frames are handled waits in a queue bounded in time (the bound is the measured recognition latency)
-   and is then attached to the item current at t. If it is still unclear at the deadline, the order goes to the
+   and is then attached according to its validated reference at t (D-030 below). If it is still unclear at the deadline, the order goes to the
    seller with two candidates for one tap; the customer is asked only for a missing variant, as today. An order
    never takes the previous item's price, and no price is written into an earlier version of the new item. If the
    new item has no approved price, the order waits for it before the confirmation is sent. `/cards/live`, the
@@ -85,6 +85,15 @@ waits for this spec and is not merged today.
 - The console and overlay read one small JS copy of the rule (`app/static/current.js`). The repo has no JS test
   runner, so the JS copy is checked against the Python test timelines in the browser (L2.5), not in `make check`.
 
+Reference eligibility (D-030): current_card resolves the current card; previous_card resolves the previous
+distinct card; explicit_sku resolves only exactly one real card with the exact SKU in the permitted 0–2
+snapshot/evidence. Zero/multiple matches, missing target or unresolved never auto-select or fall back to
+current, and do not retrieve outside the snapshot. referenced_card_id must agree with the canonical
+history/snapshot and deterministic target before use; body/model/source values are not authority. Coverage
+is necessary but does not itself resolve a reference. An unresolved reference keeps the original deadline
+and follows expiry/seller choice, retaining all metric denominators. A selected target without SKU/approved
+price waits for that same card; no rebind is permitted. See `contracts/comment_attachment.md` for the full guard.
+
 ### When a comment is attached
 
 - A frame counts as **handled** when:
@@ -98,7 +107,7 @@ waits for this spec and is not merged today.
 - **Order comments and stock questions wait; other labels do not.** The model is called at once, as today, with the
   cards known at the time. Only the attachment to a card waits: through `resolve` and the order flow for an order,
   and for the stock reply of rule 3. The shield and the labels of questions, spam and scams are not delayed.
-- A ready comment is attached at once to the current item at t. Otherwise it waits in a per-session queue and is
+- A ready comment is attached at once to its uniquely resolved real snapshot card at t. Otherwise it waits in a per-session queue and is
   attached as soon as it is ready.
 - **Deadline**: `ATTACH_WAIT_MS` after the comment is received. It is the measured p95 from frame time to its card
   version on the live path, is held in one place and is re-measured like H in D-025. The queue is bounded in time
