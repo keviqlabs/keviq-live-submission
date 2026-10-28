@@ -184,7 +184,23 @@ class MetaClient:
         for attempt in range(MAX_ATTEMPTS):
             await self._guard(model, purpose)
             started = _ms()
-            reply = await self.transport.post(path, body)
+            try:
+                reply = await self.transport.post(path, body)
+            except (Exception, asyncio.CancelledError) as exc:
+                # no reply: cancelled (a worker lane's time limit) or no connection. Still a call (AGENTS.md
+                # rule 5); its usage never came back, so its cost is unknown and logged as 0 with the error.
+                error = (
+                    "cancelled"
+                    if isinstance(exc, asyncio.CancelledError)
+                    else f"transport_{type(exc).__name__}"
+                )
+                try:
+                    await self._log(model, purpose, started, False, error=error)
+                except Exception as log_exc:
+                    log.warning(
+                        "model_call for a %s %s call (%s) not posted: %s", model, purpose, error, log_exc
+                    )
+                raise
             if reply.status == 200:
                 cost = await self._log(model, purpose, started, True, usage(reply.body), units)
                 return reply.body, cost, started, _ms()

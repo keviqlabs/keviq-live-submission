@@ -3,10 +3,12 @@
 - A new product (`is_new`) opens a draft from the catalog match and a media span on that card (D-025). The
   previous card, if it never got a price and no undecided speech line overlaps it, is retired, so a quick switch
   (< 3 s) never merges two items (C7). A product already on a card is reopened as a new version of that card
-  instead of a second card.
+  instead of a second card. A product_seen already handled (the same event id) or of a frame older than the last
+  one taken is ignored.
 - A final `speech` goes to a card by media time, not by arrival (D-025, worker/brain/window.py). Spark reads
   price, sizes and colours in the background (D-018; the rule reader in worker/voice/vn.py when there is no key
-  or the call fails). The line is decided once its read is done and HOLD_MS after it arrived, in arrival order.
+  or the call fails), at most SPEECH_READS lines at a time from read to decision; the others wait their turn. The
+  line is decided once its read is done and HOLD_MS after it arrived, in arrival order.
   A heard price goes to the one candidate card; with several, the kind of item the line names picks one. Any
   other line leaves the price for the seller and counts as a wait by reason in the session (`price wait` log
   lines). A price makes the card live. A card that already has a price keeps it (D-023): a
@@ -14,11 +16,12 @@
   stays the same (D-024). Each change is a new version whose provenance lists the speech event ids (C4).
 - A version another writer already took (409, D-024: the seller's price route) is applied on top of the card's
   highest version once, or dropped; the number is never reused. product_seen's versions go the same way.
-- When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background; the frame
-  cut to SAM's box with SAM's mask as alpha (real pixels, nothing retouched, D-020) arrives as the next version's
-  image_url.
+- When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background, one card at a
+  time per session, so a slow cut-out never holds up the next line's decision; the frame cut to SAM's box with
+  SAM's mask as alpha (real pixels, nothing retouched, D-020) arrives as the next version's image_url.
 - product_seen replayed from a file (no `caused_by`) opens cards only with CARDS_FROM_REPLAY=1, so a replay that
   still carries fixture cards does not get a second set (docs/DECISIONS.md D-017).
+- runner.stats() has the lines and cut-outs waiting and in flight (BACKLOGS), so a measure barrier waits for them.
 """
 
 import asyncio
@@ -26,7 +29,7 @@ import copy
 import json
 import logging
 import re
-from collections import Counter
+from collections import Counter, deque
 from dataclasses import dataclass, field
 
 import httpx
@@ -37,7 +40,7 @@ from meta.client import ModelError, SchemaError
 from meta.meter import BudgetExceeded
 from worker.brain import window
 from worker.brain.refused import latest_card, on_top
-from worker.runner import build
+from worker.runner import BACKLOGS, build
 from worker.voice import vn
 
 log = logging.getLogger("worker.card")
@@ -46,6 +49,7 @@ CATALOG: list[dict] = json.loads(catalog_path().read_text())  # the items on sal
 WORDS: list[dict] = json.loads((ROOT / "data" / "catalog.json").read_text())
 CATEGORIES = sorted({i["category"] for i in WORDS})
 COLORS = sorted({v["color"] for i in WORDS for v in i["variants"]})
+SPEECH_READS = 4  # lines between their read and their decision at once, per session
 CATEGORY_VI = {
     "bag": "Túi",
     "belt": "Thắt lưng",
@@ -131,6 +135,12 @@ class Session:
         default_factory=dict
     )  # card_id -> heard prices proposed at its price
     waits: Counter = field(default_factory=Counter)  # reason -> heard prices that waited for the seller
+    seen_ids: set[str] = field(default_factory=set)  # product_seen ids handled (a stream may repeat one)
+    last_frame_ts: int | None = None  # frame_ts_ms of the newest product_seen taken
+    speech: deque = field(default_factory=deque)  # (event, ctx, line) of lines waiting for a read slot
+    reading: int = 0  # lines between their read and their decision, at most SPEECH_READS
+    cutouts: deque = field(default_factory=deque)  # (event, ctx, card_id) of live cards waiting for SAM
+    cutting: bool = False  # the session's SAM consumer is running
 
     def bump(self, card_id: str, **changes) -> dict:
         card = {**copy.deepcopy(self.cards[card_id]), **changes}
@@ -192,6 +202,15 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
         return []
     start = now_ms()
     s = SESSIONS.setdefault(event["session_id"], Session())
+    if event["event_id"] in s.seen_ids:
+        log.info("product_seen %s handled before: ignored", event["event_id"])
+        return []
+    s.seen_ids.add(event["event_id"])
+    if s.last_frame_ts is not None and event["frame_ts_ms"] < s.last_frame_ts:
+        log.info("product_seen %s of frame %s is older than %s: stale, ignored", event["event_id"],
+                 event["frame_ts_ms"], s.last_frame_ts)  # fmt: skip
+        return []
+    s.last_frame_ts = event["frame_ts_ms"]
     category, color = event["category"], (event.get("attributes") or {}).get("color")
     item = match(category, color)
     out = []  # (version, its changes), in posting order
@@ -287,8 +306,17 @@ async def on_speech(event: dict, ctx) -> list[dict]:
         return []
     line = Line(event["event_id"], event["start_ms"], event["end_ms"], s.lines[-1] if s.lines else None)
     s.lines.append(line)
-    s.spawn(apply_speech(event, ctx, s, line))
+    s.speech.append((event, ctx, line))
+    pump_speech(s)
     return []
+
+
+def pump_speech(s: Session) -> None:
+    """Start the next waiting lines, in arrival order, while fewer than SPEECH_READS are being read or decided."""
+    while s.speech and s.reading < SPEECH_READS:
+        s.reading += 1
+        event, ctx, line = s.speech.popleft()
+        s.spawn(apply_speech(event, ctx, s, line))
 
 
 async def apply_speech(event: dict, ctx, s: Session, line: Line) -> None:
@@ -307,6 +335,8 @@ async def apply_speech(event: dict, ctx, s: Session, line: Line) -> None:
         if line in s.lines:
             s.lines.remove(line)
         line.done.set()
+        s.reading -= 1
+        pump_speech(s)
 
 
 async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, infer) -> None:
@@ -381,7 +411,27 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
     for new, changes in news:
         new = await post_version(event, ctx, s, new, changes, infer)
         if new and new["card_id"] == live and not new["image_url"]:
-            await attach_cutout(event, ctx, s, live)
+            queue_cutout(event, ctx, s, live)
+
+
+def queue_cutout(event: dict, ctx, s: Session, cid: str) -> None:
+    """The cut-out waits for the session's SAM consumer, which takes one card at a time."""
+    s.cutouts.append((event, ctx, cid))
+    if not s.cutting:
+        s.cutting = True
+        s.spawn(cut_out_all(s))
+
+
+async def cut_out_all(s: Session) -> None:
+    try:
+        while s.cutouts:
+            event, ctx, cid = s.cutouts.popleft()
+            try:
+                await attach_cutout(event, ctx, s, cid)
+            except Exception as exc:  # e.g. its version refused; the card stays without an image (C7)
+                log.exception("cut-out for %s failed: %s", cid, exc)
+    finally:
+        s.cutting = False
 
 
 async def attach_cutout(event: dict, ctx, s: Session, cid: str) -> None:
@@ -450,4 +500,19 @@ async def on_card(event: dict, ctx) -> list[dict]:
     return []
 
 
+def speech_backlog() -> dict:
+    return {
+        "waiting": sum(len(s.speech) for s in SESSIONS.values()),
+        "in_flight": sum(s.reading for s in SESSIONS.values()),
+    }
+
+
+def cutout_backlog() -> dict:
+    return {
+        "waiting": sum(len(s.cutouts) for s in SESSIONS.values()),
+        "in_flight": sum(s.cutting for s in SESSIONS.values()),
+    }
+
+
+BACKLOGS["speech"], BACKLOGS["cutout"] = speech_backlog, cutout_backlog
 HANDLERS = {"product_seen": [on_product_seen], "speech": [on_speech], "card": [on_card]}

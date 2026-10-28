@@ -3,8 +3,10 @@
 Shield, on receipt: a phone number or a link in the text is hidden through the connector's CommentModerator
 (the simulator only logs it) and a comment_labeled with action `hide` goes out at once (C5: visible <= 5 s).
 
-Batch: every comment joins a per-session queue; one Spark call labels up to 20 comments, at most 1 s after the
-first one was queued. The model sees the catalog, the card timeline and, per comment, the current and previous
+Batch: every comment joins a per-session queue, labeled by the session's one consumer a batch at a time. A Spark
+call labels up to 20 comments, cut when 20 are queued or the oldest has waited 1 s; the next batch is cut from
+what queued meanwhile once that call is done, so a flood waits in the queue instead of opening calls at once.
+runner.stats() has the comments queued and those being labeled (BACKLOGS). The model sees the catalog, the card timeline and, per comment, the current and previous
 card at that comment's ts_ms. It says how the customer pointed at the product (reference_kind); code then
 resolves referenced_card_id from the timeline by the comment's own ts_ms, so a late comment pins to the card
 that was live when it was written (C3, C7). The batch label is final (measure keeps the latest label). A batch
@@ -14,10 +16,12 @@ A session carrying hand-written `fx-` cards (demo1 with fixtures) already has it
 """
 
 import asyncio
+import contextlib
 import json
 import logging
+import time
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.contracts import new_id, now_ms
 from app.settings import catalog_path
@@ -26,7 +30,7 @@ from connectors.facebook.interface import CommentModerator
 from connectors.sim.moderator import SimModerator
 from orders.rules import authorize, can_message
 from worker.brain.shield import first_label, scan
-from worker.runner import Ctx, build, parse_sse
+from worker.runner import BACKLOGS, Ctx, build, parse_sse
 
 log = logging.getLogger("worker.labels")
 BATCH_MAX, BATCH_WAIT_S = 20, 1.0
@@ -165,6 +169,7 @@ class Pending:
     ctx: Ctx
     signals: list[str]
     action: str
+    queued: float = field(default_factory=time.monotonic)
 
 
 class Labeler:
@@ -177,7 +182,9 @@ class Labeler:
         self.history: dict[str, asyncio.Task] = {}
         self.fixture_sessions: set[str] = set()
         self.queues: dict[str, list[Pending]] = defaultdict(list)
-        self.timers: dict[str, asyncio.Task] = {}
+        self.consumers: dict[str, asyncio.Task] = {}  # session_id -> its consumer, while it has comments
+        self.full: dict[str, asyncio.Event] = {}  # session_id -> set when BATCH_MAX comments are queued
+        self.labeling: dict[str, int] = defaultdict(int)  # session_id -> comments in the batch being labeled
         self.tasks: set[asyncio.Task] = set()
 
     def handlers(self) -> dict:
@@ -209,11 +216,18 @@ class Labeler:
             out.append(self._label(event, ctx, first_label(signals), None, signals, action))
         queue = self.queues[sid]
         queue.append(Pending(event, ctx, signals, action))
-        if len(queue) >= BATCH_MAX:
-            self._spawn(self._label_batch(sid, self._take(sid)))
-        elif sid not in self.timers:
-            self.timers[sid] = self._spawn(self._flush_later(sid))
+        if sid not in self.consumers:
+            self.full[sid] = asyncio.Event()
+            self.consumers[sid] = self._spawn(self._consume(sid))
+        elif len(queue) >= BATCH_MAX:
+            self.full[sid].set()
         return out
+
+    def backlog(self) -> dict:
+        return {
+            "waiting": sum(len(q) for q in self.queues.values()),
+            "in_flight": sum(self.labeling.values()),
+        }
 
     async def _hide(self, event: dict, signals: list[str]) -> str:
         decision = authorize("hide_comment_contact_or_link")
@@ -238,24 +252,36 @@ class Labeler:
             partial["_infer"] = infer
         return partial
 
-    async def _flush_later(self, sid: str) -> None:
-        await asyncio.sleep(BATCH_WAIT_S)
-        self.timers.pop(sid, None)
-        await self.flush(sid)
+    async def _consume(self, sid: str) -> None:
+        """Label the session's queue a batch at a time until it is empty."""
+        queue, full = self.queues[sid], self.full[sid]
+        try:
+            while queue:
+                wait = queue[0].queued + BATCH_WAIT_S - time.monotonic()
+                if len(queue) < BATCH_MAX and wait > 0:
+                    full.clear()
+                    with contextlib.suppress(TimeoutError):
+                        await asyncio.wait_for(full.wait(), wait)
+                    continue
+                batch = self._take(sid)
+                self.labeling[sid] = len(batch)
+                try:
+                    await self._label_batch(sid, batch)
+                except (
+                    Exception
+                ) as exc:  # e.g. the post refused: these labels are lost, the queue goes on (C7)
+                    log.exception("labels: batch of %d for %s failed: %s", len(batch), sid, exc)
+                finally:
+                    self.labeling[sid] = 0
+        finally:
+            del self.consumers[sid]
 
     def _take(self, sid: str) -> list[Pending]:
         """Cut the next batch now, so a batch holds the comments queued before it and no later ones."""
-        batch, self.queues[sid] = self.queues[sid][:BATCH_MAX], self.queues[sid][BATCH_MAX:]
-        timer = self.timers.pop(sid, None)
-        if timer and timer is not asyncio.current_task():
-            timer.cancel()
-        if self.queues[sid]:
-            self.timers[sid] = self._spawn(self._flush_later(sid))
+        queue = self.queues[sid]
+        batch = queue[:BATCH_MAX]
+        del queue[:BATCH_MAX]
         return batch
-
-    async def flush(self, sid: str) -> list[dict]:
-        """Label up to BATCH_MAX queued comments of the session in one model call; post and return the events."""
-        return await self._label_batch(sid, self._take(sid))
 
     async def _label_batch(self, sid: str, batch: list[Pending]) -> list[dict]:
         if not batch:
@@ -376,3 +402,4 @@ class Labeler:
 
 LABELER = Labeler()
 HANDLERS = LABELER.handlers()
+BACKLOGS["labels"] = LABELER.backlog
