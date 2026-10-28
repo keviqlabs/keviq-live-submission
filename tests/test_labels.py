@@ -107,7 +107,7 @@ def test_scan_finds_phone_numbers_and_links_only():
 
 
 def test_scan_agrees_with_the_hand_labels():
-    """Every hand-marked phone number and link is found, nothing else; only the spelled-out number is missed."""
+    """Every hand-marked phone number and link is found, including written digits, and nothing else."""
     missed, extra = [], []
     for cid, g in GOLD.items():
         got = set(scan(g["text"]))
@@ -115,8 +115,7 @@ def test_scan_agrees_with_the_hand_labels():
         missed += [(cid, s) for s in want - got]
         extra += [(cid, s) for s in got - want]
     assert extra == []
-    assert len(missed) == 1 and missed[0][1] == "phone_number"
-    assert any(ch.isdigit() for ch in GOLD[missed[0][0]]["text"]) is False
+    assert missed == []
 
 
 def test_gold_is_what_the_authoring_rows_fix():
@@ -256,9 +255,9 @@ async def test_two_hundred_comments_through_the_stream(mem_app, monkeypatch):
         cid for cid, e in first.items() if e["action"] == "hide" and "infer_start_ms" not in e["timing"]
     }
     assert on_receipt == contact
-    # The number spelled out in words has no digits for the regex; the batch hides it on the model's signal.
-    spelled = {cid for cid, g in GOLD.items() if g["has_phone"]} - contact
-    assert len(spelled) == 1 and all(first[cid]["action"] == "hide" for cid in spelled)
+    # Written digits are shield signals too; the batch does not need to supply the first hide.
+    spelled = {cid for cid, g in GOLD.items() if g["has_phone"] and not any(ch.isdigit() for ch in g["text"])}
+    assert len(spelled) == 1 and spelled <= on_receipt
     assert {h["comment_id"] for h in moderator.hidden} >= contact
     # Every unresolved order asks the customer which item, caused by the comment and its label.
     labeled = {e["event_id"]: e for e in out if e["type"] == "comment_labeled"}

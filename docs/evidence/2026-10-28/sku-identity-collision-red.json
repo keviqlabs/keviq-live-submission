@@ -1,0 +1,22 @@
+{
+  "baseline": "650fe39d73e48560187803da699088b3dfceb1d8",
+  "prior_test_commit": "76d5e65be4f5c5b46099400149fa43bc29f2f34b",
+  "test_file": "tests/test_sku_ambiguity.py",
+  "test_sha256": "5c20ea66d499b7abec43e91690121defc2d1b554002c7f717179a1b78ff0a7e6",
+  "source_evidence_file": "docs/evidence/2026-10-28/sku-identity-collision.json",
+  "source_evidence_sha256": "09f663f2ba8ff15c15aaf581c26f076d9f1fac71d77365beb0ad90eec7e88664",
+  "catalog_sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73",
+  "raw_log_sha256": "ce6bb1ce57232e9cd0bc7261264a52fa383c29d2e57d0cf76973d1f03b9cba0b",
+  "reproduction_command": "MODEL_API_KEY= uv run python -m tests.db_lock -- pytest -q -s tests/test_sku_ambiguity.py --tb=short",
+  "pytest_exit_code": 1,
+  "pytest_result": "1 failed, 19 passed in 0.14s",
+  "failed_test": "test_recorded_category_change_cannot_reuse_a_priced_card_from_coarse_match",
+  "failure": "The changed observation writes the old card ID at version 5; the required separate unknown draft is absent.",
+  "setup_errors": 0,
+  "red_count": 1,
+  "pass_count": 19,
+  "scope": "Test/spec only. Shared test-database ownership lock held; in-memory ASGI transport; no PostgreSQL test fixture, no model client, no process changes.",
+  "cost_usd": 0,
+  "runtime_tree_unchanged": true,
+  "review": "Independent review pending; draft must not merge alone."
+}
