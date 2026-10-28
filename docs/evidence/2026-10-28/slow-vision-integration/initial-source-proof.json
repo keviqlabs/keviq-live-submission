@@ -1,0 +1,13 @@
+{
+  "test_commit": "561d156a835cc4963b82a03d13dc04af0e96612a",
+  "worker_commit": "0f08af47f4a3d0da1a3c2a9255a52f515c94dfb7",
+  "baseline": "bf620a404efe520d9e83dc7439986d1d15626cea",
+  "files": {
+    "tests/test_slow_vision_integration.py": "0d064d9b6af1dc3c81b5d75a9ea1cc549712eb66030cd91ba9beffb9ce6cf2bb",
+    "docs/specs/slow-vision-integration.md": "3bd9864155cd6542db971e5f9b3cba07542001e253feefd4d7c3fd13cffc8893",
+    "worker/runner.py": "1c1401a79571f6877b934f3d1c06aceee5e86775190c52a65486e140da435a8f",
+    "worker/brain/labels.py": "e3d68b743f454e8e765a872801000eb8e88a5c022b798b7520147250f4568412",
+    "measure/c5_progress.py": "82a6bf721dfcfc68002e0668f144a8e04eec0891d4e98d267885f17bcc727b82",
+    "measure/c5_live.py": "4fec32f02f089d2eb967c2be2c4a63ed5e6e2088183ab7e9385c47ea967a2d1b"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "session": "slow-vision-7d24c4194472",
+  "first_ingested_ms": 1793171119455,
+  "last_ingested_ms": 1793171472317,
+  "other_session_event_rows_in_window": 0,
+  "late_comments_labeled": [
+    "c5-1-095",
+    "c5-1-098"
+  ],
+  "source_hashes_unchanged": true,
+  "validation_command_exit_code": 0,
+  "subsequent_lock_present": false
+}

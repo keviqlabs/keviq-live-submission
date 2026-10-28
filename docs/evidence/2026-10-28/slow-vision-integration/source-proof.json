@@ -1,0 +1,16 @@
+{
+  "test_commit": "44edbbe9d1ebc921bd2794e4012792ba23977adf",
+  "worker_commit": "0f08af47f4a3d0da1a3c2a9255a52f515c94dfb7",
+  "baseline": "bf620a404efe520d9e83dc7439986d1d15626cea",
+  "files": {
+    "tests/test_slow_vision_integration.py": "80bf40897251a9484afbe7d86a10100eb80dbe15e68dffdec1a6cd2998fcde04",
+    "tests/db_lock.py": "d1a7dcb9f3f76b7c08992b7f44db8eb7aaaf3ec68df5cbc081a6815fd8d6fbd8",
+    "tests/test_db_lock.py": "984680af9a6b89c7b44983d0a96521c176362ce9670b2d286177cf3fbb218cc1",
+    "Makefile": "b5f6779cba236515f67d05d4f7c5278437d379c7b7fec18a7bd3de5408cb646e",
+    "docs/specs/slow-vision-integration.md": "219610422e7d11d628e2b1e5c882df2164b0253c37dcf49f892c99fd9bf98cc5",
+    "worker/runner.py": "1c1401a79571f6877b934f3d1c06aceee5e86775190c52a65486e140da435a8f",
+    "worker/brain/labels.py": "e3d68b743f454e8e765a872801000eb8e88a5c022b798b7520147250f4568412",
+    "measure/c5_progress.py": "82a6bf721dfcfc68002e0668f144a8e04eec0891d4e98d267885f17bcc727b82",
+    "measure/c5_live.py": "4fec32f02f089d2eb967c2be2c4a63ed5e6e2088183ab7e9385c47ea967a2d1b"
+  }
+}

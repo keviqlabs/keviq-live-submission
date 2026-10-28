@@ -1,0 +1,15 @@
+.SLOW_VISION {"barrier": {"background": 0, "behind": 0, "delivered": 735, "done_seq": 32195, "errors": 0, "finished": 735, "head_seq": 32195, "pending": 0, "progress_age_ms": 561, "queued": 0, "running": 0, "skipped": 178, "stale": 0, "status": "SETTLED", "tasks_running": 0, "waited_ms": 3004}, "comments": 100, "control_logical_ms": {"speech_26113642d72b4b05a7ea": 7.0, "speech_681e5bdc13f94b918837": 6.0}, "digit_phone_expected": 3, "digit_phone_hidden": 3, "frames": 351, "hide_logical_ms": {"c5-1-002": 10.0, "c5-1-007": 7.0, "c5-1-041": 9.0}, "logical_duration_ms": 351500, "model_calls": 0, "session": "slow-vision-0896ab7526e1", "speed": 1.0, "stats": {"cutout": {"in_flight": 0, "waiting": 0}, "fast": {"done": 384, "failed": 0, "in_flight": 0, "received": 384, "skipped": 0, "stale": 0, "waiting": 0}, "labels": {"in_flight": 0, "waiting": 0}, "speech": {"in_flight": 0, "waiting": 0}, "vision": {"done": 173, "failed": 0, "in_flight": 0, "received": 351, "skipped": 178, "stale": 0, "waiting": 0}}, "vision_completed": 173, "vision_started": 173, "wall_elapsed_s": 355.722}
+.FSLOW_VISION {"case": "stopped", "early": {"background": 1, "behind": 1, "delivered": 1, "done_seq": 32197, "errors": 0, "finished": 0, "head_seq": 32198, "pending": 1, "progress_age_ms": 3, "queued": 0, "running": 1, "skipped": 0, "stale": 0, "status": "INCOMPLETE", "tasks_running": 0, "waited_ms": 0}, "final": {"background": 1, "behind": 1, "delivered": 1, "done_seq": 32197, "errors": 0, "finished": 0, "head_seq": 32198, "pending": 1, "progress_age_ms": 506, "queued": 0, "running": 1, "skipped": 0, "stale": 0, "status": "INCOMPLETE", "tasks_running": 0, "waited_ms": 502}}
+..xx
+=================================== FAILURES ===================================
+_ test_real_barrier_waits_for_pending_vision_and_stopped_worker_is_incomplete[False] _
+tests/test_slow_vision_integration.py:320: in test_real_barrier_waits_for_pending_vision_and_stopped_worker_is_incomplete
+    assert drained["status"] == "SETTLED" and drained["pending"] == 0, drained
+E   AssertionError: {'status': 'INCOMPLETE', 'waited_ms': 5002, 'head_seq': 32197, 'done_seq': 32197, ...}
+E   assert ('INCOMPLETE' == 'SETTLED'
+E     
+E     - SETTLED
+E     + INCOMPLETE)
+=========================== short test summary info ============================
+FAILED tests/test_slow_vision_integration.py::test_real_barrier_waits_for_pending_vision_and_stopped_worker_is_incomplete[False]
+1 failed, 4 passed, 2 xfailed in 369.18s (0:06:09)
