@@ -5,11 +5,13 @@ See docs/specs/slow-vision-integration.md for clocks, transport limitations and 
 
 import asyncio
 import contextlib
+import contextvars
 import fcntl
 import json
 import os
 import time
 import uuid
+import weakref
 from contextlib import asynccontextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -31,6 +33,15 @@ from worker.runner import Runner
 LOOP_MS = 351500
 SPEED = float(os.environ.get("SLOW_VISION_SPEED", "20"))
 OUTCOMES = ("done", "skipped", "stale", "failed")
+SERVER_CONTEXT = contextvars.ContextVar("test_asgi_server", default=False)
+SERVER_TASKS = weakref.WeakSet()
+
+
+class Infrastructure(set):
+    """The in-process app's tasks belong to the server, not to the measured worker process."""
+
+    def __contains__(self, task):
+        return super().__contains__(task) or task in SERVER_TASKS
 
 
 class NoModel:
@@ -67,11 +78,33 @@ async def pg_app(pg_url):
             pytest.fail("keviq_test advisory lock is held by another run")
         app = create_app(store)
         app.state.store = store
+        loop = asyncio.get_running_loop()
+        prior_factory = loop.get_task_factory()
+
+        def task_factory(loop, coro, context=None):
+            task = (
+                prior_factory(loop, coro, context=context)
+                if prior_factory
+                else asyncio.Task(coro, loop=loop, context=context)
+            )
+            if context.get(SERVER_CONTEXT, False) if context is not None else SERVER_CONTEXT.get():
+                SERVER_TASKS.add(task)
+            return task
+
+        async def server(scope, receive, send):
+            token = SERVER_CONTEXT.set(True)
+            try:
+                await app(scope, receive, send)
+            finally:
+                SERVER_CONTEXT.reset(token)
+
+        loop.set_task_factory(task_factory)
         sid = "slow-vision-" + uuid.uuid4().hex[:12]
         try:
-            async with AppClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            async with AppClient(transport=httpx.ASGITransport(app=server), base_url="http://test") as client:
                 yield store, client, sid
         finally:
+            loop.set_task_factory(prior_factory)
             await store.close()  # closes the advisory-lock connection; test rows are retained
 
 
@@ -114,6 +147,9 @@ async def running(client, handlers, sid, monkeypatch, speed=SPEED, progress=Fals
         reporter.counter = c5_progress.install(reporter.say)
     worker = Runner("http://test", handlers, http=client)
     task = asyncio.create_task(worker.run(cursor=0, session=sid))
+    if reporter:
+        await asyncio.sleep(0)  # run() has installed the reporter's own-task set before its first HTTP read
+        reporter.counter.own = Infrastructure(reporter.counter.own)
     try:
         yield worker, task, reporter
     finally:

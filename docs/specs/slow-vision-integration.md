@@ -40,7 +40,8 @@ and shield bound are measured. No real model, image quality, live Facebook, rend
 
 The ASGI transport buffers streaming bodies. The test client requests the app's real SSE endpoint with
 `follow=false`, then the unmodified runner opens the next cursor read. This tests app/store/runner integration,
-not network chunking, reconnects or TCP backpressure. All writes remain in a unique session in `keviq_test`.
+not network chunking, reconnects or TCP backpressure. Tasks created under the ASGI app context are tagged as
+server infrastructure and excluded from worker background counts; worker lane/label tasks remain counted. All writes remain in a unique session in `keviq_test`.
 The test holds both a local test-database file lock and a PostgreSQL advisory lock; it never deletes run rows.
 
 ## Verification and delivery
