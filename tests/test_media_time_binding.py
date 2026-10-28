@@ -67,6 +67,8 @@ class Scenario:
     def __init__(self, store, client, sid, clock, plans):
         self.store, self.client, self.sid, self.clock, self.plans = store, client, sid, clock, plans
         self.blocked_frames = {}
+        self.finished_frames = defaultdict(asyncio.Event)
+        self.frame_outcomes = {}
 
     async def frame(self, number, category=None, color=None, ready=None):
         self.plans[number] = (category, color, number if ready is None else ready)
@@ -77,6 +79,9 @@ class Scenario:
         return await ingest(self.client, make_event("product_seen", self.sid, self.clock.at(source), "sim",
             event_id=f"{self.sid}.seen-{suffix}", category=category, attributes={"color": color}, confidence=1.0,
             is_new=True, frame_ts_ms=self.clock.at(source), caused_by=[f"{self.sid}.fr-{source}"]))  # fmt: skip
+
+    async def frame_done(self, number):
+        await asyncio.wait_for(self.finished_frames[number].wait(), timeout=2)
 
     async def events(self):
         return await self.store.read(self.sid, 0, 2000)
@@ -114,8 +119,40 @@ class Scenario:
 
     async def snapshot(self):
         events = await self.events()
+        frames = {e["event_id"]: e for e in events if e["type"] == "frame"}
         return {
             "session": self.sid,
+            "input_frames": [
+                {
+                    "event_id": e["event_id"],
+                    "ts_ms": e["ts_ms"],
+                    "ingested_ms": e["ingested_ms"],
+                    "outcome": self.frame_outcomes.get(e["event_id"]),
+                }
+                for e in frames.values()
+            ],
+            "input_comments": [
+                {k: e[k] for k in ("event_id", "comment_id", "ts_ms", "ingested_ms")}
+                for e in events
+                if e["type"] == "comment"
+            ],
+            "recognition_sources": [
+                {
+                    "event_id": e["event_id"],
+                    "frame_ts_ms": e["frame_ts_ms"],
+                    "ingested_ms": e["ingested_ms"],
+                    "frame_refs": [
+                        {
+                            "event_id": ref,
+                            "exists": ref in frames,
+                            "ts_ms": frames[ref]["ts_ms"] if ref in frames else None,
+                        }
+                        for ref in e["caused_by"]
+                    ],
+                }
+                for e in events
+                if e["type"] == "product_seen"
+            ],
             "cards": [
                 {
                     k: e.get(k)
@@ -210,6 +247,16 @@ async def scenario(pg_app, monkeypatch, request):  # noqa: F811
             handlers[kind].extend(fns)
     handlers["frame"] = [recognize]
     value = Scenario(store, client, sid, clock, plans)
+    release_frame = runner_mod.Runner.release
+
+    def released(self, lane, event, outcome):
+        release_frame(self, lane, event, outcome)
+        if event["type"] == "frame":
+            number = int(event["event_id"].rsplit("-", 1)[1])
+            value.frame_outcomes[event["event_id"]] = {"kind": outcome, "at_ms": clock.now_ms()}
+            value.finished_frames[number].set()
+
+    monkeypatch.setattr(runner_mod.Runner, "release", released)
     try:
         async with running(client, dict(handlers), sid, monkeypatch, speed=SPEED):
             yield value
@@ -258,6 +305,8 @@ async def test_price_before_card_pins_later_price_without_backwriting(scenario):
     await s.frame(10, "sneaker", "trắng", ready=13.8)
     await s.comment(11, "early-price-order")
     await s.frame(11)
+    await s.frame_done(11)
+    await s.frame(14)
     await s.clock.until(16)
     await s.settle()
     a = await s.latest("GIAY-01")
@@ -314,6 +363,7 @@ async def test_expiry_needs_seller_with_two_candidates_instead_of_old_price(scen
     await s.frame(15, "sneaker", "trắng")
     a = await s.price("GIAY-01", 150000)
     await s.frame(19, ready=25)  # a lower media frame remains unfinished
+    await s.frame(20)
     await s.comment(20.4, "expiry-order")
     await s.frame(21)
     await s.clock.until(23)
@@ -345,6 +395,7 @@ async def test_expiry_deadline_while_lower_frame_result_is_blocked(scenario):
     try:
         await s.frame(19)
         await asyncio.wait_for(started.wait(), timeout=0.2)
+        await s.frame(20)
         await s.comment(20.4, "deadline-order")
         comment = next(
             e for e in await s.events() if e.get("comment_id") == "deadline-order" and e["type"] == "comment"
