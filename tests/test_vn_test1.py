@@ -1,7 +1,8 @@
 """worker/voice/vn.py on the test1 transcript as heard (data/local/test1/probe/voice.json, local, not committed).
 
-Expected readings are row numbers and values only. Rows 8, 9, 31 and 55 are the misread prices fixed in vn.py (a
-repeated "mươi"; a "một" counting the item after "nghìn"); every other row reads as it did before the fix.
+Expected readings are row numbers and values only. Rows 9, 31 and 55 are misread prices fixed in vn.py (a digit
+counting the item after "nghìn" was added to the price); row 8 has a repeated "mươi" and now gives no price. Every
+other row reads as it did before the fix.
 """
 
 import json
@@ -14,8 +15,10 @@ from worker.voice import vn
 
 VOICE = Path(__file__).resolve().parent.parent / "data/local/test1/probe/voice.json"
 
-# row -> price; before the fix these read 230 000, 220 100, 160 100 and 600 100
-FIXED = {8: 220_000, 9: 220_000, 31: 160_000, 55: 600_000}
+# row -> price; before the fix these read 220 100, 160 100 and 600 100
+FIXED = {9: 220_000, 31: 160_000, 55: 600_000}
+# a repeated "mươi": no price; before the fix row 8 read 230 000
+NO_PRICE = {8}
 # the 17 other rows with a price, the sizes and the colours: as read before the fix
 KEPT = {
     3: 250_000,
@@ -91,15 +94,21 @@ def test_the_misread_prices_read_as_said(heard):
     assert {i: heard[i].price for i in FIXED} == FIXED
 
 
+def test_the_repeated_muoi_row_has_no_price(heard):
+    assert {i: heard[i].price for i in NO_PRICE} == {8: None}
+
+
 def test_the_other_prices_read_as_before(heard):
     assert len(KEPT) == 17
-    assert {i: s.price for i, s in enumerate(heard) if s.price is not None and i not in FIXED} == KEPT
+    assert {
+        i: s.price for i, s in enumerate(heard) if s.price is not None and i not in {*FIXED, *NO_PRICE}
+    } == KEPT
 
 
 def test_rows_without_a_price_still_have_none(heard):
-    none = [i for i, s in enumerate(heard) if s.price is None]
+    none = [i for i, s in enumerate(heard) if s.price is None and i not in NO_PRICE]
     assert len(heard) == 64 and len(none) == 43
-    assert none == [i for i in range(64) if i not in KEPT | FIXED]
+    assert none == [i for i in range(64) if i not in {*KEPT, *FIXED, *NO_PRICE}]
 
 
 def test_sizes_and_colours_read_as_before(heard):
