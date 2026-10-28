@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keviq:requests:attachment-decision:v1",
+  "title": "Seller pre-order attachment decision request",
+  "description": "Proposed body of POST /api/sessions/{id}/attachments/{attachment_id}/decision, pending product-owner approval. Server supplies actor and validates snapshot membership, session, expected version, canonical retry and absence of an order.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "attachment_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "decision": {
+      "enum": [
+        "select",
+        "keep_unresolved",
+        "reject"
+      ]
+    },
+    "card_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+    }
+  },
+  "required": [
+    "attachment_version",
+    "decision"
+  ],
+  "if": {
+    "properties": {
+      "decision": {
+        "const": "select"
+      }
+    },
+    "required": [
+      "decision"
+    ]
+  },
+  "then": {
+    "required": [
+      "card_id"
+    ]
+  },
+  "else": {
+    "not": {
+      "required": [
+        "card_id"
+      ]
+    }
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keviq:requests:attachment-system:v1",
+  "title": "Worker system attachment evaluation request",
+  "description": "Proposed worker-only POST /api/sessions/{id}/attachments/system body. Authentication binds session and active epoch outside this schema. Server derives outcome and event fields; evidence is an authenticated worker attestation, not independent proof of physical reads.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+    },
+    "terminal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "frame_event_id": {
+          "$ref": "#/$defs/id"
+        },
+        "result": {
+          "enum": [
+            "no_product_seen",
+            "read_error",
+            "product_seen"
+          ]
+        },
+        "product_seen_event_id": {
+          "$ref": "#/$defs/id"
+        },
+        "card_event_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      },
+      "required": [
+        "frame_event_id",
+        "result"
+      ],
+      "if": {
+        "properties": {
+          "result": {
+            "const": "product_seen"
+          }
+        },
+        "required": [
+          "result"
+        ]
+      },
+      "then": {
+        "required": [
+          "product_seen_event_id",
+          "card_event_ids"
+        ]
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "product_seen_event_id"
+              ]
+            },
+            {
+              "required": [
+                "card_event_ids"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "after_frame_event_id": {
+          "$ref": "#/$defs/id"
+        },
+        "handled_frames": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1755,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/terminal"
+          }
+        }
+      },
+      "required": [
+        "after_frame_event_id",
+        "handled_frames"
+      ],
+      "description": "Authenticated owner-epoch terminal attestations and source references. Shape alone proves neither physical read completion nor coverage, chronology or posted-card causality."
+    }
+  },
+  "properties": {
+    "worker_epoch": {
+      "$ref": "#/$defs/id"
+    },
+    "comment_event_id": {
+      "$ref": "#/$defs/id"
+    },
+    "label_event_id": {
+      "$ref": "#/$defs/id"
+    },
+    "observed_cursor": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "readiness_evidence": {
+      "$ref": "#/$defs/readiness"
+    }
+  },
+  "required": [
+    "worker_epoch",
+    "comment_event_id",
+    "label_event_id",
+    "observed_cursor"
+  ]
+}

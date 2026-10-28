@@ -1,5 +1,14 @@
 # Current item, stock hold, stock replies (spec)
 
+Supplement proposed on 28/10: D-029 in `contracts/comment_attachment.md` describes a pre-order wait record for
+missing SKU/approved price or fewer than two known candidates, without changing required order fields. Its
+semantics, including no selection from an empty frozen snapshot and console-only pre-order rejection, still
+require product-owner approval. A worker-only, session/epoch-bound ingress with source/evidence checks is
+proposed; it is not implemented or configured, and sender authentication alone proves no readiness. Priced
+unidentified non-draft SKU eligibility remains an explicit gap. Stuck/late cases stay in the original timing
+and reference denominators and must report recall/seller-effort impact. This note does not approve implementation,
+change the timing/metric criteria below or open paid work.
+
 Status: spec only. This change touches no code, contract or runtime. Rule 1 is coded in a PR on 29/10. Rules 2 and 3
 come after the 30/10 gate. Rule 2 and the end-of-live event change order states, so they go through a contracts PR
 that the contracts owner and the product owner review and the product owner merges. Line numbers below are on main
