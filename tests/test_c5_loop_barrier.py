@@ -71,7 +71,6 @@ class Worker:
 
 def restore_runner(monkeypatch) -> None:
     """c5_progress.install patches worker.runner in place, as in the worker process; undone after the test."""
-    monkeypatch.setattr(runner, "parse_sse", runner.parse_sse)
     monkeypatch.setattr(runner.Runner, "handle", runner.Runner.handle)
     monkeypatch.setattr(runner.Runner, "run", runner.Runner.run)
 
@@ -106,8 +105,50 @@ def test_a_worker_two_seconds_into_an_event_is_not_settled_after_half_a_second(m
     assert {k: early[k] for k in ("head_seq", "done_seq", "behind", "delivered", "pending", "running")} == {
         "head_seq": 7, "done_seq": 6, "behind": 1, "delivered": 1, "pending": 1, "running": 1}  # fmt: skip
     assert late["status"] == "SETTLED" and late_ms >= 2000
-    assert {k: late[k] for k in ("done_seq", "behind", "finished", "errors", "pending", "running")} == {
-        "done_seq": 7, "behind": 0, "finished": 1, "errors": 0, "pending": 0, "running": 0}  # fmt: skip
+    assert {k: late[k] for k in ("done_seq", "behind", "finished", "errors", "pending", "running", "background")} == {
+        "done_seq": 7, "behind": 0, "finished": 1, "errors": 0, "pending": 0, "running": 0, "background": 0}  # fmt: skip
+
+
+def test_work_a_handler_left_in_the_background_holds_the_barrier(monkeypatch):
+    """A labels batch or a speech decision runs after handle() returned: done_seq is at the head, nothing is
+    pending, and the loop is still not settled until that task ends."""
+    restore_runner(monkeypatch)
+    worker = Worker()
+    c5_progress.install(worker.say)
+    later = set()
+
+    async def queue(event, ctx):
+        later.add(asyncio.create_task(asyncio.sleep(3.0)))
+        return []
+
+    async def scenario():
+        w = runner.Runner("http://app", {"comment": [queue]}, http=WorkerHttp(sse(7, comment(7))))
+        working = asyncio.create_task(w.run(cursor=5, session="run"))
+        watch = c5_live.Watch(PollHttp(), "run", Feed(), Shop())
+        watch.seqs = [7]
+        watching = asyncio.create_task(watch.run())
+        t = time.monotonic()
+        early = await watch.barrier(worker, [set()], timeout_s=2.0)  # long enough to settle without the task
+        late = await watch.barrier(worker, [set()], timeout_s=8.0)
+        late_ms = (time.monotonic() - t) * 1000
+        working.cancel()
+        await watch.halt(watching)
+        return early, late, late_ms
+
+    early, late, late_ms = asyncio.run(scenario())
+    assert early["status"] == "INCOMPLETE"
+    assert {k: early[k] for k in ("done_seq", "behind", "pending", "running", "background")} == {
+        "done_seq": 7, "behind": 0, "pending": 0, "running": 0, "background": 1}  # fmt: skip
+    assert late["status"] == "SETTLED" and late["background"] == 0 and late_ms >= 3000
+
+
+def test_install_leaves_parse_sse_alone_so_history_reads_are_not_deliveries(monkeypatch):
+    """labels, orders and refused read the session history with worker.runner.parse_sse; those events are
+    never handed to handle() and must not count as pending."""
+    restore_runner(monkeypatch)
+    parse = runner.parse_sse
+    c5_progress.install(Worker().say)
+    assert runner.parse_sse is parse
 
 
 def test_the_watermark_is_continuous_when_events_finish_out_of_order():
@@ -153,6 +194,7 @@ def test_check_is_ok_only_with_a_fresh_line_nothing_pending_at_the_head_and_no_t
     behind = check(line(delivered=1, finished=1, done_seq=7), [7, 8, 9])
     assert (behind["ok"], behind["behind"]) == (False, 2)
     assert not check(line(delivered=1, pending=1, done_seq=6), [7])["ok"]
+    assert not check(line(delivered=2, finished=2, done_seq=9, background=1), [8, 9])["ok"]
 
     async def busy():
         task = asyncio.create_task(asyncio.sleep(1))
