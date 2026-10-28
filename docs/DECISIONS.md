@@ -2,6 +2,58 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-28 — proposed pre-order attachment history
+
+**D-029 PROPOSED: preserve attachment outcome before an order can be priced, with a frozen real-card snapshot
+and audited seller decisions. Product-owner approval is still required; this is not runtime authorization.**
+New `comment_attachment` event type v1, envelope type entry and separate system/attachment-decision request schemas.
+Full proposed semantics and validation limits are in `contracts/comment_attachment.md`.
+
+- Initial version records ready/expired, actual decision time, original comment/label refs and deadline,
+  history cursor and 0–2 real candidate card/version/appearance refs. It contains no price or fake order.
+  Later versions append seller decisions without changing the outcome, snapshot or clocks. Late evidence
+  cannot rebind the selected card, expand candidates or turn expired into ready.
+- New producer semantics require the chosen card's own SKU and approved price before an order. Two eligible
+  frozen candidates retain the D-027 order-choice path; missing SKU is not cured by price alone. Historical
+  order shapes/nullability, state machine, permissions and rules remain unchanged.
+- Proposed seller route before an order: select / keep_unresolved / reject with expected attachment version.
+  Server supplies actor; the body cannot supply price, actor, snapshot or deadline. Keep appends audit history,
+  unlike the D-028 null-SKU no-op. Once an order exists, only its existing approve/reject route chooses items.
+- Logical version uniqueness, compare-and-swap, canonical same-intent retries and recovery from history are
+  runtime invariants. A duplicate event ID alone is not sufficient. Recovery never resets a deadline or
+  backdates timestamps, imports evidence after the original deadline, or claims a missed timing target passed.
+
+Product decisions explicitly requested: an empty frozen snapshot can only be kept unresolved or rejected,
+with no automatic rescue snapshot; a pre-order reject only closes the console intent and sends no customer
+message or fake CANCELLED order. These effects are proposed for approval, not assumed accepted.
+
+Proposed system ingress: one HTTP endpoint for an authenticated worker bound by durable server configuration
+to the exact session/active epoch, with initial-outcome scope only. It submits source refs, observed cursor and
+optional per-frame terminal evidence; the app derives outcome, clocks/deadline, snapshot and actor. Evidence is
+frozen on ready outcomes. Server checks frame coverage, refs and posted cards; terminal reads remain worker
+attestations, not independently observed execution. No boolean, identity or credential alone proves ready.
+Before deadline missing proof stays pending, at/after deadline it expires using real time; late labels/requests
+remain timing misses without reset/backdating or denominator exclusion. Generic ingest cannot forge events,
+and worker authority cannot become seller authority. No credential, provisioning or runtime implementation
+is included; rollout requires guards/readers/configuration before enabling this flow.
+
+The proposed full-evidence bound covers the approved five-lap run: 351 frames per lap, at most 1755 terminal
+records, two required card-post refs per frame and 1 MiB raw ingress/serialized ready event. A synthetic compact
+maximum-identifier request is 846461 bytes. Over-limit requests fail closed without truncation or changing
+workload/denominators; app expiry still uses the original deadline. No durable-prefix optimization or 4000-ms
+runtime guarantee is claimed. App-owned expiry can record a null worker epoch without inventing a worker;
+ready and ingress still require a real active epoch, and seller versions preserve the stored epoch/null.
+
+Unresolved **SPEC_GAP**: D-028 cannot assign a SKU to an already-priced unidentified live/edited card. This
+proposal does not widen that route or change its status; it remains pending/keep/reject until a separate owner
+decision supplies a valid continuation. Rescore must count these stuck cases and report recall/seller-effort
+impact; no sample is dropped and abstention is not counted as correct.
+
+Validation is structural only. Tests do not prove actor authority, same-session membership, real references,
+chronological relationships, immutable snapshots, CAS or recovery. Old events remain valid under the new v1
+schema set; old validators/readers need coordinated updates before enabling producers. C1/C3/C5/C8, gold,
+caps and paid gates are unchanged. No producer, route, order flow or UI implementation is included.
+
 ## 2026-10-28 — seller identifies an unresolved draft
 
 **D-028 The seller may assign a catalog SKU to an unresolved draft, or explicitly leave it unresolved.**

@@ -8,6 +8,7 @@ Changes go through the contracts owner **and** the Founder, get a `docs/DECISION
 | `events/<type>.schema.json` | JSON Schema (draft 2020-12) per event type; `events/envelope.schema.json` = fields every event has |
 | `requests/<route>.schema.json` | request-body shape; route semantics and history checks are documented below |
 | `order_states.json` / `order_states.md` | order state machine |
+| `comment_attachment.md` | proposed pre-order attachment semantics, pending product-owner approval; no runtime producer/route |
 | `permissions.json` / `permissions.md` | who decides what (assistant · seller · forbidden) |
 | `acceptance.md` | functional criteria C1–C11 |
 
@@ -30,6 +31,7 @@ Every event has `event_id`, `session_id`, `ts_ms`, `source` (`replay` · `facebo
 | `price_proposal` | `card_id`, `card_version`, `current_price`, `heard_price`, `speech_event_id`; `caused_by` lists the speech | worker/brain, when speech names a different price for a priced card (console only) |
 | `comment` | `comment_id`, `user_ref` (pseudonym), `text`, `reply_to` | connectors |
 | `comment_labeled` | `comment_id`, `label`, `order_draft{sku, variant, qty, referenced_card_id, reference_kind}`, `scam_signals[]`, `action`, `latency_ms` | worker/brain |
+| `comment_attachment` | versioned ready/expired outcome; frozen 0–2 card refs, original clocks/deadline, owner epoch/readiness refs, selected card and server-assigned action/actor | proposed worker-only system ingress/app writer and separate seller route (D-029) |
 | `order` | `order_id`, `customer_ref`, `lines[]`, `amount`, `state`, `prev_state`, `actor`, `approval_needed`, `reason`, `receipt{card_version, image_url, price}` | orders |
 | `message_out` / `message_in` | `thread_ref`, `template`, `payload` | connectors (sim/facebook) |
 | `model_call` | `model`, `purpose`, `tokens_in`, `tokens_out`, `cost_usd`, `latency_ms`, `ok`, `error`, `units` | meta/ |
@@ -139,16 +141,19 @@ only the body shape and the existing event shape. Runtime must verify catalog me
 seller authority, current status, latest-version match, append-only history and unchanged price provenance.
 The route does not reassign a card that already has a SKU or change the SKU/version pinned by an existing order.
 
-## Unresolved contract gaps
+## Supplemental pre-order proposal, pending product-owner approval
 
-- **SPEC_GAP — missing price or candidates at expiry.** The current required order line cannot represent an
-  unknown card/version or a missing approved `unit_price`. The two-candidate shape cannot represent fewer than
-  two known cards. The spec's expiry requirement in these cases needs an owner decision before runtime
-  implementation. This contract does not decide to extend a deadline, pretend readiness, borrow another
-  card's price, use zero, relax required fields or change states.
-- **SPEC_GAP — persisting attachment outcome.** `comment_labeled.order_draft` has no ready/expired marker or
-  candidate snapshot. The handoff and restart representation between attachment and the order consumer remains
-  undecided; this change adds no field there. Adding candidates to an order does not by itself resolve that gap.
+The D-027 gaps (missing price/identity/candidates before an order and persisting ready/expired attachment) have
+the separate **proposed** contract in `comment_attachment.md` (D-029). It adds an append-only event and a
+pre-order seller-decision request without weakening an order line or adding fields to comment_labeled.
+The proposal requires explicit product approval, especially that an empty frozen snapshot cannot be selected
+and pre-order rejection only closes the console intent without messaging the customer. It defines a proposed
+authenticated session/epoch-bound system ingress with evidence checks, no credentials or runtime implementation,
+published full-evidence limits for the approved five-lap run (1755 records, two card refs per frame, 1 MiB),
+and the eligibility limit of D-028 for a priced unidentified non-draft. App-owned expiry may have a null worker
+epoch, while ready and ingress requests require a real authenticated epoch. Bounds and those product effects
+remain proposed for approval; no latency or C5-pass claim follows from the schemas.
+The proposal alone does not clear runtime gates or authorize deployment.
 
 These contracts alone do not open the remaining runtime gates. This change implements no route, worker,
 order flow or UI; request schemas are not yet wired into runtime validation. V1 is retained because existing

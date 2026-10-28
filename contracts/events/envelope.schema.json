@@ -62,6 +62,7 @@
       "enum": [
         "card",
         "comment",
+        "comment_attachment",
         "comment_labeled",
         "frame",
         "message_in",

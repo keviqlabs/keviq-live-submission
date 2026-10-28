@@ -1,0 +1,446 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keviq:events:comment_attachment:v1",
+  "title": "Versioned pre-order comment attachment",
+  "description": "Proposed pre-order attachment record pending product-owner approval. Structural constraints do not prove writer authority, frozen history, source membership, chronological relations or CAS.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+    },
+    "milliseconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "terminal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "frame_event_id": {
+          "$ref": "#/$defs/id"
+        },
+        "result": {
+          "enum": [
+            "no_product_seen",
+            "read_error",
+            "product_seen"
+          ]
+        },
+        "product_seen_event_id": {
+          "$ref": "#/$defs/id"
+        },
+        "card_event_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      },
+      "required": [
+        "frame_event_id",
+        "result"
+      ],
+      "if": {
+        "properties": {
+          "result": {
+            "const": "product_seen"
+          }
+        },
+        "required": [
+          "result"
+        ]
+      },
+      "then": {
+        "required": [
+          "product_seen_event_id",
+          "card_event_ids"
+        ]
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "product_seen_event_id"
+              ]
+            },
+            {
+              "required": [
+                "card_event_ids"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "observed_cursor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "after_frame_event_id": {
+          "$ref": "#/$defs/id"
+        },
+        "handled_frames": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1755,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/terminal"
+          }
+        }
+      },
+      "required": [
+        "observed_cursor",
+        "after_frame_event_id",
+        "handled_frames"
+      ],
+      "description": "Authenticated owner-epoch terminal attestations and source references. Shape alone proves neither physical read completion nor coverage, chronology or posted-card causality."
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "$ref": "#/$defs/id"
+        },
+        "card_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "card_event_id": {
+          "$ref": "#/$defs/id"
+        },
+        "appearance_event_id": {
+          "$ref": "#/$defs/id"
+        },
+        "appearance_frame_ts_ms": {
+          "$ref": "#/$defs/milliseconds"
+        }
+      },
+      "required": [
+        "card_id",
+        "card_version",
+        "card_event_id",
+        "appearance_event_id",
+        "appearance_frame_ts_ms"
+      ]
+    }
+  },
+  "properties": {
+    "event_id": {
+      "$ref": "#/$defs/id"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+    },
+    "ts_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Actual decision time, including late recovery; never backdated to the comment or deadline."
+    },
+    "source": {
+      "enum": [
+        "replay",
+        "facebook",
+        "sim"
+      ]
+    },
+    "v": {
+      "const": 1
+    },
+    "type": {
+      "const": "comment_attachment"
+    },
+    "caused_by": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/id"
+      },
+      "description": "Initial version names comment and label; later versions name the preceding attachment and relevant evidence. References require runtime verification."
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "received_ms": {
+          "$ref": "#/$defs/milliseconds"
+        },
+        "infer_start_ms": {
+          "$ref": "#/$defs/milliseconds"
+        },
+        "infer_end_ms": {
+          "$ref": "#/$defs/milliseconds"
+        },
+        "emitted_ms": {
+          "$ref": "#/$defs/milliseconds"
+        }
+      }
+    },
+    "attachment_id": {
+      "$ref": "#/$defs/id"
+    },
+    "worker_epoch": {
+      "anyOf": [
+        {"$ref": "#/$defs/id"},
+        {"type": "null"}
+      ],
+      "description": "Active authenticated owner epoch for ready; null is allowed only for an app-owned expiry with no worker claim. Frozen on later seller versions."
+    },
+    "readiness_evidence": {
+      "$ref": "#/$defs/readiness"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "comment_id": {
+      "$ref": "#/$defs/id"
+    },
+    "comment_event_id": {
+      "$ref": "#/$defs/id"
+    },
+    "label_event_id": {
+      "$ref": "#/$defs/id"
+    },
+    "comment_ts_ms": {
+      "$ref": "#/$defs/milliseconds"
+    },
+    "comment_ingested_ms": {
+      "$ref": "#/$defs/milliseconds"
+    },
+    "deadline_ms": {
+      "$ref": "#/$defs/milliseconds"
+    },
+    "snapshot_at_ms": {
+      "$ref": "#/$defs/milliseconds"
+    },
+    "snapshot_cursor": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/candidate"
+      },
+      "description": "Frozen current/previous references, omitting absent cards. Distinct card_id values and real same-session history require runtime checks; uniqueItems only rejects identical objects."
+    },
+    "outcome": {
+      "enum": [
+        "ready",
+        "expired"
+      ]
+    },
+    "action": {
+      "enum": [
+        "ready",
+        "expire",
+        "select",
+        "keep_unresolved",
+        "reject"
+      ]
+    },
+    "selected_card_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "actor": {
+      "enum": [
+        "system",
+        "seller"
+      ],
+      "description": "Assigned by the authorized server writer; a caller-supplied valid value is not proof of authority."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "event_id",
+    "session_id",
+    "ts_ms",
+    "source",
+    "v",
+    "type",
+    "caused_by",
+    "attachment_id",
+    "worker_epoch",
+    "version",
+    "comment_id",
+    "comment_event_id",
+    "label_event_id",
+    "comment_ts_ms",
+    "comment_ingested_ms",
+    "deadline_ms",
+    "snapshot_at_ms",
+    "snapshot_cursor",
+    "candidates",
+    "outcome",
+    "action",
+    "selected_card_id",
+    "actor",
+    "reason"
+  ],
+  "oneOf": [
+    {
+      "properties": {
+        "action": {
+          "const": "ready"
+        },
+        "version": {
+          "const": 1
+        },
+        "actor": {
+          "const": "system"
+        },
+        "outcome": {
+          "const": "ready"
+        },
+        "selected_card_id": {
+          "$ref": "#/$defs/id"
+        },
+        "candidates": {
+          "minItems": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "action": {
+          "const": "expire"
+        },
+        "version": {
+          "const": 1
+        },
+        "actor": {
+          "const": "system"
+        },
+        "outcome": {
+          "const": "expired"
+        },
+        "selected_card_id": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "action": {
+          "const": "select"
+        },
+        "version": {
+          "minimum": 2
+        },
+        "actor": {
+          "const": "seller"
+        },
+        "outcome": {
+          "const": "expired"
+        },
+        "selected_card_id": {
+          "$ref": "#/$defs/id"
+        },
+        "candidates": {
+          "minItems": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "action": {
+          "const": "keep_unresolved"
+        },
+        "version": {
+          "minimum": 2
+        },
+        "actor": {
+          "const": "seller"
+        }
+      }
+    },
+    {
+      "properties": {
+        "action": {
+          "const": "reject"
+        },
+        "version": {
+          "minimum": 2
+        },
+        "actor": {
+          "const": "seller"
+        }
+      }
+    }
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "ready"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "required": ["readiness_evidence"],
+        "properties": {
+          "worker_epoch": {"$ref": "#/$defs/id"},
+          "candidates": {
+            "minItems": 1
+          },
+          "selected_card_id": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      },
+      "else": {
+        "not": {"required": ["readiness_evidence"]}
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "selected_card_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "selected_card_id"
+        ]
+      },
+      "then": {
+        "properties": {
+          "candidates": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}
