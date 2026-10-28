@@ -271,23 +271,60 @@ async def test_two_hundred_comments_through_the_stream(mem_app, monkeypatch):
     )
 
 
-async def test_batch_flushes_at_twenty_then_on_the_timer(mem_app):
+class TimedOracle(OracleTransport):
+    """The oracle, `seconds` per call; when each call started and how many were open at once."""
+
+    def __init__(self, seconds: float = 0.0):
+        super().__init__()
+        self.seconds, self.at, self.open, self.most = seconds, [], 0, 0
+
+    async def post(self, path: str, body: dict) -> Reply:
+        self.at.append(asyncio.get_running_loop().time())
+        self.open += 1
+        self.most = max(self.most, self.open)
+        try:
+            await asyncio.sleep(self.seconds)
+            return await super().post(path, body)
+        finally:
+            self.open -= 1
+
+
+def sizes(transport) -> list[int]:
+    return [len(json.loads(r["input"][1]["content"])["comments"]) for r in transport.requests]
+
+
+async def test_a_batch_goes_at_twenty_and_the_rest_after_the_wait(mem_app):
     _, store, client = mem_app
-    transport = OracleTransport()
+    transport = TimedOracle()
     labeler, runner = wire(client, transport)
-    schedule = [p for p in plan(events(), SESSION, now_ms(), 1.0) if p[1]["type"] == "card"][:1]
-    comments = [p for p in plan(events(), SESSION, now_ms(), 1.0) if p[1]["type"] == "comment"][:21]
+    timed = plan(events(), SESSION, now_ms(), 1.0)
+    schedule = [p for p in timed if p[1]["type"] == "card"][:1]
+    comments = [p for p in timed if p[1]["type"] == "comment"][:21]
+    t0 = asyncio.get_running_loop().time()
     await feed(client, runner, schedule + comments)
-    assert len(labeler.queues[SESSION]) == 1 and SESSION in labeler.timers
-    pending = [
-        t for t in labeler.tasks if t is not labeler.timers[SESSION]
-    ]  # the batch of 20, the cancelled timer
-    assert not [r for r in await asyncio.gather(*pending, return_exceptions=True) if isinstance(r, Exception)]
-    assert [len(json.loads(r["input"][1]["content"])["comments"]) for r in transport.requests] == [20]
     await drain(labeler)
-    assert [len(json.loads(r["input"][1]["content"])["comments"]) for r in transport.requests] == [20, 1]
+    assert sizes(transport) == [20, 1]
+    assert transport.at[0] - t0 < labels_mod.BATCH_WAIT_S / 2  # twenty queued: no wait
+    assert transport.at[1] - t0 >= labels_mod.BATCH_WAIT_S  # one queued: it waited for more
     ctx = json.loads(transport.requests[0]["input"][1]["content"])
     assert ctx["catalog"] and ctx["card_timeline"][0]["card_id"] == "card-01"
+
+
+async def test_one_label_batch_at_a_time_per_session(mem_app):
+    """A flood never opens a model call per twenty comments at once: the next batch is cut when the last is done,
+    from what queued meanwhile (phone numbers are still hidden on receipt, before any batch)."""
+    _, store, client = mem_app
+    transport = TimedOracle(0.1)
+    labeler, runner = wire(client, transport)
+    timed = plan(events(), SESSION, now_ms(), 1.0)
+    schedule = [p for p in timed if p[1]["type"] == "card"][:1]
+    comments = [p for p in timed if p[1]["type"] == "comment"][:45]
+    await feed(client, runner, schedule + comments)
+    await drain(labeler)
+    assert transport.most == 1
+    assert sizes(transport) == [20, 20, 5]
+    labeled = {e["comment_id"] for e in await store.read(SESSION, 0, 500) if e["type"] == "comment_labeled"}
+    assert labeled == {e["comment_id"] for _, e in comments}
 
 
 async def test_invalid_model_output_labels_the_batch_other_and_goes_on(mem_app, monkeypatch):

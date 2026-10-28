@@ -1,5 +1,6 @@
 """meta/: daily cap stops calls and is logged, 429 backoff honours Retry-After, schema retry then SchemaError (C7)."""
 
+import asyncio
 import json
 
 import pytest
@@ -109,3 +110,31 @@ async def test_sam_and_image_bill_per_image():
     await client.image("x")
     assert calls[0]["units"] == {"images": 1} and calls[0]["cost_usd"] == pytest.approx(0.0025)
     assert transport.requests[1][0] == "/images/generations" and calls[1]["cost_usd"] == pytest.approx(0.01)
+
+
+async def test_a_call_with_no_reply_is_still_logged_and_not_retried():
+    """Cancelled (a worker lane's time limit) or no connection: a model_call all the same (AGENTS.md rule 5), not
+    ok, cost 0 since no usage came back, and the error goes up to the caller."""
+
+    class Hangs(FakeTransport):
+        async def post(self, path, body):
+            self.requests.append((path, body))
+            await asyncio.Event().wait()
+
+    class Drops(FakeTransport):
+        async def post(self, path, body):
+            self.requests.append((path, body))
+            raise OSError("connection reset")
+
+    client, _, calls, _ = make([])
+    client.transport = Hangs([])
+    with pytest.raises(TimeoutError):
+        await asyncio.wait_for(client.responses(input="x", schema=SCHEMA, purpose="label_comments"), 0.05)
+    client.transport = Drops([])
+    with pytest.raises(OSError):
+        await client.responses(input="x", schema=SCHEMA, purpose="label_comments")
+    assert len(client.transport.requests) == 1
+    assert [(c["ok"], c["error"], c["cost_usd"]) for c in calls] == [
+        (False, "cancelled", 0.0),
+        (False, "transport_OSError", 0.0),
+    ]

@@ -191,6 +191,38 @@ async def test_live_card_gets_the_sam_cut_out_as_its_next_version(mem_app, monke
     assert last["timing"]["infer_end_ms"] - last["timing"]["infer_start_ms"] == 600
 
 
+async def test_a_slow_cut_out_does_not_hold_up_the_next_line(mem_app, monkeypatch):
+    """SAM takes its time on the card that just went live; the next line is decided meanwhile, and the cut-out
+    still arrives as a later version."""
+    _, store, client = mem_app
+    runner = runner_with(client, [])
+    ts, gate = now_ms(), asyncio.Event()
+    frames.put(SID, ts, b"\xff\xd8jpeg")
+
+    async def read(text, ctx):
+        return vn.Spoken(450000 if "450" in text else None, ["38"] if "38" in text else [], []), (0, 0)
+
+    async def slow_cut_out(client, jpeg, category):
+        await gate.wait()
+        return "data:image/png;base64,iVBORw0KGgo=", (ts, ts)
+
+    monkeypatch.setattr(card, "read_speech", read)
+    monkeypatch.setattr(sam, "cut_out", slow_cut_out)
+    await run(client, runner, seen("ps-a", "sneaker", "trắng", ts, caused_by=["fr-a"]))
+    await run(client, runner, said("sp-1", "đôi này 450 nghìn", ts + 800))
+    await run(client, runner, said("sp-2", "size 38 nhé", ts + 1600))
+    for _ in range(100):
+        sized = [c for c in await cards_in(store) if c["caused_by"][0] == "sp-2"]
+        if sized:
+            break
+        await asyncio.sleep(0.01)
+    gate.set()
+    await settle()
+    assert sized and [v["size"] for v in sized[0]["variants"]] == ["38"] and not sized[0]["image_url"]
+    last = (await cards_in(store))[-1]
+    assert last["image_url"].startswith("data:image/png") and last["version"] > sized[0]["version"]
+
+
 async def test_console_edit_is_followed_so_versions_keep_counting(mem_app):
     _, store, client = mem_app
     runner = runner_with(client, [Reply(400, {})])
@@ -227,3 +259,47 @@ async def test_a_slow_read_does_not_hold_up_the_next_product(mem_app, monkeypatc
     assert latest["card-a"]["caused_by"][0] == "sp-1"
     assert latest["card-b"]["status"] == "retired" and latest["card-b"]["caused_by"][0] == "sp-2"
     assert latest["card-c"]["status"] == "draft"
+
+
+async def test_a_product_seen_handled_twice_is_one_card_version(mem_app):
+    """The runner's fast lane may get the same product_seen again (a stream resumed at an older cursor)."""
+    _, store, client = mem_app
+    runner = runner_with(client, [])
+    event = seen("ps-a", "sneaker", "trắng", now_ms())
+    await run(client, runner, event)
+    assert await runner.handle(event) == []
+    await settle()
+    assert [(c["card_id"], c["version"]) for c in await cards_in(store)] == [("card-a", 1)]
+
+
+async def test_speech_lines_are_read_a_few_at_a_time_and_decided_in_arrival_order(mem_app, monkeypatch):
+    """A burst of lines never starts a read per line at once (no unbounded tasks); the later ones wait their turn,
+    and a line read faster than the one before it still waits for that one's decision."""
+    _, store, client = mem_app
+    runner = runner_with(client, [])
+    reading, most, decided = 0, 0, []
+
+    async def slow_read(text, ctx):
+        nonlocal reading, most
+        reading += 1
+        most = max(most, reading)
+        await asyncio.sleep(0.01 * (10 - int(text.split()[-1])))  # later lines read faster
+        reading -= 1
+        return vn.Spoken(None, [], []), (0, 0)
+
+    decide = card.decide
+
+    async def logged(event, *args):
+        decided.append(event["event_id"])
+        await decide(event, *args)
+
+    monkeypatch.setattr(card, "read_speech", slow_read)
+    monkeypatch.setattr(card, "decide", logged)
+    ts = now_ms()
+    await run(client, runner, seen("ps-a", "sneaker", "trắng", ts))
+    for n in range(8):
+        assert await run(client, runner, said(f"sp-{n}", f"câu {n}", ts + 100 * n)) == []
+    assert len(card.SESSIONS[SID].lines) == 8  # every line is known to the cards while it waits
+    await settle()
+    assert most == 4  # card.SPEECH_READS
+    assert decided == [f"sp-{n}" for n in range(8)]
