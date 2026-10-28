@@ -301,6 +301,14 @@ async def test_price_before_card_pins_later_price_without_backwriting(scenario):
     s = scenario
     await s.frame(5, "tshirt", "đen")
     p = await s.price("AO-10", 120000)
+    p_history = [e for e in await s.events() if e["type"] == "card" and e["card_id"] == p["card_id"]]
+    assert any(e["version"] == 1 and e["price"] is None and e["status"] == "draft" for e in p_history)
+    assert (
+        p in p_history
+        and p["price"] == 120000
+        and p["status"] == "edited"
+        and p["provenance"]["edited_by"] == "seller"
+    )
     await s.speech(10, 9, 9.5, "giày này 150 nghìn")
     await s.frame(10, "sneaker", "trắng", ready=13.8)
     await s.comment(11, "early-price-order")
@@ -323,7 +331,7 @@ async def test_price_before_card_pins_later_price_without_backwriting(scenario):
         for e in orders
         for line in e["lines"]
     )
-    assert all(e["price"] == 120000 for e in events if e["type"] == "card" and e["card_id"] == p["card_id"])
+    assert [e for e in events if e["type"] == "card" and e["card_id"] == p["card_id"]] == p_history
     assert a["ts_ms"] >= s.clock.at(13.8) and a["ts_ms"] >= a["provenance"]["frame_ts_ms"]
 
 
