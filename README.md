@@ -22,7 +22,7 @@ Everything in this repository was made during the event, from 26 October 2026 23
 - All code, contracts, tests, data and docs in this repository. The first commit is dated 27 October 10:22 ICT, and no commit is older than the event start: `git log --format=%aI%n%cI | sort | head -1`.
 - Outside this repository: the test1 recording (27 October, kept local and out of Git), the project brief with criteria C1–C11 and the day-1 prompt (27 October morning), and a private UI mock-up (27 October) that is kept apart; nothing from the mock-up was copied here.
 
-AI coding assistants were used as tools. The entrant is the Founder, working alone. Branches the assistant created were named with its default `claude/` prefix, so some merge commits in the history carry that prefix; branches opened after PR #20 was merged (27 October, 20:16 ICT) carry no tool name, and merges use a written title.
+AI coding assistants were used as tools. The entrant is the Founder, working alone. Branches the assistant created were named with its default `claude/` prefix, so some merge commits in the history carry that prefix; later branches can also use a tool's default prefix, including `codex/c5-latency-integration` for PR #47. Merge titles are written explicitly.
 
 ## Run it in 5 minutes
 
