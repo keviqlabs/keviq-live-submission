@@ -3,6 +3,8 @@
 Only a change of product is emitted (`is_new` true): a new category, or the same category in a new colour,
 compared with the last product this session saw. Frames with no product, or the same product again, produce
 nothing, so every product_seen gets a card within the cycle (D-009). The frame is cached for the SAM cut-out.
+A read that fails (no key, model error, budget spent, output failed twice) fails the frame in the runner's vision
+lane; it is not read again.
 """
 
 import logging
@@ -10,6 +12,7 @@ from dataclasses import dataclass
 
 from meta.client import SchemaError
 from worker.brain.card import CATEGORIES, COLORS
+from worker.runner import Failed
 from worker.vision import frames
 
 log = logging.getLogger("worker.vision")
@@ -81,7 +84,7 @@ async def see_product(event: dict, ctx) -> list[dict]:
         if (session, type(exc).__name__) not in _WARNED:  # once per session and kind, not once per second
             _WARNED.add((session, type(exc).__name__))
             log.warning("product_seen skipped from %s on: %s", event["event_id"], exc)
-        return []
+        raise Failed(str(exc)) from exc
     d = res.data
     if not d["has_product"] or d["category"] == "none" or d["confidence"] < MIN_CONFIDENCE:
         return []

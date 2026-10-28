@@ -14,6 +14,7 @@ from meta import probe
 from meta.client import MetaClient, parse_segmentation
 from meta.meter import Meter, memory_spend
 from meta.transport import FakeTransport, Reply, responses_reply
+from worker import runner as lanes
 from worker.runner import Runner
 from worker.vision import frames, sam, spark
 
@@ -83,6 +84,16 @@ async def test_model_failure_skips_the_frame_and_keeps_the_frame_cached(mem_app)
     outs, _ = await run_frames(mem_app, [Reply(400, {"error": "bad request"}), Reply(400, {})])
     assert outs == [[], []]
     assert frames.get(SID, max(frames._CACHE[SID])) == JPEG
+
+
+async def test_a_read_error_is_a_failed_frame(mem_app):
+    """HTTP 400 on purpose: the client retries a 5xx inside the call, a 400 is the call's one reply."""
+    _, _, client = mem_app
+    runner = Runner("http://test", {"frame": [spark.see_product]}, http=client)
+    runner._meta = (FakeTransport([Reply(400, {})]), Meter(memory_spend([])))
+    event = frame(0, now_ms())
+    await client.post(f"/api/sessions/{SID}/events", json=[event])
+    assert await runner.process(event, now_ms(), lanes.VISION_TIMEOUT_S) == "failed"
 
 
 # The verified reply shape (D-020) with made-up numbers and a mask payload that does not decode.

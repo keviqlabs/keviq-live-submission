@@ -70,9 +70,11 @@ class Worker:
 
 
 def restore_runner(monkeypatch) -> None:
-    """c5_progress.install patches worker.runner in place, as in the worker process; undone after the test."""
-    monkeypatch.setattr(runner.Runner, "handle", runner.Runner.handle)
-    monkeypatch.setattr(runner.Runner, "run", runner.Runner.run)
+    """c5_progress.install patches worker.runner.Runner in place, as in the worker process; every method of it is
+    put back after the test."""
+    for name, method in list(vars(runner.Runner).items()):
+        if callable(method):
+            monkeypatch.setattr(runner.Runner, name, method)
 
 
 def test_a_worker_two_seconds_into_an_event_is_not_settled_after_half_a_second(monkeypatch):
@@ -140,6 +142,40 @@ def test_work_a_handler_left_in_the_background_holds_the_barrier(monkeypatch):
     assert {k: early[k] for k in ("done_seq", "behind", "pending", "running", "background")} == {
         "done_seq": 7, "behind": 0, "pending": 0, "running": 0, "background": 1}  # fmt: skip
     assert late["status"] == "SETTLED" and late["background"] == 0 and late_ms >= 3000
+
+
+def test_work_queued_with_no_task_yet_holds_the_barrier(monkeypatch):
+    """Comments waiting for their labels batch, lines waiting for a read slot, live cards waiting for SAM: no task
+    may hold them yet, and the loop is not settled while worker.runner.BACKLOGS has any queued."""
+    restore_runner(monkeypatch)
+    worker = Worker()
+    c5_progress.install(worker.say)
+    held = []
+    backlog = {"waiting": 0, "in_flight": 0}
+    monkeypatch.setitem(getattr(runner, "BACKLOGS", {}), "held", lambda: backlog | {"waiting": len(held)})
+
+    async def hold(event, ctx):
+        held.append(event["event_id"])
+        return []
+
+    async def scenario():
+        w = runner.Runner("http://app", {"comment": [hold]}, http=WorkerHttp(sse(7, comment(7))))
+        working = asyncio.create_task(w.run(cursor=5, session="run"))
+        watch = c5_live.Watch(PollHttp(), "run", Feed(), Shop())
+        watch.seqs = [7]
+        watching = asyncio.create_task(watch.run())
+        early = await watch.barrier(worker, [set()], timeout_s=2.0)  # long enough to settle without the queue
+        held.clear()  # the batch was taken and done
+        late = await watch.barrier(worker, [set()], timeout_s=5.0)
+        working.cancel()
+        await watch.halt(watching)
+        return early, late
+
+    early, late = asyncio.run(scenario())
+    assert early["status"] == "INCOMPLETE"
+    assert {k: early.get(k) for k in ("done_seq", "behind", "pending", "running", "background", "queued")} == {
+        "done_seq": 7, "behind": 0, "pending": 0, "running": 0, "background": 0, "queued": 1}  # fmt: skip
+    assert late["status"] == "SETTLED" and late["queued"] == 0
 
 
 def test_install_leaves_parse_sse_alone_so_history_reads_are_not_deliveries(monkeypatch):

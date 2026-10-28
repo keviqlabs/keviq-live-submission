@@ -109,9 +109,11 @@ def worker_log(path):
 
 
 def restore_runner(monkeypatch) -> None:
-    """c5_progress.install patches worker.runner in place, as in the worker process; undone after the test."""
-    monkeypatch.setattr(runner.Runner, "handle", runner.Runner.handle)
-    monkeypatch.setattr(runner.Runner, "run", runner.Runner.run)
+    """c5_progress.install patches worker.runner.Runner in place, as in the worker process; every method of it is
+    put back after the test."""
+    for name, method in list(vars(runner.Runner).items()):
+        if callable(method):
+            monkeypatch.setattr(runner.Runner, name, method)
 
 
 def with_worker(app: App, log, handlers: dict, body):
@@ -211,3 +213,11 @@ def test_the_worker_log_keeps_whole_progress_lines_only(tmp_path):
         f.write('ing": 0}\n' + tag + "{not json\n" + "2026 worker INFO a log line\n")
     w.read()
     assert w.progress == {"kind": "progress", "n": 1, "pending": 0} and w.progress_at is not None
+
+
+def test_the_barrier_check_fails_when_there_was_no_read():
+    """A scenario that never read a session proved nothing about the worker's barrier."""
+    run = scenarios.Run(None, "http://app", 20.0, worker_log=None)
+    run.barrier_check()
+    kind, name, ok, detail = run.rows[-1]
+    assert (kind, ok, detail) == ("CHECK", False, "no read") and "0 reads" in name
