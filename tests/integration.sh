@@ -44,7 +44,8 @@ echo "    healthz: $health"
 echo "$health" | grep -q '"store":"pg"' || fail "app is not on PostgreSQL"
 
 echo "3/4 worker"
-uv run python -m worker --base-url "$BASE" >"$LOG_DIR/worker.log" 2>&1 &
+# Under measure.c5_proc: its progress lines are the barrier every scenario read waits at, never quiet alone.
+uv run python -m measure.c5_proc worker --base-url "$BASE" >"$LOG_DIR/worker.log" 2>&1 &
 WORKER=$!
 PIDS+=($WORKER)
 sleep 2
@@ -52,7 +53,8 @@ kill -0 "$WORKER" 2>/dev/null || { cat "$LOG_DIR/worker.log" >&2; fail "worker e
 
 echo "4/4 scenarios -> $PREFIX-*"
 rc=0
-uv run python -m measure.scenarios --base-url "$BASE" --prefix "$PREFIX" --json "$LOG_DIR/scenarios.json" || rc=$?
+uv run python -m measure.scenarios --base-url "$BASE" --worker-log "$LOG_DIR/worker.log" --prefix "$PREFIX" \
+  --json "$LOG_DIR/scenarios.json" || rc=$?
 kill -0 "$WORKER" 2>/dev/null || fail "worker exited during the scenarios"
 [ "$rc" -eq 0 ] || fail "scenario checks failed (rc=$rc)"
 echo "INTEGRATION OK ($PREFIX)"

@@ -207,15 +207,19 @@ class Watch:
             await asyncio.sleep(0.1)
         return self.frames[n]
 
+    def at_head(self, p: dict, head: int | None) -> bool:
+        """The worker (--session: it reads this session only) has finished the session up to its head."""
+        if p.get("delivered"):
+            return p.get("done_seq") == head
+        # nothing delivered yet: fine only if the worker started at or after the head
+        return p.get("start_seq") is not None and (head is None or p["start_seq"] >= head)
+
     def check(self, worker: "Child", tasks: list[set]) -> dict:
         """One look at the work left: the worker's progress line (measure/c5_progress) against the session head."""
         p = worker.progress or {}
         head = self.seqs[-1] if self.seqs else None
         done = p.get("done_seq")
-        if p.get("delivered"):
-            at_head = done == head
-        else:  # nothing delivered yet: fine only if the worker started at or after the head
-            at_head = p.get("start_seq") is not None and (head is None or p["start_seq"] >= head)
+        at_head = self.at_head(p, head)
         age = None if worker.progress_at is None else int((time.monotonic() - worker.progress_at) * 1000)
         busy = sum(not t.done() for s in tasks for t in s)
         row = {"head_seq": head, "done_seq": done,
