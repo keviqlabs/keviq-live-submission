@@ -1,0 +1,154 @@
+{
+  "baseline_runtime": "650fe39d73e48560187803da699088b3dfceb1d8",
+  "review_base": "7b8d0203da5396ced73b259ff636e2c5ae8d2ca9",
+  "test_sha256": "206d49fff3ba24a5db59a4c80a894af89e88e6ea2dabde139a8a5eb227a5f96a",
+  "raw_log_sha256": "4ab0b89bfe345d735550d3e122fe4b10e711e1c2ceebcda40f43b26472dd7669",
+  "snapshots_sha256": "cc97547599f07f73a45ebdae896a21df29d40dc6afab398537722bea9d8f0add",
+  "source_proof_sha256": "b5b7f5bd365bae2fd3dc74514de5c0996f087989c0acfc093ba793538c7c3185",
+  "command": "MODEL_API_KEY= uv run python -m tests.db_lock -- pytest -q -s tests/test_media_time_binding.py --tb=short",
+  "environment": "DATABASE_URL and TEST_DATABASE_URL point to keviq_test; shared ownership lock held; structured snapshot output enabled",
+  "result": "5 failed in 7.17s",
+  "passed": 0,
+  "failed": 5,
+  "skipped": 0,
+  "exit_code": 1,
+  "model_calls": 0,
+  "cost_usd": 0,
+  "runtime_tree_unchanged": true,
+  "scenario_assertions_unchanged": true,
+  "scenario_assertion_count": 25,
+  "deadline_origin": "comment.ingested_ms",
+  "wait_ms": 4000,
+  "tolerance_ms": 200,
+  "logical_speed": 10,
+  "price_fixture_input_proof": {
+    "case": "test_price_before_card_pins_later_price_without_backwriting",
+    "frame_11": {
+      "event_id": "slow-vision-7905d930ba8c.fr-11",
+      "ingested_ms": 1793197473408,
+      "outcome": {
+        "at_ms": 1793197476033,
+        "kind": "done"
+      },
+      "ts_ms": 1793197473154
+    },
+    "after_frame_fence": {
+      "event_id": "slow-vision-7905d930ba8c.fr-14",
+      "ingested_ms": 1793197476181,
+      "outcome": {
+        "at_ms": 1793197476271,
+        "kind": "done"
+      },
+      "ts_ms": 1793197476154
+    },
+    "comment": {
+      "comment_id": "early-price-order",
+      "event_id": "comment_dcb88c9c5f65494a8ca2",
+      "ingested_ms": 1793197473224,
+      "ts_ms": 1793197473154
+    },
+    "comment_deadline_ms": 1793197477224,
+    "fence_before_deadline_by_ms": 1043,
+    "frame_11_done_before_fence": true,
+    "fence_media_time_after_comment": true
+  },
+  "expiry_fixture_input_proofs": [
+    {
+      "case": "test_expiry_needs_seller_with_two_candidates_instead_of_old_price",
+      "canonical_frame_20": {
+        "event_id": "slow-vision-45d56ea265c0.fr-20",
+        "ingested_ms": 1793197476086,
+        "outcome": {
+          "at_ms": 1793197477209,
+          "kind": "skipped"
+        },
+        "ts_ms": 1793197476032
+      },
+      "comment": {
+        "comment_id": "expiry-order",
+        "event_id": "comment_d2e558a5c38a421fb7bc",
+        "ingested_ms": 1793197476489,
+        "ts_ms": 1793197476432
+      },
+      "recognition": {
+        "event_id": "slow-vision-45d56ea265c0.seen-b",
+        "frame_refs": [
+          {
+            "event_id": "slow-vision-45d56ea265c0.fr-20",
+            "exists": true,
+            "ts_ms": 1793197476032
+          }
+        ],
+        "frame_ts_ms": 1793197476032,
+        "ingested_ms": 1793197479083
+      },
+      "lower_frame_19": {
+        "event_id": "slow-vision-45d56ea265c0.fr-19",
+        "ingested_ms": 1793197475078,
+        "outcome": {
+          "at_ms": 1793197481038,
+          "kind": "done"
+        },
+        "ts_ms": 1793197475032
+      },
+      "canonical_frame_before_comment": true,
+      "recognition_before_lower_frame_completion": true
+    },
+    {
+      "case": "test_expiry_deadline_while_lower_frame_result_is_blocked",
+      "canonical_frame_20": {
+        "event_id": "slow-vision-5621b288b073.fr-20",
+        "ingested_ms": 1793197477207,
+        "outcome": {
+          "at_ms": 1793197482042,
+          "kind": "done"
+        },
+        "ts_ms": 1793197477160
+      },
+      "comment": {
+        "comment_id": "deadline-order",
+        "event_id": "comment_382955e1a47b4df0aac4",
+        "ingested_ms": 1793197477611,
+        "ts_ms": 1793197477560
+      },
+      "recognition": {
+        "event_id": "slow-vision-5621b288b073.seen-deadline-b",
+        "frame_refs": [
+          {
+            "event_id": "slow-vision-5621b288b073.fr-20",
+            "exists": true,
+            "ts_ms": 1793197477160
+          }
+        ],
+        "frame_ts_ms": 1793197477160,
+        "ingested_ms": 1793197480213
+      },
+      "lower_frame_19": {
+        "event_id": "slow-vision-5621b288b073.fr-19",
+        "ingested_ms": 1793197476191,
+        "outcome": {
+          "at_ms": 1793197482039,
+          "kind": "done"
+        },
+        "ts_ms": 1793197476160
+      },
+      "canonical_frame_before_comment": true,
+      "recognition_before_lower_frame_completion": true
+    }
+  ],
+  "blocked_deadline_observation": {
+    "comment_id": "comment_382955e1a47b4df0aac4",
+    "deadline_ms": 1793197481611,
+    "observed_at_ms": null,
+    "order_states": [
+      "DRAFT",
+      "CONFIRM_SENT"
+    ],
+    "outcome_id": null,
+    "outcome_ingested_ms": null,
+    "result_completed": false,
+    "result_released": false,
+    "tolerance_ms": 200
+  },
+  "limitation": "Test-only fixture correction on baseline-identical runtime. Five ordinary assertion failures are expected; no green runtime, readiness, production or model result is claimed. Post-test frame completion timestamps in snapshots do not replace the pre-release deadline observation."
+}

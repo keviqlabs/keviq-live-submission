@@ -1,0 +1,35 @@
+{
+  "baseline_runtime": "650fe39d73e48560187803da699088b3dfceb1d8",
+  "review_base": "c539c0565b1b230f4af0f8aa2b2965b94883c734",
+  "test_sha256": "711652f8a0b1d706394d92458d118aa96f6d9bd0a682cc6df9ae1c903583f2ad",
+  "raw_log_sha256": "6c6a4926f9b2b39baba8e0ee958ed689e8170eb74a3f01fd9dfea7cefdf288de",
+  "command": "MODEL_API_KEY= uv run python -m tests.db_lock -- pytest -q -s tests/test_media_time_binding.py --tb=short",
+  "environment": "DATABASE_URL and TEST_DATABASE_URL point to keviq_test; shared ownership lock held",
+  "result": "5 failed in 7.14s",
+  "passed": 0,
+  "failed": 5,
+  "skipped": 0,
+  "exit_code": 1,
+  "model_calls": 0,
+  "cost_usd": 0,
+  "runtime_tree_unchanged": true,
+  "deadline_origin": "comment.ingested_ms",
+  "wait_ms": 4000,
+  "tolerance_ms": 200,
+  "logical_speed": 10,
+  "observation": {
+    "comment_id": "comment_2912d5efb5b94936b88a",
+    "deadline_ms": 1793184779605,
+    "observed_at_ms": null,
+    "order_states": [
+      "DRAFT",
+      "CONFIRM_SENT"
+    ],
+    "outcome_id": null,
+    "outcome_ingested_ms": null,
+    "result_completed": false,
+    "result_released": false,
+    "tolerance_ms": 200
+  },
+  "limitation": "Executed on test branch with baseline-identical runtime, not a new model or live measurement. Initial invocation without DB configuration skipped all five cases; that log is preserved separately and is not acceptance evidence."
+}
