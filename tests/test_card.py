@@ -272,6 +272,17 @@ async def test_a_product_seen_handled_twice_is_one_card_version(mem_app):
     assert [(c["card_id"], c["version"]) for c in await cards_in(store)] == [("card-a", 1)]
 
 
+async def test_an_older_frame_product_seen_is_stale(mem_app):
+    """A product_seen of a frame older than the last one handled arrives late: it opens no card."""
+    _, store, client = mem_app
+    runner = runner_with(client, [])
+    t = now_ms()
+    await run(client, runner, seen("ps-a", "sneaker", "trắng", t))
+    await run(client, runner, seen("ps-b", "bag", None, t - 5000))
+    await settle()
+    assert [(c["card_id"], c["version"]) for c in await cards_in(store)] == [("card-a", 1)]
+
+
 async def test_speech_lines_are_read_a_few_at_a_time_and_decided_in_arrival_order(mem_app, monkeypatch):
     """A burst of lines never starts a read per line at once (no unbounded tasks); the later ones wait their turn,
     and a line read faster than the one before it still waits for that one's decision."""
