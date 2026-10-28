@@ -6,11 +6,12 @@ return is stored output of session test1, replayed, never a model result.
   the worker takes its no-key paths (the rule price reader, no product_seen from vision) and no MetaClient exists;
 - labels: the labels brain's client is c5_dry.GoldClient over loop k's gold rows; the brain, its prompt context and
   its order drafts run for real, the labels are the gold ones;
-- cut-out: sam.cut_out returns the stored SAM cut-out (data/local/test1/probe/sam/cut_<t>_<sku>.png, mask decoded)
-  of the item a card opened at the frame stands for (Gold.card_item, as the scorer: an item's span starts at its
-  change band, so a frame in the band SP01 -> SP02 is SP02's although SP01 is still held), the one nearest in t, when
-  that item is of the card's category (membership, as card.match). Otherwise it returns None and the card has no
-  image: NOT_RUN, with the reason in a C5PROC "cutout" line. The frame is found by its bytes: frames.load is wrapped to note sha256 -> f_<i>.jpg.
+- cut-out: sam.cut_out returns a stored SAM cut-out of session test1 (data/local/test1/probe/sam.json, mask
+  decoded, file on this machine) only when it is the output of the same call: the same source frame (the frame's
+  bytes are found by sha256: frames.load is wrapped to note sha256 -> f_<i>.jpg, and the row's t is that i) and the
+  same noun (sam.noun of the card's category). The gold is never read and the row's product label is recorded, not
+  matched. No such row, or more than one, and it returns None: the card has no image (NOT_RUN), with the reason in a
+  C5PROC "cutout" line that also names the source session, frame, png and its sha256.
 """
 
 import hashlib
@@ -21,16 +22,17 @@ from pathlib import Path
 from measure import c5
 
 SAM = c5.ROOT / "data/local/test1/probe/sam.json"
+SOURCE = "test1"  # the session the stored output comes from
 FRAME = re.compile(r"f_(\d{5})\.jpg$")
 
 
-def stored_cutouts(sam_json: Path = SAM) -> dict[str, list[tuple[int, Path]]]:
-    """sku -> [(t, png)] of the stored cut-outs whose mask decoded and whose file is on this machine."""
-    out: dict[str, list[tuple[int, Path]]] = {}
+def stored_cutouts(sam_json: Path = SAM) -> dict[int, list[dict]]:
+    """Source frame t -> the stored cut-outs of it whose mask decoded and whose file is on this machine."""
+    out: dict[int, list[dict]] = {}
     for r in json.loads(sam_json.read_text())["rows"]:
         png = sam_json.parent / "sam" / f"cut_{r['t']:03d}_{r['product']}.png"
         if r.get("mask_decoded") and png.exists():
-            out.setdefault(r["product"], []).append((r["t"], png))
+            out.setdefault(r["t"], []).append({"noun": r["noun"], "sku": r["product"], "png": png})
     return out
 
 
@@ -42,11 +44,10 @@ class NoModel:
 
 
 class Cutouts:
-    """The stored cut-out for a frame, by the item held at it; every answer and miss is kept for the run file."""
+    """The stored cut-out of the same call (frame and noun); every answer and miss is kept for the run file."""
 
-    def __init__(self, gold, catalog: list[dict], stored: dict[str, list[tuple[int, Path]]]):
-        self.gold, self.stored = gold, stored
-        self.categories = {i["sku"]: i.get("categories") or [i["category"]] for i in catalog}
+    def __init__(self, stored: dict[int, list[dict]], noun):
+        self.stored, self.noun = stored, noun
         self.index: dict[str, int] = {}
         self.log: list[dict] = []
 
@@ -55,29 +56,26 @@ class Cutouts:
             self.index[hashlib.sha256(jpeg).hexdigest()] = int(m.group(1))
 
     def pick(self, jpeg: bytes, category: str) -> tuple[Path | None, dict]:
-        i = self.index.get(hashlib.sha256(jpeg).hexdigest())
-        row = {"frame": i, "category": category, "item": None, "held": None, "source_t": None, "png": None,
-               "reason": None}  # fmt: skip
+        sha = hashlib.sha256(jpeg).hexdigest()
+        i, noun = self.index.get(sha), self.noun(category)
+        row = {"source_session": SOURCE, "frame": i, "frame_sha256": sha, "category": category, "noun": noun,
+               "source_t": None, "stored_sku": None, "png": None, "png_sha256": None, "reason": None}  # fmt: skip
         if i is None:
             return None, {**row, "reason": "frame not seen by this worker"}
-        row["held"] = self.gold.held_at(i * 1000)
-        item = row["item"] = self.gold.card_item(i * 1000)
-        if item is None:
-            return None, {**row, "reason": "no item for a card at this frame"}
-        if category not in self.categories.get(item, []):
-            return None, {**row, "reason": f"item {item} is not of category {category}"}
-        if not self.stored.get(item):
-            return None, {**row, "reason": f"no stored cut-out of {item} on this machine"}
-        t, png = min(self.stored[item], key=lambda x: (abs(x[0] - i), x[0]))
-        return png, {**row, "source_t": t, "png": png.name}
+        same = [r for r in self.stored.get(i, []) if r["noun"] == noun]
+        if len(same) != 1:
+            many = "several stored cut-outs" if same else "no stored cut-out"
+            return None, {**row, "reason": f"{many} of frame {i} for '{noun}'"}
+        png = same[0]["png"]
+        return png, {**row, "source_t": i, "stored_sku": same[0]["sku"], "png": png.name,
+                     "png_sha256": hashlib.sha256(png.read_bytes()).hexdigest()}  # fmt: skip
 
 
 def install(k: int, say) -> dict:
     """Patches the worker modules for loop k; returns what it installed (counts and sources, no text)."""
     from measure.c5_dry import GoldClient
-    from measure.c5_shop import Gold
     from worker import runner
-    from worker.brain import card, labels
+    from worker.brain import labels
     from worker.vision import frames, sam
 
     rows = c5.streams(k)[0]
@@ -85,7 +83,7 @@ def install(k: int, say) -> dict:
     runner.Runner.client_for = lambda self, event: no_model
     gold_client = GoldClient(rows)
     labels.LABELER.client_for = lambda ctx: gold_client
-    cuts = Cutouts(Gold.load(c5.C5, c5.LABELS), card.CATALOG, stored_cutouts())
+    cuts = Cutouts(stored_cutouts(), sam.noun)
     load = frames.load
 
     def noting_load(event: dict) -> bytes:
@@ -106,7 +104,7 @@ def install(k: int, say) -> dict:
 
     frames.load = noting_load
     sam.cut_out = stored_cut_out
-    return {"loop": k, "gold_rows": len(rows), "cutout_items": sorted(cuts.stored),
+    return {"loop": k, "gold_rows": len(rows), "cutout_frames": sorted(cuts.stored),
             "model_client": "none: every call raises RuntimeError, as with no key",
             "labels": "gold labels through the labels brain (GoldClient), stored gold of test1, replayed",
-            "cutout": "stored output of session test1 (probe/sam), replayed"}  # fmt: skip
+            "cutout": "stored output of session test1 (probe/sam) of the same frame and noun, replayed"}  # fmt: skip

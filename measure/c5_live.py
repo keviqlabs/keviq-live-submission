@@ -8,9 +8,9 @@ vision effort, the model key set or not). Without --paid the children run with M
 vision call fails and media runs with --no-voice. The runner then posts the 6b vision rows (measure/c5_dry.media_items)
 as product_seen on the loop's clock, each caused by this run's frame at or just before its time, so cards open on
 the runtime path (caused_by, not CARDS_FROM_REPLAY), and the stored test1 lines as final speech when they end (the
-rule price reader reads them). The worker gets C5_OFFLINE=<k>: gold labels through the labels brain and the stored
-SAM cut-out of the card's item (measure/c5_offline), and no model client at all; a card with no stored cut-out
-has no image (NOT_RUN). All of it is stored output of session test1, replayed, not a model result; the shop's route
+rule price reader reads them). The worker gets C5_OFFLINE=<k>: gold labels through the labels brain, the stored
+SAM cut-out of the same frame and noun (measure/c5_offline; never chosen by the gold), and no model client at all;
+a card with no such cut-out has no image (NOT_RUN). All of it is stored output of session test1, replayed, not a model result; the shop's route
 and the simulated Messenger are the real ones.
 
 Per loop: worker up (it reads from the head, as after a restart), media up; t0 = the first frame's ts_ms minus its
@@ -382,8 +382,8 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                    "product_seen": "worker vision" if paid else "stored output of session test1 (6b rows, "
                    "c5_dry.media_items), replayed by the runner, caused by this run's frames",
                    "cutout": "on a card gone live (model call)" if paid else "stored output of session test1 "
-                   "(probe/sam cut-out of the card's item, Gold.card_item), replayed; none on this machine: no image "
-                   "(NOT_RUN)", "model_client": "model client" if paid else "none (measure/c5_offline.NoModel)",
+                   "(probe/sam cut-out of the same source frame and noun, not chosen by the gold), replayed; none: no "
+                   "image (NOT_RUN)", "model_client": "model client" if paid else "none (measure/c5_offline.NoModel)",
                    "card_line": False, "labels": "labels brain with the model" if paid else "gold labels through "
                    "the labels brain (GoldClient), stored gold of test1, replayed",
                    "speech": "media voice (Voice Transcribe)" if paid else "stored output of session test1 "
