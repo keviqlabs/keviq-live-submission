@@ -13,6 +13,7 @@ A "progress" C5PROC line, on a change at most every 0.25 s and at least once a s
   pending     delivered and not finished; running: being handled now
   background  the worker's other tasks still running
   queued      waiting or in flight in BACKLOGS (labels, speech, cut-outs)
+  stats       Runner.stats(): counters per lane kind and each handler's background backlog
   done_seq    every delivered event at or below it is finished (the continuous watermark); start_seq before any
   n           the line's number, so the runner can tell a newer line from an old one
 Ids and numbers only."""
@@ -28,6 +29,7 @@ class Progress:
         self.pending: dict[str, int | None] = {}  # event_id -> seq: delivered, not finished
         self.delivered = self.finished = self.errors = self.skipped = self.stale = self.running = self.n = 0
         self.loop = None  # the worker's loop
+        self.runner = None  # the worker whose lane and background counters are reported
         self.own: set = set()  # its tasks that are not work: those from before the runner, the reporter
 
     def deliver(self, seq: int | None, event: dict) -> None:
@@ -59,7 +61,7 @@ class Progress:
         return {"start_seq": self.start_seq, "delivered": self.delivered, "finished": self.finished,
                 "errors": self.errors, "skipped": self.skipped, "stale": self.stale, "pending": len(self.pending),
                 "running": self.running, "background": self.background(), "queued": self.queued(),
-                "done_seq": self.done_seq()}  # fmt: skip
+                "done_seq": self.done_seq(), "stats": self.runner.stats() if self.runner is not None else {}}  # fmt: skip
 
 
 async def report(p: Progress, say) -> None:
@@ -113,6 +115,7 @@ def install(say) -> Progress:
             p.running -= 1
 
     async def running(self, cursor: int | None = None, session: str | None = None) -> None:
+        p.runner = self
         if cursor is None:
             cursor = (await self.http.get("/healthz")).json()["head_seq"]
         p.start_seq, p.loop = cursor, asyncio.get_running_loop()
