@@ -2,6 +2,28 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-28 — attachment reference eligibility
+
+**D-030 Clarify that frame coverage and reference resolution are separate prerequisites for ready.**
+This preserves the existing reference kinds and C3 intent: current_card chooses current at comment media
+time, previous_card chooses previous, and explicit_sku chooses only a unique real matching card within the
+permitted frozen snapshot/evidence. Missing, ambiguous, out-of-snapshot and unresolved references do not
+auto-select or fall back to current. The snapshot remains 0–2 current/previous cards in that order.
+
+The stored referenced_card_id must be checked/reconciled with canonical history/snapshot and the proven
+reference target before binding or materialization; it cannot confer authority or override the kind's result.
+Incomplete reference resolution retains the original deadline and then follows expiry/seller choice, with
+all original timing/reference/recall denominators. A valid selected card without SKU/approved price stays
+fixed while waiting. Provisional first-candidate lines on the two-priced path are not automatic choices;
+both seller decision paths preserve their explicit membership/session/version/price guards.
+
+No event/request shape, enum, field, version or order state changes. Schema examples already permit ready
+to name previous or another uniquely matching snapshot member; their base/head validation is structural,
+not proof of cross-record eligibility or C3 runtime behavior. No wording-string tests or test-only resolver
+are used. The future runtime must verify these guards with real history and the unchanged C3/ref criteria.
+No price authority, prompt, catalog, gold, C1/C3/gate or customer-confirmation rule changes. This clarification
+does not itself grant additional runtime or paid authority; product-owner review/merge is required.
+
 ## 2026-10-28 — proposed pre-order attachment history
 
 **D-029 PROPOSED: preserve attachment outcome before an order can be priced, with a frozen real-card snapshot
