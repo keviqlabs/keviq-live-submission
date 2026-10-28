@@ -1,0 +1,71 @@
+FSLOW_VISION {"barrier": null, "comments": 100, "control_logical_ms": {"speech_2a63002605984c0b873c": 5620.0, "speech_a3d4f91ffcbe4fddbbcc": 7880.0}, "digit_phone_expected": 3, "digit_phone_hidden": 3, "frames": 351, "hide_logical_ms": {"c5-1-002": 15200.0, "c5-1-007": 55380.0, "c5-1-041": 242100.0}, "logical_duration_ms": 351500, "model_calls": 0, "session": "slow-vision-db3d086f21dd", "speed": 20.0, "stats": null, "vision_completed": 171, "vision_started": 172, "wall_elapsed_s": 23.599}
+F
+=================================== FAILURES ===================================
+__________________ test_runner_exposes_conserved_lane_counts ___________________
+tests/test_slow_vision_integration.py:190: in test_runner_exposes_conserved_lane_counts
+    assert callable(getattr(Runner, "stats", None)), "runner.stats() is required to count unfinished input"
+E   AssertionError: runner.stats() is required to count unfinished input
+E   assert False
+E    +  where False = callable(None)
+E    +    where None = getattr(Runner, 'stats', None)
+__________ test_full_loop_digit_phone_hide_is_not_held_behind_vision ___________
+tests/test_slow_vision_integration.py:292: in test_full_loop_digit_phone_hide_is_not_held_behind_vision
+    assert max(delays.values()) <= 5000, delays  # deliberately NOT latency_ms
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: {'c5-1-041': 242100.0, 'c5-1-002': 15200.0, 'c5-1-007': 55380.0}
+E   assert 242100.0 <= 5000
+E    +  where 242100.0 = max(dict_values([242100.0, 15200.0, 55380.0]))
+E    +    where dict_values([242100.0, 15200.0, 55380.0]) = <built-in method values of dict object at 0x10fd4f1c0>()
+E    +      where <built-in method values of dict object at 0x10fd4f1c0> = {'c5-1-041': 242100.0, 'c5-1-002': 15200.0, 'c5-1-007': 55380.0}.values
+------------------------------ Captured log call -------------------------------
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 2 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 2 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 2 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 2 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 1 not labeled (model transport disabled in offline integration); labeling them other
+WARNING  worker.labels:labels.py:328 labels: batch of 2 not labeled (model transport disabled in offline integration); labeling them other
+=========================== short test summary info ============================
+FAILED tests/test_slow_vision_integration.py::test_runner_exposes_conserved_lane_counts
+FAILED tests/test_slow_vision_integration.py::test_full_loop_digit_phone_hide_is_not_held_behind_vision
+2 failed, 5 deselected in 23.85s

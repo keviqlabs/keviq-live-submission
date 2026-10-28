@@ -35,7 +35,7 @@ fmt:
 	uv run ruff check --fix .
 
 test:
-	uv run pytest -q
+	uv run python -m tests.db_lock -- pytest -q
 
 measure-quick:
 	uv run python -m measure --events-file data/sessions/demo1/events.jsonl --gold data/sessions/demo1/gold.json --no-write
