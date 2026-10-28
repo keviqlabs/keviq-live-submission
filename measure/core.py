@@ -127,11 +127,15 @@ def c5(events: list[dict], gold: dict) -> dict:
     gold_orders = [cid for cid, g in gold["comments"].items() if g["label"] == "order"]
     hit = sum((labels.get(cid) or {}).get("label") == "order" for cid in gold_orders)
     span_ms = (max(when(e) for e in events) - min(when(e) for e in events)) if events else 0
-    interventions = sum(
-        (e["type"] == "card" and e["provenance"]["edited_by"] == "seller")
-        or (e["type"] == "order" and e["actor"] == "seller")
-        for e in events
-    )
+    cards = {(e["card_id"], e["version"]): e for e in events if e["type"] == "card"}
+    # a seller version counts when it changes the price: worker and retire versions copy edited_by at the same price
+    interventions = 0
+    for e in events:
+        if e["type"] == "card" and e["provenance"]["edited_by"] == "seller":
+            before = cards.get((e["card_id"], e["version"] - 1))
+            interventions += before is None or before.get("price") != e.get("price")
+        elif e["type"] == "order":
+            interventions += e["actor"] == "seller"
     hidden_at = {}  # a phone stops being visible at its first hide (shield or model), not at the latest label
     for e in events:
         if e["type"] == "comment_labeled" and e["action"] == "hide":
@@ -140,7 +144,6 @@ def c5(events: list[dict], gold: dict) -> dict:
     for cid, g in gold["comments"].items():
         if g.get("has_phone") and cid in comments:
             phone_s.append((hidden_at[cid] - when(comments[cid])) / 1000 if cid in hidden_at else math.inf)
-    cards = {(e["card_id"], e["version"]): e for e in events if e["type"] == "card"}
     receipts = [e for e in events if e["type"] == "order" and e["state"] == "CONFIRMED"]
     good = 0
     for o in receipts:

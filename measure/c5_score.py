@@ -335,8 +335,8 @@ def intervention_row(run: Run, e: dict, kind: str, why: list[str], proposals: li
 
 def interventions(run: Run, c5: dict) -> dict:
     """The C5 interventions (HQ 03:48): a seller price version (seller_price) or a seller order decision, with the
-    breakdown by cause summing to the total. core.c5 counts every version with edited_by "seller", so it also
-    counts the copies; its number stays beside this one as `core_c5`. The 10 / h threshold is unchanged. System
+    breakdown by cause summing to the total. core.c5 counts the same (a seller version that changes the price, not
+    its copies); its number stays beside this one as `core_c5`. The 10 / h threshold is unchanged. System
     questions to the customer are listed beside the total, not in it.
 
     HQ 06:58 (e): `rows` holds one row per intervention (as many as `total`): event id, loop, kind (card / order),

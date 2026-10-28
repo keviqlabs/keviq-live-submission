@@ -1,6 +1,6 @@
 """The C5 rules HQ ruled on at 03:48, on synthetic events and the committed C5 gold (windows.json):
 
-- interventions: a seller version that changes the price, or a seller order decision (not core.c5's count);
+- interventions: a seller version that changes the price, or a seller order decision (core.c5 counts the same);
 - situation 2: a wrong proposal fails only when it is used; a right one passes when used, fixed or replaced;
   outcome "other" is reported beside the verdict, not scored;
 - right price: the gold price at the end of the line, or either gold price when the line overlaps the window
@@ -65,11 +65,21 @@ def test_interventions_count_a_seller_price_change_not_its_copies():
     ]
     run = Run(events, LOOPS, GOLD)
     got = c5_score.interventions(run, core.c5(events, {"comments": {}}))
-    assert got["total"] == 2  # core.c5 counts 4: the three edited_by "seller" versions and the order
-    assert got["core_c5"] == 4
+    assert got["total"] == 2
+    assert got["core_c5"] == got["total"]  # core.c5 counts the same: the price the seller typed and the order
     assert got["by_cause"] == {"price_typed": 1, "order:over_stock->CANCELLED": 1}
     assert got["per_hour"] == 2 / ((60_000 - 16_000) / 3_600_000)
     assert sum(c5_score.intervention(run, e) for e in events) == 2  # the per-loop count uses the same rule
+
+
+def test_core_c5_counts_a_seller_version_only_when_it_changes_the_price():
+    events = [
+        card("card-b", 1, "draft", 1_000, 180_000, "seller"),  # the card's first version, made by the seller
+        card("card-b", 2, "live", 2_000, 180_000, "seller"),  # a copy at the price before it
+        card("card-b", 3, "edited", 3_000, 160_000, "seller"),  # the seller changes the price
+    ]
+    counts = [core.c5(events[:n], {"comments": {}})["interventions"] for n in (1, 2, 3)]
+    assert counts == [1, 1, 2]
 
 
 def test_situation_2_fails_a_wrong_proposal_only_when_it_is_used():
