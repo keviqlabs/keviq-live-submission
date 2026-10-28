@@ -12,5 +12,15 @@
     "worker/brain/labels.py": "e3d68b743f454e8e765a872801000eb8e88a5c022b798b7520147250f4568412",
     "measure/c5_progress.py": "82a6bf721dfcfc68002e0668f144a8e04eec0891d4e98d267885f17bcc727b82",
     "measure/c5_live.py": "4fec32f02f089d2eb967c2be2c4a63ed5e6e2088183ab7e9385c47ea967a2d1b"
-  }
+  },
+  "dependency_head_at_delivery": "b38569230373cd9ce8faff7412dc1fa1a3b29849",
+  "dependency_runtime_paths_unchanged": [
+    "worker",
+    "measure",
+    "app",
+    "connectors",
+    "orders",
+    "meta",
+    "contracts"
+  ]
 }

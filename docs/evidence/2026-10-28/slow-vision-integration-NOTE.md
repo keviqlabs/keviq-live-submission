@@ -3,6 +3,9 @@
 The same test source reproduces the serial runner failure on `bf620a404efe520d9e83dc7439986d1d15626cea`
 and passes the compressed checks on worker pull request #45, `0f08af47f4a3d0da1a3c2a9255a52f515c94dfb7`.
 The test implementation is commit `44edbbe9d1ebc921bd2794e4012792ba23977adf`.
+At delivery #45 advanced to `b38569230373cd9ce8faff7412dc1fa1a3b29849`, adding two tests only. A Git comparison
+confirmed `worker/`, `measure/`, `app/`, `connectors/`, `orders/`, `meta/` and `contracts/` are unchanged from the
+measured dependency. The recorded suite totals refer to the measured commit, not a later combined suite.
 
 This is a 0 USD scheduling and shield regression. Vision results and label classification are synthetic;
 the HTTP routes, PostgreSQL store, runner, shield, simulated moderator, progress reporter and barrier are real.
@@ -38,7 +41,8 @@ The accepted full-speed profile session is `slow-vision-7d24c4194472`. Its store
 2026-10-28T14:05:19.455000+07:00 through
 2026-10-28T14:11:12.317000+07:00.
 A read-only query found **0 event rows from other sessions** in that window. Source hashes remained unchanged
-through validation. The command completed with exit 0. At readback a subsequent run already held the shared lock; its file was left untouched.
+through validation. The command completed with exit 0. A subsequent run’s lock was observed and left untouched; a final readback
+found the shared lock absent. These readbacks do not alter the accepted profile’s event window.
 
 ## Earlier run excluded from accepted timing
 
@@ -112,7 +116,7 @@ MODEL_API_KEY= DATABASE_URL="$TEST_DATABASE_URL" SLOW_VISION_SPEED=1 \
 Test source SHA-256: `80bf40897251a9484afbe7d86a10100eb80dbe15e68dffdec1a6cd2998fcde04`.
 Accepted logs and complete structured frame outcomes are in [the evidence directory](slow-vision-integration/).
 The [SHA256SUMS manifest](slow-vision-integration/SHA256SUMS) covers accepted results, isolation proof, source proof,
-and the preserved earlier run. Its SHA-256 is `5fdc9f744be43e41b7a260d2c035f87462cf44977ee654f401444059e68e2e2b`.
+and the preserved earlier run. Its SHA-256 is `2a450020af9e61529075053c146aec95f03b87033bd4ab9c6985e55f081d6516`.
 
 | Log | SHA-256 |
 | --- | --- |

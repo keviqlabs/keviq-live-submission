@@ -9,5 +9,6 @@
   ],
   "source_hashes_unchanged": true,
   "validation_command_exit_code": 0,
-  "subsequent_lock_present": false
+  "subsequent_run_lock_observed_after_validation": true,
+  "shared_lock_absent_at_final_readback": true
 }
