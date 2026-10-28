@@ -2,8 +2,9 @@
 process really loaded (HQ 01:39 item 2: the app's env proves nothing about the worker's or media's): the catalog
 file and its sha256, the catalog the card and labels brains hold, the cap and warning its Meter takes, the vision
 effort, the git sha. On SIGTERM it prints the card brain's `Session.waits` of each session it holds and exits: the
-loop-end snapshot, taken before the restart (HQ419). Its lines start with "C5PROC " and hold no secret (the model
-key only as set or not).
+loop-end snapshot, taken before the restart (HQ419). The worker also says, in "progress" lines, how far it has
+finished the stream (measure/c5_progress), for the loop-end barrier; the last one again on SIGTERM. Its lines start
+with "C5PROC " and hold no secret (the model key only as set or not).
 
 With C5_OFFLINE=<loop k> and the model key empty, the worker gets the stored-output stand-ins of measure/c5_offline
 (gold labels, stored cut-outs) before it starts, and says so in an "offline" line. With a key set it refuses."""
@@ -17,6 +18,7 @@ import sys
 
 TAG = "C5PROC "
 MODULES = ("worker", "worker.media")
+PROGRESS = None  # the worker's measure/c5_progress count
 
 
 def say(kind: str, **fields) -> None:
@@ -53,6 +55,9 @@ def offline_loop() -> int | None:
 def on_term(signum, frame) -> None:
     from worker.brain import card
 
+    if PROGRESS is not None:
+        PROGRESS.n += 1
+        say("progress", n=PROGRESS.n, **PROGRESS.line())
     say("waits", waits={sid: dict(s.waits) for sid, s in card.SESSIONS.items()})
     os._exit(0)
 
@@ -69,6 +74,11 @@ def main() -> None:
         from measure import c5_offline
 
         say("offline", **c5_offline.install(said["offline_loop"], say))
+    if module == "worker":
+        from measure import c5_progress
+
+        global PROGRESS
+        PROGRESS = c5_progress.install(say)
     signal.signal(signal.SIGTERM, on_term)
     sys.argv = [module, *sys.argv[2:]]
     runpy.run_module(module, run_name="__main__", alter_sys=True)
