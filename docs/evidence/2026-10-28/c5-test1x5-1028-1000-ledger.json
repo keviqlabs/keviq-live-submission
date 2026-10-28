@@ -1,0 +1,36 @@
+{
+ "run": "c5-test1x5-1028-1000",
+ "day_bounds_ms": [
+  1793120400000,
+  1793206800000
+ ],
+ "rows": 1394,
+ "cost_usd": 1.92995845,
+ "rows_outside_today": 0,
+ "cost_usd_today": 1.92995845,
+ "not_ok": 0,
+ "first_ingested_ms": 1793156442870,
+ "last_ingested_ms": 1793158638422,
+ "by_purpose": {
+  "card_cutout": {
+   "n": 10,
+   "cost_usd": 0.025
+  },
+  "card_from_speech": {
+   "n": 149,
+   "cost_usd": 0.39678025
+  },
+  "label_comments": {
+   "n": 239,
+   "cost_usd": 0.334463
+  },
+  "product_seen": {
+   "n": 991,
+   "cost_usd": 1.0859652
+  },
+  "transcribe": {
+   "n": 5,
+   "cost_usd": 0.08775
+  }
+ }
+}
