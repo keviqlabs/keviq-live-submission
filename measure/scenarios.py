@@ -1,6 +1,6 @@
 """Integration replay on a running app + worker without a model key (`make integration`, tests/integration.sh).
 
-    python -m measure.scenarios --base-url URL [--prefix smoke-integ-<ts>] [--speed 20]
+    python -m measure.scenarios --base-url URL --worker-log PATH [--prefix smoke-integ-<ts>] [--speed 20]
 
 Everything is synthetic (data/comments, data/sessions/demo1) and goes over HTTP into the store and the worker's
 SSE stream, so it runs on PostgreSQL when the app does. Four sessions:
@@ -17,6 +17,11 @@ Labels in -orders and -load are the gold labels replayed, not model output, and 
 measured in -shield only); their cards are replayed as fx- so the labels and card brains leave those sessions
 alone. No model is called, so every time here is worker + store, not model latency. CHECK rows set the exit code
 (1 if one fails); MEASURE rows report numbers against targets and do not.
+
+A read waits at the loop-end barrier of measure/c5_live (Watch.barrier, the same rule): the worker runs under
+measure.c5_proc and its log (--worker-log) says how far it has finished the stream (measure/c5_progress); a read
+returns once that count has passed the session's head with nothing pending and no background task left, never on
+quiet alone. A read that times out keeps what is there and fails the barrier CHECK, with what was left.
 
 Limit: the run shares the test database. An app + worker started on it during the run (`make smoke`, a second
 `make integration`, a replay script) reads the same event stream from the seq it starts at, has not seen a
@@ -39,6 +44,7 @@ from app.contracts import now_ms
 from app.settings import ROOT
 from connectors.sim import replay
 from connectors.sim.messenger import webhook_body
+from measure import c5_live, c5_proc
 from measure.core import CYCLE_MS, c1, c5, pct, when
 from orders.flow import order_id_for, thread_for
 from worker.brain.shield import PHONE
@@ -47,7 +53,6 @@ LABELS = ROOT / "data" / "comments" / "labels.jsonl"
 CARDS = ROOT / "data" / "comments" / "cards.jsonl"
 DEMO1 = ROOT / "data" / "sessions" / "demo1"
 CUSTOMERS = ("u014", "u064", "u065")
-QUIET_S = 2.0  # how long to wait before deciding that a message produced nothing
 WAIT_S = 20.0
 
 
@@ -224,10 +229,59 @@ def invariants(evs: list[dict]) -> list[str]:
 # --- driving the app
 
 
+class WorkerLog:
+    """The worker's log file (tests/integration.sh sends its stdout there): its last C5PROC progress line and when
+    it was read, as measure/c5_live Child keeps them for Watch.barrier. Whole lines only."""
+
+    def __init__(self, path: Path):
+        self.path, self.pos = Path(path), 0
+        self.progress, self.progress_at = None, None
+
+    def read(self) -> None:
+        with self.path.open("rb") as f:
+            f.seek(self.pos)
+            chunk = f.read()
+        whole = chunk[: chunk.rfind(b"\n") + 1]
+        self.pos += len(whole)
+        for line in whole.decode(errors="replace").splitlines():
+            if not line.startswith(c5_proc.TAG):
+                continue
+            try:
+                said = json.loads(line[len(c5_proc.TAG) :])
+            except ValueError:
+                continue
+            if said.get("kind") == "progress":
+                self.progress, self.progress_at = said, time.monotonic()
+
+    async def follow(self) -> None:
+        while True:
+            self.read()
+            await asyncio.sleep(0.1)
+
+
+class SessionWatch(c5_live.Watch):
+    """Watch.barrier on one session for the integration worker, which reads the whole stream (no --session)."""
+
+    def __init__(self, read, sid: str):
+        super().__init__(None, sid, None, None)
+        self.read = read
+
+    async def poll(self) -> None:
+        self.seqs = [seq for seq, _ in await self.read(self.sid) if seq is not None]
+        self.polls += 1
+
+    def at_head(self, p: dict, head: int | None) -> bool:
+        """Its watermark past this session's head, on other sessions' events, is done with this one: not behind."""
+        done = p.get("done_seq")
+        return head is None or (done is not None and done >= head)
+
+
 class Run:
-    def __init__(self, http: httpx.AsyncClient, base_url: str, speed: float):
+    def __init__(self, http: httpx.AsyncClient, base_url: str, speed: float, worker_log: Path | None = None):
         self.http, self.base_url, self.speed = http, base_url, speed
         self.rows: list[tuple[str, str, bool | None, str]] = []  # (kind, name, ok, detail)
+        self.worker = WorkerLog(worker_log) if worker_log else None
+        self.barriers: list[tuple[str, dict]] = []  # (session, Watch.barrier result) of each read
 
     def check(self, name: str, ok: bool, detail: str = "") -> None:
         self.rows.append(("CHECK", name, bool(ok), detail))
@@ -245,10 +299,20 @@ class Run:
             )  # fmt: skip
             await replay.run(args)
 
-    async def events(self, sid: str) -> list[dict]:
+    async def read(self, sid: str) -> list[tuple[int | None, dict]]:
         r = await self.http.get(f"/api/sessions/{sid}/events", params={"cursor": 0, "follow": "false"})
         r.raise_for_status()
-        return [json.loads(line[5:]) for line in r.text.splitlines() if line.startswith("data:")]
+        rows, seq = [], None
+        for line in r.text.splitlines():
+            if line.startswith("id:"):
+                seq = int(line[3:])
+            elif line.startswith("data:"):
+                rows.append((seq, json.loads(line[5:])))
+                seq = None
+        return rows
+
+    async def events(self, sid: str) -> list[dict]:
+        return [ev for _, ev in await self.read(sid)]
 
     async def wait_for(self, sid: str, done, limit_s: float = WAIT_S) -> list[dict]:
         end = time.monotonic() + limit_s
@@ -258,16 +322,32 @@ class Run:
                 return evs
             await asyncio.sleep(0.2)
 
-    async def settle(self, sid: str, quiet: float = QUIET_S, limit_s: float = 60.0) -> list[dict]:
-        """Wait until the session has had no new event for `quiet` seconds."""
-        end, last, since = time.monotonic() + limit_s, -1, time.monotonic()
-        while True:
-            evs = await self.events(sid)
-            if len(evs) != last:
-                last, since = len(evs), time.monotonic()
-            if time.monotonic() - since >= quiet or time.monotonic() > end:
-                return evs
-            await asyncio.sleep(0.2)
+    async def settle(self, sid: str, limit_s: float = 60.0) -> list[dict]:
+        """The session's events once the worker has finished them, by its own count (measure/c5_live Watch.barrier),
+        never on quiet alone. At `limit_s` it returns what is there, and barrier_check fails that read."""
+        if self.worker is None:
+            raise SystemExit("settle needs the worker's log (--worker-log)")
+        self.worker.read()
+        watch = SessionWatch(self.read, sid)
+        watching, following = asyncio.create_task(watch.run()), asyncio.create_task(self.worker.follow())
+        try:
+            row = await watch.barrier(self.worker, [], timeout_s=limit_s)
+        finally:
+            following.cancel()
+            await watch.halt(watching)
+        self.barriers.append((sid, row))
+        return await self.events(sid)
+
+    def barrier_check(self) -> None:
+        left = [f"{sid} {r['status']} after {r['waited_ms']} ms: behind {r.get('behind')}, pending "
+                f"{r.get('pending')}, running {r.get('running')}, background {r.get('background')}"
+                for sid, r in self.barriers if r["status"] != "SETTLED"]  # fmt: skip
+        waited = [r["waited_ms"] for _, r in self.barriers]
+        self.check(
+            f"every read waited until the worker had finished the session, by its count ({len(waited)} reads)",
+            bool(waited) and not left,
+            "; ".join(left[:3]) or (f"longest wait {max(waited)} ms" if waited else "no read"),
+        )
 
     async def say(
         self, sid: str, thread: str, text: str | None = None, quick_reply: str | None = None
@@ -418,7 +498,7 @@ async def orders(run: Run, sid: str) -> None:
 async def load(run: Run, sid: str) -> None:
     """All 200 comments with gold labels: each order label with a card should get an orders-stream consequence."""
     await run.replay(sid, labeled_session())
-    evs = await run.settle(sid, quiet=3.0, limit_s=120.0)
+    evs = await run.settle(sid, limit_s=120.0)
     labels = [
         e
         for e in evs
@@ -478,7 +558,7 @@ async def shield(run: Run, sid: str) -> None:
     the gold phones, spelled ones included."""
     rows = jsonl(LABELS)
     await run.replay(sid, shield_session())
-    evs = await run.settle(sid, quiet=3.0, limit_s=120.0)
+    evs = await run.settle(sid, limit_s=120.0)
     hidden = {e["comment_id"] for e in evs if e["type"] == "comment_labeled" and e["action"] == "hide"}
     phones = {r["comment_id"] for r in rows if r["has_phone"]}
     digits = {r["comment_id"] for r in rows if r["has_phone"] and PHONE.search(r["text"])}
@@ -513,7 +593,7 @@ async def shield(run: Run, sid: str) -> None:
 async def demo1(run: Run, sid: str) -> None:
     """demo1 without fixtures: raw comments, product_seen, speech and two customer messages, no key."""
     await run.replay(sid, demo1_session())
-    evs = await run.settle(sid, quiet=3.0)
+    evs = await run.settle(sid)
     gold = json.loads((DEMO1 / "gold.json").read_text())
     r, k = c5(evs, gold), c1(evs)
     run.check(
@@ -532,10 +612,11 @@ async def demo1(run: Run, sid: str) -> None:
 
 async def main_async(args, prefix: str) -> Run:
     async with httpx.AsyncClient(base_url=args.base_url, timeout=10) as http:
-        run = Run(http, args.base_url, args.speed)
+        run = Run(http, args.base_url, args.speed, worker_log=Path(args.worker_log))
         for name, scenario in (("orders", orders), ("load", load), ("shield", shield), ("demo1", demo1)):
             if not args.only or name in args.only:
                 await scenario(run, f"{prefix}-{name}")
+        run.barrier_check()
     return run
 
 
@@ -559,6 +640,7 @@ def report(run: Run, prefix: str, args) -> int:
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="measure.scenarios")
     p.add_argument("--base-url", default="http://127.0.0.1:8000")
+    p.add_argument("--worker-log", required=True, help="the log of the worker, run under measure.c5_proc")
     p.add_argument("--prefix", help="session prefix (default smoke-integ-<epoch>, a test-session prefix)")
     p.add_argument("--speed", type=float, default=20.0)
     p.add_argument("--only", nargs="*", help="orders load shield demo1")
