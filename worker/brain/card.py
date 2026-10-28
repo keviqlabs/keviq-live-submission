@@ -2,9 +2,9 @@
 
 - A new product (`is_new`) opens a draft from the catalog match and a media span on that card (D-025). The
   previous card, if it never got a price and no undecided speech line overlaps it, is retired, so a quick switch
-  (< 3 s) never merges two items (C7). A product already on a card is reopened as a new version of that card
-  instead of a second card. A product_seen already handled (the same event id) or of a frame older than the last
-  one taken is ignored.
+  (< 3 s) never merges two items (C7). A known card is reopened only when its observation still agrees and the
+  current appearance has not lost identity. A changed coarse observation opens an independent unknown draft.
+  A product_seen already handled (the same event id) or of a frame older than the last one taken is ignored.
 - A final `speech` goes to a card by media time, not by arrival (D-025, worker/brain/window.py). Spark reads
   price, sizes and colours in the background (D-018; the rule reader in worker/voice/vn.py when there is no key
   or the call fails), at most SPEECH_READS lines at a time from read to decision; the others wait their turn. The
@@ -219,6 +219,12 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
         same = item and next(
             (c for c in s.cards.values() if c["sku"] == item["sku"] and c["status"] != "retired"), None
         )
+        if same:
+            prior = s.meta.get(same["card_id"], {})
+            agrees = prior.get("category") == category and prior.get("color") == color
+            if not agrees or (prev and prev["sku"] is None):
+                # A unique catalog candidate does not prove that this is the same physical item.
+                item, same = None, None
         if prev and prev is not same:
             window.close_span(s.spans.setdefault(prev["card_id"], []), event["frame_ts_ms"])
             if prev["status"] == "draft" and not pending(s, prev["card_id"]):
