@@ -3,7 +3,7 @@
   "review_base": "c539c0565b1b230f4af0f8aa2b2965b94883c734",
   "test_sha256": "711652f8a0b1d706394d92458d118aa96f6d9bd0a682cc6df9ae1c903583f2ad",
   "raw_log_sha256": "6c6a4926f9b2b39baba8e0ee958ed689e8170eb74a3f01fd9dfea7cefdf288de",
-  "command": "MODEL_API_KEY= python -m tests.db_lock -- pytest -q -s tests/test_media_time_binding.py --tb=short",
+  "command": "MODEL_API_KEY= uv run python -m tests.db_lock -- pytest -q -s tests/test_media_time_binding.py --tb=short",
   "environment": "DATABASE_URL and TEST_DATABASE_URL point to keviq_test; shared ownership lock held",
   "result": "5 failed in 7.14s",
   "passed": 0,
