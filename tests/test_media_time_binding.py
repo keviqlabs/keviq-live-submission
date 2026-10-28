@@ -66,6 +66,7 @@ class Classifier:
 class Scenario:
     def __init__(self, store, client, sid, clock, plans):
         self.store, self.client, self.sid, self.clock, self.plans = store, client, sid, clock, plans
+        self.blocked_frames = {}
 
     async def frame(self, number, category=None, color=None, ready=None):
         self.plans[number] = (category, color, number if ready is None else ready)
@@ -184,6 +185,11 @@ async def scenario(pg_app, monkeypatch, request):  # noqa: F811
     async def recognize(event, ctx):
         number = int(event["event_id"].rsplit("-", 1)[1])
         category, color, ready = plans[number]
+        if number in value.blocked_frames:
+            started, release, completed = value.blocked_frames[number]
+            started.set()
+            await release.wait()
+            completed.set()
         await clock.until(ready)
         if category is None:
             return []
@@ -327,3 +333,72 @@ async def test_expiry_needs_seller_with_two_candidates_instead_of_old_price(scen
         if e["type"] == "message_out" and e["template"] in ("confirm_order", "ask_which_item")
     ]
     assert all(e["ts_ms"] >= s.clock.at(24.4) for e in orders), "expiry was backdated or bypassed"
+
+
+async def test_expiry_deadline_while_lower_frame_result_is_blocked(scenario):
+    """Seller outcome within 4000 + 200 logical ms, observed before vision is released."""
+    s = scenario
+    await s.frame(15, "sneaker", "trắng")
+    a = await s.price("GIAY-01", 150000)
+    started, release, completed = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    s.blocked_frames[19] = (started, release, completed)
+    try:
+        await s.frame(19)
+        await asyncio.wait_for(started.wait(), timeout=0.2)
+        await s.comment(20.4, "deadline-order")
+        comment = next(
+            e for e in await s.events() if e.get("comment_id") == "deadline-order" and e["type"] == "comment"
+        )
+        deadline = comment["ingested_ms"] + 4000
+        tolerance = 200  # logical milliseconds: 20 ms wall time at SPEED=10
+        await s.clock.until(23)
+        await s.seen(20, "boot", "đen", "deadline-b")
+        b = await s.price("BOOT-02", 200000)
+        outcome = None
+        observed_at = None
+        events = []
+        while s.clock.now_ms() <= deadline + tolerance:
+            events = await s.events()
+            sellers = [
+                e
+                for e in events
+                if e["type"] == "order"
+                and e["order_id"] == "o-deadline-order"
+                and e["state"] == "NEEDS_SELLER"
+            ]
+            if sellers:
+                outcome, observed_at = sellers[-1], s.clock.now_ms()
+                break
+            await asyncio.sleep(0.001)
+        orders = [e for e in events if e["type"] == "order"]
+        print(
+            "EXPIRY_DEADLINE "
+            + json.dumps(
+                {
+                    "comment_id": comment["event_id"],
+                    "deadline_ms": deadline,
+                    "tolerance_ms": tolerance,
+                    "observed_at_ms": observed_at,
+                    "outcome_id": outcome["event_id"] if outcome else None,
+                    "outcome_ingested_ms": outcome["ingested_ms"] if outcome else None,
+                    "order_states": [e["state"] for e in orders],
+                    "result_released": release.is_set(),
+                    "result_completed": completed.is_set(),
+                },
+                sort_keys=True,
+            )
+        )
+        assert started.is_set() and not release.is_set() and not completed.is_set()
+        assert outcome is not None, "seller timeout missing while lower frame result remains blocked"
+        assert deadline <= outcome["ingested_ms"] <= deadline + tolerance
+        assert deadline <= outcome["ts_ms"] <= deadline + tolerance
+        assert observed_at <= deadline + tolerance, "seller outcome observed after deadline tolerance"
+        assert outcome["lines"][0].get("candidates") == [b["card_id"], a["card_id"]]
+        assert all(e["ingested_ms"] >= deadline for e in orders), "order emitted before expiry"
+        assert not [
+            e
+            for e in events
+            if e["type"] == "message_out" and e["template"] in ("confirm_order", "ask_which_item")
+        ]
+    finally:
+        release.set()  # only after observing and asserting the deadline snapshot, including failure
