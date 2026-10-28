@@ -1,0 +1,562 @@
+{
+  "baseline": "650fe39d73e48560187803da699088b3dfceb1d8",
+  "test_file": "tests/test_media_time_binding.py",
+  "test_sha256": "baa14d4f33e93fecc56842082eefc7cf930ea2484a596bec8026552b5316daa2",
+  "command": "MODEL_API_KEY= uv run python -m tests.db_lock -- pytest -q -s tests/test_media_time_binding.py --tb=short",
+  "result": "4 failed in 6.07s; expected assertion failures, no setup errors",
+  "red_count": 4,
+  "model_calls": 0,
+  "raw_log_sha256": "973ecefcab6de961638b8ac218dc69092019f1f5c4f1b95d82e69ef801ba5a38",
+  "cases": [
+    {
+      "cards": [
+        {
+          "card_id": "card-5c3a86c9eb58",
+          "event_id": "card_4f97e0803563481ebf44",
+          "price": null,
+          "provenance": {
+            "edited_by": null,
+            "frame_ts_ms": 1793172876163,
+            "speech_event_ids": []
+          },
+          "sku": "GIAY-01",
+          "status": "draft",
+          "ts_ms": 1793172876801,
+          "version": 1
+        },
+        {
+          "card_id": "card-5c3a86c9eb58",
+          "event_id": "card_651e19ea08494150ada1",
+          "price": 150000,
+          "provenance": {
+            "edited_by": "seller",
+            "frame_ts_ms": 1793172876163,
+            "speech_event_ids": []
+          },
+          "sku": "GIAY-01",
+          "status": "edited",
+          "ts_ms": 1793172876911,
+          "version": 2
+        },
+        {
+          "card_id": "card-dd3060a84520",
+          "event_id": "card_981c917ff93f4f5e9e1d",
+          "price": null,
+          "provenance": {
+            "edited_by": null,
+            "frame_ts_ms": 1793172878163,
+            "speech_event_ids": []
+          },
+          "sku": "BOOT-02",
+          "status": "draft",
+          "ts_ms": 1793172882257,
+          "version": 1
+        },
+        {
+          "card_id": "card-dd3060a84520",
+          "event_id": "card_c35d9ef3dc3948f98e6a",
+          "price": 200000,
+          "provenance": {
+            "edited_by": "seller",
+            "frame_ts_ms": 1793172878163,
+            "speech_event_ids": []
+          },
+          "sku": "BOOT-02",
+          "status": "edited",
+          "ts_ms": 1793172884276,
+          "version": 2
+        }
+      ],
+      "case": "test_switch_before_result_waits_for_new_items_price",
+      "labels": [
+        {
+          "comment_id": "switch-order",
+          "draft": {
+            "qty": 1,
+            "reference_kind": "current_card",
+            "referenced_card_id": "card-5c3a86c9eb58",
+            "sku": "GIAY-01",
+            "variant": {
+              "color": null,
+              "size": "38"
+            }
+          }
+        }
+      ],
+      "messages": [
+        "confirm_order"
+      ],
+      "model_calls": 0,
+      "orders": [
+        {
+          "caused_by": [
+            "comment_labeled_2f2cf8f1469c4ec9beea",
+            "comment_83bdf4661e4d46cb9f0b",
+            "card_651e19ea08494150ada1"
+          ],
+          "lines": [
+            {
+              "card_id": "card-5c3a86c9eb58",
+              "card_version": 2,
+              "qty": 1,
+              "sku": "GIAY-01",
+              "unit_price": 150000,
+              "variant": {
+                "color": "tr\u1eafng",
+                "size": "38"
+              }
+            }
+          ],
+          "order_id": "o-switch-order",
+          "state": "DRAFT",
+          "ts_ms": 1793172879963
+        },
+        {
+          "caused_by": [
+            "comment_labeled_2f2cf8f1469c4ec9beea",
+            "comment_labeled_2f2cf8f1469c4ec9beea.o-switch-order.draft",
+            "comment_83bdf4661e4d46cb9f0b",
+            "card_651e19ea08494150ada1"
+          ],
+          "lines": [
+            {
+              "card_id": "card-5c3a86c9eb58",
+              "card_version": 2,
+              "qty": 1,
+              "sku": "GIAY-01",
+              "unit_price": 150000,
+              "variant": {
+                "color": "tr\u1eafng",
+                "size": "38"
+              }
+            }
+          ],
+          "order_id": "o-switch-order",
+          "state": "CONFIRM_SENT",
+          "ts_ms": 1793172879964
+        }
+      ],
+      "session": "slow-vision-b099d0345d9b"
+    },
+    {
+      "cards": [
+        {
+          "card_id": "card-00f24bd35b3e",
+          "event_id": "card_6c4ceb1c6f4b45fead3d",
+          "price": null,
+          "provenance": {
+            "edited_by": null,
+            "frame_ts_ms": 1793172877155,
+            "speech_event_ids": []
+          },
+          "sku": "AO-10",
+          "status": "draft",
+          "ts_ms": 1793172877341,
+          "version": 1
+        },
+        {
+          "card_id": "card-00f24bd35b3e",
+          "event_id": "card_3f96f536c88e4598bb3d",
+          "price": 120000,
+          "provenance": {
+            "edited_by": "seller",
+            "frame_ts_ms": 1793172877155,
+            "speech_event_ids": []
+          },
+          "sku": "AO-10",
+          "status": "edited",
+          "ts_ms": 1793172877434,
+          "version": 2
+        },
+        {
+          "card_id": "card-474b74ebbb1c",
+          "event_id": "card_8c97626757884812af4e",
+          "price": null,
+          "provenance": {
+            "edited_by": null,
+            "frame_ts_ms": 1793172882155,
+            "speech_event_ids": []
+          },
+          "sku": "GIAY-01",
+          "status": "draft",
+          "ts_ms": 1793172886085,
+          "version": 1
+        },
+        {
+          "card_id": "card-474b74ebbb1c",
+          "event_id": "card_742cf34209c643d6bf63",
+          "price": 150000,
+          "provenance": {
+            "edited_by": null,
+            "frame_ts_ms": 1793172882155,
+            "speech_event_ids": [
+              "speech_e90c624534e04491804a"
+            ]
+          },
+          "sku": "GIAY-01",
+          "status": "live",
+          "ts_ms": 1793172886481,
+          "version": 2
+        }
+      ],
+      "case": "test_price_before_card_pins_later_price_without_backwriting",
+      "labels": [
+        {
+          "comment_id": "early-price-order",
+          "draft": {
+            "qty": 1,
+            "reference_kind": "current_card",
+            "referenced_card_id": "card-00f24bd35b3e",
+            "sku": "AO-10",
+            "variant": {
+              "color": null,
+              "size": "38"
+            }
+          }
+        }
+      ],
+      "messages": [
+        "waiting_for_shop"
+      ],
+      "model_calls": 0,
+      "orders": [
+        {
+          "caused_by": [
+            "comment_labeled_07ee6f22d6864b2fb7d4",
+            "comment_7117a9346b6948338c8b",
+            "card_3f96f536c88e4598bb3d"
+          ],
+          "lines": [
+            {
+              "card_id": "card-00f24bd35b3e",
+              "card_version": 2,
+              "qty": 1,
+              "sku": "AO-10",
+              "unit_price": 120000,
+              "variant": {
+                "color": null,
+                "size": "38"
+              }
+            }
+          ],
+          "order_id": "o-early-price-order",
+          "state": "DRAFT",
+          "ts_ms": 1793172884564
+        },
+        {
+          "caused_by": [
+            "comment_labeled_07ee6f22d6864b2fb7d4",
+            "comment_labeled_07ee6f22d6864b2fb7d4.o-early-price-order.draft",
+            "comment_7117a9346b6948338c8b",
+            "card_3f96f536c88e4598bb3d"
+          ],
+          "lines": [
+            {
+              "card_id": "card-00f24bd35b3e",
+              "card_version": 2,
+              "qty": 1,
+              "sku": "AO-10",
+              "unit_price": 120000,
+              "variant": {
+                "color": null,
+                "size": "38"
+              }
+            }
+          ],
+          "order_id": "o-early-price-order",
+          "state": "NEEDS_SELLER",
+          "ts_ms": 1793172884565
+        }
+      ],
+      "session": "slow-vision-180f1522da70"
+    },
+    {
+      "cards": [
+        {
+          "card_id": "card-b7303409fed5",
+          "event_id": "card_86f0cc8ce03947699f19",
+          "price": null,
+          "provenance": {
+            "edited_by": null,
+            "frame_ts_ms": 1793172878392,
+            "speech_event_ids": []
+          },
+          "sku": "GIAY-01",
+          "status": "draft",
+          "ts_ms": 1793172878615,
+          "version": 1
+        },
+        {
+          "card_id": "card-b7303409fed5",
+          "event_id": "card_91f354503e1f4466a1d2",
+          "price": 150000,
+          "provenance": {
+            "edited_by": "seller",
+            "frame_ts_ms": 1793172878392,
+            "speech_event_ids": []
+          },
+          "sku": "GIAY-01",
+          "status": "edited",
+          "ts_ms": 1793172878706,
+          "version": 2
+        },
+        {
+          "card_id": "card-5ef8f713ae80",
+          "event_id": "card_e7b8c84c1cda43c5a702",
+          "price": null,
+          "provenance": {
+            "edited_by": null,
+            "frame_ts_ms": 1793172888392,
+            "speech_event_ids": []
+          },
+          "sku": "BOOT-02",
+          "status": "draft",
+          "ts_ms": 1793172888698,
+          "version": 1
+        },
+        {
+          "card_id": "card-5ef8f713ae80",
+          "event_id": "card_c01135e3a1a74a71bfce",
+          "price": 200000,
+          "provenance": {
+            "edited_by": "seller",
+            "frame_ts_ms": 1793172888392,
+            "speech_event_ids": []
+          },
+          "sku": "BOOT-02",
+          "status": "edited",
+          "ts_ms": 1793172888852,
+          "version": 2
+        },
+        {
+          "card_id": "card-b7303409fed5",
+          "event_id": "card_d9398d5db68a49fb9916",
+          "price": 150000,
+          "provenance": {
+            "edited_by": "seller",
+            "frame_ts_ms": 1793172898392,
+            "speech_event_ids": []
+          },
+          "sku": "GIAY-01",
+          "status": "edited",
+          "ts_ms": 1793172901016,
+          "version": 3
+        },
+        {
+          "card_id": "card-5ef8f713ae80",
+          "event_id": "card_ae1ac8372d3b4fe1809b",
+          "price": 210000,
+          "provenance": {
+            "edited_by": "seller",
+            "frame_ts_ms": 1793172888392,
+            "speech_event_ids": []
+          },
+          "sku": "BOOT-02",
+          "status": "edited",
+          "ts_ms": 1793172902296,
+          "version": 3
+        }
+      ],
+      "case": "test_late_result_and_seller_edit_do_not_restore_previous_item",
+      "labels": [
+        {
+          "comment_id": "return-order",
+          "draft": {
+            "qty": 1,
+            "reference_kind": "current_card",
+            "referenced_card_id": "card-5ef8f713ae80",
+            "sku": "BOOT-02",
+            "variant": {
+              "color": null,
+              "size": "38"
+            }
+          }
+        }
+      ],
+      "messages": [
+        "confirm_order"
+      ],
+      "model_calls": 0,
+      "orders": [
+        {
+          "caused_by": [
+            "comment_labeled_b3eb0e1b9c8a4049b59b",
+            "comment_ef335a1c027f4f63bc81",
+            "card_ae1ac8372d3b4fe1809b"
+          ],
+          "lines": [
+            {
+              "card_id": "card-5ef8f713ae80",
+              "card_version": 3,
+              "qty": 1,
+              "sku": "BOOT-02",
+              "unit_price": 210000,
+              "variant": {
+                "color": "\u0111en",
+                "size": "38"
+              }
+            }
+          ],
+          "order_id": "o-return-order",
+          "state": "DRAFT",
+          "ts_ms": 1793172903730
+        },
+        {
+          "caused_by": [
+            "comment_labeled_b3eb0e1b9c8a4049b59b",
+            "comment_labeled_b3eb0e1b9c8a4049b59b.o-return-order.draft",
+            "comment_ef335a1c027f4f63bc81",
+            "card_ae1ac8372d3b4fe1809b"
+          ],
+          "lines": [
+            {
+              "card_id": "card-5ef8f713ae80",
+              "card_version": 3,
+              "qty": 1,
+              "sku": "BOOT-02",
+              "unit_price": 210000,
+              "variant": {
+                "color": "\u0111en",
+                "size": "38"
+              }
+            }
+          ],
+          "order_id": "o-return-order",
+          "state": "CONFIRM_SENT",
+          "ts_ms": 1793172903731
+        }
+      ],
+      "session": "slow-vision-03e9f92585af"
+    },
+    {
+      "cards": [
+        {
+          "card_id": "card-1350760de029",
+          "event_id": "card_f59e885245d246d58761",
+          "price": null,
+          "provenance": {
+            "edited_by": null,
+            "frame_ts_ms": 1793172881023,
+            "speech_event_ids": []
+          },
+          "sku": "GIAY-01",
+          "status": "draft",
+          "ts_ms": 1793172881258,
+          "version": 1
+        },
+        {
+          "card_id": "card-1350760de029",
+          "event_id": "card_152952794ee743a8bca6",
+          "price": 150000,
+          "provenance": {
+            "edited_by": "seller",
+            "frame_ts_ms": 1793172881023,
+            "speech_event_ids": []
+          },
+          "sku": "GIAY-01",
+          "status": "edited",
+          "ts_ms": 1793172881350,
+          "version": 2
+        },
+        {
+          "card_id": "card-seen-b",
+          "event_id": "card_da08d5cd7bd940d3ab30",
+          "price": null,
+          "provenance": {
+            "edited_by": null,
+            "frame_ts_ms": 1793172886023,
+            "speech_event_ids": []
+          },
+          "sku": "BOOT-02",
+          "status": "draft",
+          "ts_ms": 1793172889188,
+          "version": 1
+        },
+        {
+          "card_id": "card-seen-b",
+          "event_id": "card_de91217cf27a491798d4",
+          "price": 200000,
+          "provenance": {
+            "edited_by": "seller",
+            "frame_ts_ms": 1793172886023,
+            "speech_event_ids": []
+          },
+          "sku": "BOOT-02",
+          "status": "edited",
+          "ts_ms": 1793172889345,
+          "version": 2
+        }
+      ],
+      "case": "test_expiry_needs_seller_with_two_candidates_instead_of_old_price",
+      "labels": [
+        {
+          "comment_id": "expiry-order",
+          "draft": {
+            "qty": 1,
+            "reference_kind": "current_card",
+            "referenced_card_id": "card-1350760de029",
+            "sku": "GIAY-01",
+            "variant": {
+              "color": null,
+              "size": "38"
+            }
+          }
+        }
+      ],
+      "messages": [
+        "confirm_order"
+      ],
+      "model_calls": 0,
+      "orders": [
+        {
+          "caused_by": [
+            "comment_labeled_8898786500b64a9da4ed",
+            "comment_391786dc8a5c4d72b7d4",
+            "card_152952794ee743a8bca6"
+          ],
+          "lines": [
+            {
+              "card_id": "card-1350760de029",
+              "card_version": 2,
+              "qty": 1,
+              "sku": "GIAY-01",
+              "unit_price": 150000,
+              "variant": {
+                "color": "tr\u1eafng",
+                "size": "38"
+              }
+            }
+          ],
+          "order_id": "o-expiry-order",
+          "state": "DRAFT",
+          "ts_ms": 1793172887844
+        },
+        {
+          "caused_by": [
+            "comment_labeled_8898786500b64a9da4ed",
+            "comment_labeled_8898786500b64a9da4ed.o-expiry-order.draft",
+            "comment_391786dc8a5c4d72b7d4",
+            "card_152952794ee743a8bca6"
+          ],
+          "lines": [
+            {
+              "card_id": "card-1350760de029",
+              "card_version": 2,
+              "qty": 1,
+              "sku": "GIAY-01",
+              "unit_price": 150000,
+              "variant": {
+                "color": "tr\u1eafng",
+                "size": "38"
+              }
+            }
+          ],
+          "order_id": "o-expiry-order",
+          "state": "CONFIRM_SENT",
+          "ts_ms": 1793172887845
+        }
+      ],
+      "session": "slow-vision-de81ee23e065"
+    }
+  ]
+}
