@@ -267,13 +267,22 @@ request still requires a non-null authenticated active epoch; null is not a work
 This draft uses bounded full evidence, not a new durable-prefix storage/progress protocol. The approved
 frozen workload has 351 frames per lap and five laps in one run, so each request/event readiness list allows
 at most **1755 terminal records**. At most **two required card-post refs per frame** cover the current card
-and a previous draft's retirement in the present handler. These are published proposed protocol limits;
+and a previous draft's retirement in the present handler. If a third post is actually required for handled,
+do not omit it to fit: full output cannot be proved within this bound, so readiness fails closed.
+These are published proposed protocol limits;
 they do not shorten the approved run to one lap or alter the source workload or acceptance denominators.
 
 The ingress raw JSON body and serialized ready event are limited to **1 MiB (1048576 bytes)**. A synthetic
 five-lap request with 1755 distinct product-result records, every identifier at its maximum 96 ASCII
-characters, two card refs per frame and a 64-bit cursor serializes to 846461 bytes in compact JSON. The
-schema tests validate that full-size request and event; their size bound is not a runtime latency benchmark.
+characters, two card refs per frame and a 64-bit cursor serializes to 846461 bytes in compact JSON, leaving
+202115 bytes. A full ready-event sample is 848828 bytes, leaving 199748 bytes: all event fields including
+four timing fields, two candidates, two causal refs, a 64-character ASCII session ID and a 256-character ASCII
+reason are present. Sample clocks/cursors use nonnegative signed-64-bit values, card versions use positive
+signed-64-bit values, and logical version is 1. Both samples use Python json.dumps with ensure_ascii=True,
+compact comma/colon separators and UTF-8, without compression. These are full-shape measurements in that
+declared domain, not an absolute maximum of every schema-valid body: reason length, causal-ref count and
+numeric values do not all have schema maxima. The raw byte guard remains authoritative for other bodies.
+The schema tests validate a full-size request and event; their size bound is not a runtime latency benchmark.
 The worker uses compact encoding; raw byte enforcement is an HTTP/app guard, not JSON Schema. Whitespace
 or escaping does not bypass the byte cap merely because the parsed value would fit a shape.
 
