@@ -152,3 +152,86 @@ async def test_ambiguous_new_item_does_not_reuse_a_priced_known_card(mem_app, mo
             ensure_ascii=True,
         )
     )
+
+
+async def test_recorded_category_change_cannot_reuse_a_priced_card_from_coarse_match(mem_app):
+    """Replay the stored 58s -> 96s observation pair; the runtime never receives the gold item name.
+
+    The unchanged full catalog maps both observations to SP02. That is a candidate match, not proof of
+    physical identity. Intermediate versions are metadata-only fixtures; no speech or image is replayed.
+    """
+    _, store, client = mem_app
+    runner = NoModel("http://test", card.HANDLERS, http=client)
+    sid = "sku-recorded-category-change"
+    recorded = json.loads((ROOT / "docs/evidence/2026-10-28/sku-identity-collision.json").read_text())[
+        "observations"
+    ]
+
+    def observation(row):
+        return make_event(
+            "product_seen", sid, row["frame_ts_ms"], "sim", event_id=row["event_id"],
+            category=row["category"], attributes={"color": row["color"], "size": None, "material": None},
+            confidence=0.99, is_new=True, frame_ts_ms=row["frame_ts_ms"],
+            caused_by=[row["frame_event_id"]],
+        )  # fmt: skip
+
+    assert card.CATALOG == CATALOG  # no reduced catalog or gold-assisted match for either observation
+    assert card.match("sneaker", "trắng")["sku"] == "SP02"
+    assert card.match("sandal", "trắng")["sku"] == "SP02"
+    await ingest(client, runner, observation(recorded[0]))
+    [first] = [event for event in await store.read(sid, 0, 100) if event["type"] == "card"]
+    assert first["sku"] == "SP02" and first["version"] == 1
+
+    # Restore the observed precondition (SP02 v4, live and already priced) through the app and handler.
+    # These fixture versions do not exercise price extraction or image generation.
+    fields = {key: copy.deepcopy(first[key]) for key in card.CARD_FIELDS}
+    fields.update(status="live", price=next(item["price"] for item in CATALOG if item["sku"] == "SP02"))
+    for version in (2, 3, 4):
+        fields["version"] = version
+        event = make_event(
+            "card", sid, now_ms(), "sim", event_id=f"fixture-priced-v{version}",
+            caused_by=[f"fixture-price-context-{version}"], **fields,
+        )  # fmt: skip
+        await ingest(client, runner, event)
+    before = [event for event in await store.read(sid, 0, 100) if event["type"] == "card"]
+    assert [event["version"] for event in before] == [1, 2, 3, 4]
+    assert before[-1]["status"] == "live" and before[-1]["price"] == 320000
+
+    trigger = observation(recorded[1])
+    await ingest(client, runner, trigger)
+    events = await store.read(sid, 0, 100)
+    consequences = [
+        event
+        for event in events
+        if event["type"] == "card" and trigger["event_id"] in event.get("caused_by", [])
+    ]
+    print(
+        "SKU_IDENTITY_COLLISION_EVIDENCE "
+        + json.dumps(
+            {
+                "trigger": trigger["event_id"],
+                "prior_card": first["card_id"],
+                "category": trigger["category"],
+                "color": trigger["attributes"]["color"],
+                "frame_ts_ms": trigger["frame_ts_ms"],
+                "catalog_match": card.match("sandal", "trắng")["sku"],
+                "consequences": [
+                    {key: event[key] for key in ("card_id", "version", "sku", "status", "price")}
+                    for event in consequences
+                ],
+            },
+            ensure_ascii=True,
+        )
+    )
+    assert len(consequences) == 1
+    [opened] = consequences
+    assert opened["card_id"] != first["card_id"], (
+        "A changed observation cannot inherit SP02's priced identity"
+    )
+    assert opened["version"] == 1 and opened["status"] == "draft"
+    assert opened["sku"] is None and opened["price"] is None and opened["image_url"] is None
+    assert opened["variants"] == [] and opened["stock"] == 0
+    assert opened["provenance"]["frame_ts_ms"] == trigger["frame_ts_ms"]
+    assert [e for e in events if e["type"] == "card" and e["card_id"] == first["card_id"]] == before
+    assert card.SESSIONS[sid].current == opened["card_id"]
+    assert not [e for e in events if e["type"] in {"model_call", "order", "price_proposal", "message_out"}]

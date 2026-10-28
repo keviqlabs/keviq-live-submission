@@ -1,8 +1,11 @@
 # SKU ambiguity: acceptance and minimum distinguishing evidence
 
-Test/spec-only draft on main `650fe39`. The requested abstention rule already exists in `match(category, color)`:
-several matching catalog items return `None`. An ambiguous new observation opens an unknown draft instead of
-reusing a known SKU. The tests report that baseline honestly; a red test is not manufactured.
+Test/spec-only draft on main `650fe39`, kept as a foundation for the identity implementation; do not merge
+independently. The original 19 controls pass: several matching catalog items return `None`, and an ambiguous
+new observation opens an unknown draft instead of reusing a known SKU. A newly added recorded-input case is
+red: a changed observation can still return one coarse candidate and reuse a priced card without evidence
+of physical continuity. See the [one-page design](uncertain-item-identity.md) and
+[recorded identifiers](../evidence/2026-10-28/sku-identity-collision.json).
 
 The committed C5 catalog has **no pair with the same exact `kind` and colour**. It has two pairs at the coarse
 category/colour resolution actually accepted by the matcher:

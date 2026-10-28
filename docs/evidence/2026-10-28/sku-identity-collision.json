@@ -1,0 +1,126 @@
+{
+  "run": "diag-test1x1-1028-1531",
+  "source_sha": "650fe39d73e48560187803da699088b3dfceb1d8",
+  "verification": "Canonical events read via a read-only SQL transaction; source recording and catalog unchanged.",
+  "observations": [
+    {
+      "event_id": "product_seen_9957806a909e4495b603",
+      "frame_event_id": "frame_ebcfa1689774492db856",
+      "category": "sneaker",
+      "color": "trắng",
+      "frame_ts_ms": 1793176322452
+    },
+    {
+      "event_id": "product_seen_e0fd770dcde34b6f80fb",
+      "frame_event_id": "frame_4e661bc33a8c4934880f",
+      "category": "sandal",
+      "color": "trắng",
+      "frame_ts_ms": 1793176360452
+    }
+  ],
+  "card_versions": [
+    {
+      "event_id": "card_e227e9741d0e47d68654",
+      "card_id": "card-9957806a909e",
+      "version": "1",
+      "sku": "SP02",
+      "status": "draft",
+      "provenance_frame_ts_ms": "1793176322452",
+      "caused_by": [
+        "product_seen_9957806a909e4495b603"
+      ]
+    },
+    {
+      "event_id": "card_a19c0fbf2f80416d8cdd",
+      "card_id": "card-9957806a909e",
+      "version": "4",
+      "sku": "SP02",
+      "status": "live",
+      "provenance_frame_ts_ms": "1793176322452",
+      "caused_by": [
+        "speech_1353a3f2a3e342a1b41b"
+      ]
+    },
+    {
+      "event_id": "card_a74a428fefec4483b2ea",
+      "card_id": "card-9957806a909e",
+      "version": "5",
+      "sku": "SP02",
+      "status": "live",
+      "provenance_frame_ts_ms": "1793176360452",
+      "caused_by": [
+        "product_seen_e0fd770dcde34b6f80fb"
+      ]
+    }
+  ],
+  "catalog_entries": [
+    {
+      "sku": "SP02",
+      "name": "SP02 giày trắng",
+      "kind": "giày",
+      "category": "sneaker",
+      "categories": [
+        "sneaker",
+        "boot",
+        "loafer",
+        "heels",
+        "sandal"
+      ],
+      "price": 320000,
+      "currency": "VND",
+      "variants": [
+        {
+          "size": "39",
+          "color": "trắng",
+          "stock": 1
+        },
+        {
+          "size": "40",
+          "color": "trắng",
+          "stock": 2
+        }
+      ]
+    },
+    {
+      "sku": "SP03",
+      "name": "SP03 giày xám",
+      "kind": "giày",
+      "category": "sneaker",
+      "categories": [
+        "sneaker",
+        "boot",
+        "loafer",
+        "heels",
+        "sandal"
+      ],
+      "price": 280000,
+      "currency": "VND",
+      "variants": [
+        {
+          "size": "41",
+          "color": "xám",
+          "stock": 2
+        },
+        {
+          "size": "42",
+          "color": "xám",
+          "stock": 1
+        }
+      ]
+    }
+  ],
+  "catalog_sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73",
+  "branch_evidence": {
+    "candidate_lookup": "worker/brain/card.py:101-107; sandal plus white uniquely selects SP02",
+    "same_lookup": "worker/brain/card.py:219-221; same SKU and not retired",
+    "reuse": "worker/brain/card.py:226-228; bump existing card with new frame provenance",
+    "result": "card-9957806a909e v4 -> v5; no new card for the observation at frame 96 s"
+  },
+  "ground_truth_boundary": "SP03 is the evaluation label for the recorded frame interval, not an output SKU or a runtime input.",
+  "test_fixture_limits": [
+    "Full committed C5 catalog is used without edits for both observations.",
+    "Intermediate card versions are synthetic metadata-only preconditions; speech, cutout and price extraction are not rerun.",
+    "Confidence 0.99 in the test is synthetic and unused by the card handler; no confidence claim about the recorded model response.",
+    "No raw comment text, speech, images, customer IDs or credentials included."
+  ]
+}
