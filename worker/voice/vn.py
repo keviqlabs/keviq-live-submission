@@ -5,7 +5,9 @@
 
 Prices need a magnitude word (trăm, nghìn/ngàn/k, triệu/tr/củ) or a number of 1000 or more; a bare "bốn trăm
 rưỡi" is read as thousands (450000), as sellers say it. Sizes follow "size"/"cỡ": digit pairs ("ba tám" = 38),
-numbers ("bốn mươi" = 40), digits or S/M/L letters, until a word that is not part of the list.
+numbers ("bốn mươi" = 40), digits or S/M/L letters, until a word that is not part of the list. A digit word right
+after nghìn/triệu and before an item word ("… nghìn hai chiếc") counts the items and is not part of the price. A run
+with "mươi mươi" gives no price.
 """
 
 import re
@@ -34,6 +36,7 @@ NUMBER_WORDS = {*DIGITS, *UNITS, "mười", "mươi", "trăm", "lẻ", "linh", "
 SIZE_WORDS = {"size", "sai", "sài", "cỡ", "sz"}
 SIZE_FILLER = {"còn", "có", "và", "với", "từ", "đến", "tới", "nha", "nhé", "ạ"}
 LETTER_SIZES = {"xs", "s", "m", "l", "xl", "xxl"}
+ITEM_WORDS = {"đôi", "cái", "chiếc", "bộ", "cặp", "món"}  # counted items: "một đôi" is one pair
 TOKEN = re.compile(r"\d+(?:[.,]\d+)*|[^\W\d_]+|[,;]")
 THOUSANDS = re.compile(r"^\d{1,3}(?:[.,]\d{3})+$")
 
@@ -62,7 +65,9 @@ def _num(t: str) -> int | None:
 
 
 def price_value(run: list[str]) -> int | None:
-    """Value of a number phrase, or None when it has no magnitude word and is below 1000."""
+    """Value of a number phrase, or None when it has no magnitude word and is below 1000, or repeats "mươi"."""
+    if any(a == b == "mươi" for a, b in zip(run, run[1:], strict=False)):
+        return None  # "năm mươi mươi nghìn" is a transcription slip: 50 000 or 60 000 would be a guess
     total = group = 0
     pending: int | None = None
     last_unit = 1
@@ -149,6 +154,14 @@ def parse(text: str, colors: set[str] | frozenset[str] = frozenset()) -> Spoken:
                 spoken.sizes.extend(s for s in size_values(run) if s not in spoken.sizes)
             else:
                 in_sizes = False
+                if (
+                    len(run) > 1
+                    and run[-1] in DIGITS
+                    and run[-2] in UNITS
+                    and j < len(toks)
+                    and toks[j] in ITEM_WORDS
+                ):
+                    run = run[:-1]  # "250 nghìn hai chiếc" is 250 000 for two items, not 250 200
                 value = price_value(run)
                 if value is not None and 10_000 <= value <= 100_000_000 and spoken.price is None:
                     spoken.price = value
