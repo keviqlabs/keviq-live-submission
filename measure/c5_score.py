@@ -254,6 +254,8 @@ def proposals(run: Run) -> dict:
         "n": len(rows),
         "outcomes": dict(Counter(r["outcome"] for r in rows)),
         "right_card": sum(r["right_card"] for r in rows),
+        "right_price": sum(r["right_price"] for r in rows),
+        "both": sum(r["right_card"] and r["right_price"] for r in rows),
         "wrong_card": sum(not r["right_card"] for r in rows),
         "wrong": {"n": len(wrong), "outcomes": dict(Counter(r["outcome"] for r in wrong)),
                   "card": sum(not r["right_card"] for r in wrong), "price": sum(r["right_card"] for r in wrong)},
@@ -309,16 +311,55 @@ def intervention(run: Run, e: dict) -> bool:
     return seller_price(run, e) or (e["type"] == "order" and e["actor"] == "seller")
 
 
+# a seller version's cause: the field groups it changes against the version before it
+CARD_FIELDS = (("price", ("price",)), ("item", ("sku", "name")), ("stock", ("stock", "variants")))
+# a seller order's cause: c5_shop.cause of the NEEDS_SELLER reason before it
+ORDER_CAUSE = {"no_price": "price", "price_changed": "price", "discount": "price", "amount": "price",
+               "over_stock": "stock", "variant": "stock", "card_state": "item"}  # fmt: skip
+
+
+def intervention_row(run: Run, e: dict, kind: str, why: list[str], proposals: list[dict]) -> dict:
+    card_id = e["card_id"] if kind == "card" else e["lines"][0]["card_id"]
+    before = sorted(
+        (p for p in proposals if p["card_id"] == card_id and core.when(p) <= core.when(e)), key=core.when
+    )
+    took = core.when(e) - core.when(before[-1]) if before else None
+    return {
+        "event_id": e["event_id"],
+        "loop": run.loop(e["ts_ms"]),
+        "kind": kind,
+        "took_ms": took,
+        "cause": why,
+    }
+
+
 def interventions(run: Run, c5: dict) -> dict:
     """The C5 interventions (HQ 03:48): a seller price version (seller_price) or a seller order decision, with the
     breakdown by cause summing to the total. core.c5 counts every version with edited_by "seller", so it also
     counts the copies; its number stays beside this one as `core_c5`. The 10 / h threshold is unchanged. System
-    questions to the customer are listed beside the total, not in it."""
-    ids = {e["event_id"] for e in run.events if e["type"] == "price_proposal"}
-    parts = Counter()
+    questions to the customer are listed beside the total, not in it.
+
+    HQ 06:58 (e): `rows` holds one row per intervention (as many as `total`): event id, loop, kind (card / order),
+    took_ms and cause. took_ms is the raw core.when(e) - core.when(p), p the last price proposal of the same card
+    (an order's: its line's card) with core.when(p) <= core.when(e); None when there is none. cause is a list:
+
+        card version, against version - 1 (a first version against an empty one):
+            price changed -> "price"; sku or name -> "item"; stock or variants -> "stock"
+        order, c5_shop.cause of the last NEEDS_SELLER reason before it:
+            no_price, price_changed, discount, amount -> "price"
+            over_stock, variant -> "stock"
+            card_state -> "item"
+        anything else (other, no NEEDS_SELLER before, a version that changes none of these) -> "error"
+    """
+    props = [e for e in run.events if e["type"] == "price_proposal"]
+    ids = {p["event_id"] for p in props}
+    parts, rows = Counter(), []
     for e in run.events:
         if seller_price(run, e):
             parts["price_used" if set(e.get("caused_by") or []) & ids else "price_typed"] += 1
+            last = run.version(e["card_id"], e["version"] - 1) or {}
+            why = [name for name, keys in CARD_FIELDS if any(e.get(k) != last.get(k) for k in keys)]
+            rows.append(intervention_row(run, e, "card", why or ["error"], props))
         elif e["type"] == "order" and e["actor"] == "seller":
             before = [
                 o
@@ -327,13 +368,14 @@ def interventions(run: Run, c5: dict) -> dict:
             ]
             why = cause(before[-1].get("reason")) if before else "no_needs_seller"
             parts[f"order:{why}->{e['state']}"] += 1
+            rows.append(intervention_row(run, e, "order", [ORDER_CAUSE.get(why, "error")], props))
     total = sum(parts.values())
     hours = (
         (max(map(core.when, run.events)) - min(map(core.when, run.events))) / 3_600_000 if run.events else 0
     )
     asks = sum(e["type"] == "message_out" and e["template"] == "ask_variant" for e in run.events)
     return {"total": total, "per_hour": total / hours if hours else None, "by_cause": dict(parts),
-            "core_c5": c5["interventions"], "ask_customer_messages": asks}  # fmt: skip
+            "core_c5": c5["interventions"], "ask_customer_messages": asks, "rows": rows}  # fmt: skip
 
 
 def missed(run: Run, rows: list[dict]) -> dict:

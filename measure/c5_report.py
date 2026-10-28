@@ -186,6 +186,7 @@ def per_loop(run: Run, rows: list[dict], parts: dict) -> list[dict]:
         in_k = lambda e, k=k: run.loop(e["ts_ms"]) == k  # noqa: E731
         firsts = [evs[0] for evs in run.orders.values() if in_k(evs[0])]
         mine = {e["order_id"] for e in firsts}
+        props = [p for p in parts["proposals"]["rows"] if p["loop"] == k]
         out.append({
             "loop": k, "t0_ms": lp["t0_ms"], "end_ms": lp["end_ms"],
             "comments": sum(in_k(c) for c in run.comments.values()),
@@ -195,13 +196,30 @@ def per_loop(run: Run, rows: list[dict], parts: dict) -> list[dict]:
             "needs_seller": parts["needs_seller"]["per_loop"].get(k, {}).get("entries", 0),
             "would_be": parts["needs_seller"]["per_loop"].get(k, {}).get("would_be", 0),
             "interventions": sum(in_k(e) and intervention(run, e) for e in run.events),
-            "proposals": sum(p["loop"] == k for p in parts["proposals"]["rows"]),
+            "proposals": len(props),
+            "right_card": sum(p["right_card"] for p in props),
+            "right_price": sum(p["right_price"] for p in props),
+            "both": sum(p["right_card"] and p["right_price"] for p in props),
             "waits": sum(parts["waits"]["per_loop"].get(k, {}).get("lines", {}).values()),
             "missed": sum(run.loop(run.comments[c]["ts_ms"]) == k for c in missed_ids),
             "items_with_card": len({run.item[c] for c in run.cards if run.loop(run.cards[c][0]["ts_ms"]) == k} & items),
             "items": len(items),
             "stopped": lp.get("stopped"),
         })  # fmt: skip
+    return out
+
+
+def text(scored: dict) -> list[str]:
+    """HQ 06:58 (e), as printed lines: right_card | right_price | both per loop and in total, then one line per
+    intervention (event id, loop, took_ms, cause). Numbers and event ids only."""
+    p, iv = scored["proposals"], scored["interventions"]
+    out = ["loop | proposals | right_card | right_price | both"]
+    out += [f"{lp['loop']} | {lp['proposals']} | {lp['right_card']} | {lp['right_price']} | {lp['both']}"
+            for lp in scored["per_loop"]]  # fmt: skip
+    out.append(f"total | {p['n']} | {p['right_card']} | {p['right_price']} | {p['both']}")
+    out.append(f"interventions {iv['total']}")
+    out.append("event_id | loop | took_ms | cause")
+    out += [f"{r['event_id']} | {r['loop']} | {r['took_ms']} | {','.join(r['cause'])}" for r in iv["rows"]]
     return out
 
 
