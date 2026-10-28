@@ -1,11 +1,13 @@
 """C5 live run: a running app, and per loop k the worker (--session) and media, each under measure/c5_proc.
 
-The app is started by the operator with MODEL_SESSION_CAP_USD=8 MODEL_SESSION_WARN_USD=6 and is not on :8001; the
-runner checks /api/cost?session=<run> gives 8.0/6.0 and that the session is empty before loop 1. The children get
-this process's env plus CATALOG_PATH and the cap 8 / warning 6 (CARDS_FROM_REPLAY removed); each prints a proof
-line of what it loaded and the runner stops if it differs (catalog sha256, the labels catalog, cap/warn, git sha,
-vision effort, the model key set or not). Without --paid the children run with MODEL_API_KEY empty: 0 USD, the
-vision call fails and media runs with --no-voice. The runner then posts the 6b vision rows (measure/c5_dry.media_items)
+The run's per-session cap and warning are MODEL_SESSION_CAP_USD / MODEL_SESSION_WARN_USD of this process's env, both
+or neither, 8 / 6 when unset (session_cap). The app is started by the operator with the same and is not on :8001; the
+runner prints the cap it runs with, checks /api/cost?session=<run> gives it and that the session is empty before
+loop 1. The children get this process's env plus CATALOG_PATH and that cap / warning (CARDS_FROM_REPLAY removed);
+each prints a proof line of what it loaded, the cap and warning its Meter took among them, and the runner stops if
+it differs (catalog sha256, the labels catalog, cap/warn, git sha, vision effort, the model key set or not).
+Without --paid the children run with MODEL_API_KEY empty: 0 USD, the vision call fails and media runs with
+--no-voice. The runner then posts the 6b vision rows (measure/c5_dry.media_items)
 as product_seen on the loop's clock, each caused by this run's frame at or just before its time, so cards open on
 the runtime path (caused_by, not CARDS_FROM_REPLAY), and the stored test1 lines as final speech when they end (the
 rule price reader reads them). The worker gets C5_OFFLINE=<k>: gold labels through the labels brain, the stored
@@ -38,6 +40,24 @@ from measure import c5, c5_proc
 log = logging.getLogger("c5.live")
 SHOP_DELAY_S = 4.0
 FRAME = re.compile(r"f_(\d{5})\.jpg$")
+CAP_USD, WARN_USD = 8.0, 6.0
+
+
+def session_cap(environ=os.environ) -> tuple[float, float, str]:
+    """(cap, warning, "env" or "default"): MODEL_SESSION_CAP_USD and MODEL_SESSION_WARN_USD, both set or both unset
+    (8 / 6), 0 < warning < cap; anything else stops the run before it starts."""
+    raw = [(environ.get(k) or "").strip() for k in ("MODEL_SESSION_CAP_USD", "MODEL_SESSION_WARN_USD")]
+    if raw == ["", ""]:
+        return CAP_USD, WARN_USD, "default"
+    try:
+        cap, warn = (float(x) for x in raw)
+    except ValueError:
+        raise SystemExit(
+            "set MODEL_SESSION_CAP_USD and MODEL_SESSION_WARN_USD as numbers, or neither"
+        ) from None
+    if not 0 < warn < cap:
+        raise SystemExit(f"session cap {cap} / warning {warn}: needs 0 < warning < cap")
+    return cap, warn, "env"
 
 
 def check_proof(proof: dict, want: dict) -> list[str]:
@@ -268,14 +288,16 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
     if urlsplit(base_url).port == 8001:
         raise SystemExit("refusing :8001 (it gets no C5 events)")
     settings.load_dotenv(c5.ROOT / ".env")
-    env = {**os.environ, "CATALOG_PATH": str(catalog), "MODEL_SESSION_CAP_USD": "8",
-           "MODEL_SESSION_WARN_USD": "6", "PYTHONUNBUFFERED": "1"}  # fmt: skip
+    cap, warn, cap_from = session_cap()
+    print(f"session cap {cap} USD, warning {warn} USD ({cap_from})", flush=True)
+    env = {**os.environ, "CATALOG_PATH": str(catalog), "MODEL_SESSION_CAP_USD": str(cap),
+           "MODEL_SESSION_WARN_USD": str(warn), "PYTHONUNBUFFERED": "1"}  # fmt: skip
     env.pop("CARDS_FROM_REPLAY", None)
     if not paid:
         env["MODEL_API_KEY"] = ""
     sha = c5.git_sha()
-    want = {"catalog_sha256": c5.sha256(catalog), "labels_catalog_same": True, "session_cap_usd": 8.0,
-            "session_warn_usd": 6.0, "sha": sha, "spark_effort": "minimal", "model_key_set": paid}  # fmt: skip
+    want = {"catalog_sha256": c5.sha256(catalog), "labels_catalog_same": True, "session_cap_usd": cap,
+            "session_warn_usd": warn, "sha": sha, "spark_effort": "minimal", "model_key_set": paid}  # fmt: skip
     gold = Gold.load(c5.C5, c5.LABELS)
     full_ms = gold.windows["loop_ms"]
     loop_ms = min(full_ms, int(seconds * 1000)) if seconds else full_ms
@@ -284,9 +306,10 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
     async with httpx.AsyncClient(base_url=base_url, timeout=httpx.Timeout(10, read=30)) as http:
         health = (await http.get("/healthz")).json()
         cost = (await http.get("/api/cost", params={"session": run})).json()
-        if (cost.get("session_cap_usd"), cost.get("session_warn_usd")) != (8.0, 6.0):
-            raise SystemExit(f"app cap/warn for {run}: {cost.get('session_cap_usd')}/{cost.get('session_warn_usd')}"
-                             ", start it with MODEL_SESSION_CAP_USD=8 MODEL_SESSION_WARN_USD=6")  # fmt: skip
+        got = (cost.get("session_cap_usd"), cost.get("session_warn_usd"))
+        if got != (cap, warn):
+            raise SystemExit(f"app cap/warn for {run}: {got[0]}/{got[1]}, start it with "
+                             f"MODEL_SESSION_CAP_USD={cap:g} MODEL_SESSION_WARN_USD={warn:g}")  # fmt: skip
         if await read_all(http, run):
             raise SystemExit(f"{run} is not empty")
         feed, clock = Feed(), Loops()
@@ -388,7 +411,7 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                    "the labels brain (GoldClient), stored gold of test1, replayed",
                    "speech": "media voice (Voice Transcribe)" if paid else "stored output of session test1 "
                    "(probe/voice.json), replayed on the loop clock; rule price reader (no key); media --no-voice",
-                   "cap_usd": 8.0, "warn_usd": 6.0, "paid": paid, "seconds": seconds,
+                   "cap_usd": cap, "warn_usd": warn, "cap_from": cap_from, "paid": paid, "seconds": seconds,
                    "restart": "worker and media processes per loop", "shop_delay_s": SHOP_DELAY_S,
                    "tail_ms": c5.TAIL_MS, "loop_ms": loop_ms},
         "cost_api": cost_api, "customers": customers.log, "shop": shop.log,
