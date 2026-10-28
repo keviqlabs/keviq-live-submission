@@ -200,16 +200,18 @@ class Watch:
         busy = sum(not t.done() for s in tasks for t in s)
         row = {"head_seq": head, "done_seq": done,
                "behind": len(self.seqs) - (bisect.bisect_right(self.seqs, done) if done is not None else 0),
-               **{k: p.get(k) for k in ("delivered", "finished", "errors", "pending", "running")},
+               **{k: p.get(k) for k in ("delivered", "finished", "errors", "pending", "running", "background")},
                "tasks_running": busy, "progress_age_ms": age}  # fmt: skip
-        ok = bool(p) and age is not None and age <= 2000 and p.get("pending") == 0 and at_head and busy == 0
+        idle = p.get("pending") == 0 and p.get("background") == 0 and busy == 0
+        ok = bool(p) and age is not None and age <= 2000 and idle and at_head
         return {**row, "ok": ok, "n": p.get("n", 0), "polls": self.polls}
 
     async def barrier(self, worker: "Child", tasks: list[set], timeout_s: float = 120.0) -> dict:
         """The loop's work is done, never just quiet (RC2): the worker's last progress line under 2 s old, nothing
-        pending, its done_seq at the session head, and no shop/customer task running; seen on two checks with the
-        same head, a newer progress line and two polls of the session between them. At the timeout the result is
-        INCOMPLETE with what was still left (events behind, pending, running, tasks)."""
+        pending and no background task of the worker left, its done_seq at the session head, and no shop/customer
+        task running; seen on two checks with the same head, a newer progress line and two polls of the session
+        between them. At the timeout the result is INCOMPLETE with what was still left (events behind, pending,
+        running, background, tasks)."""
         start = time.monotonic()
         first = None
         while True:
