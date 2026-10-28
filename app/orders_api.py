@@ -55,6 +55,8 @@ async def decide(session_id: str, order_id: str, body: Decision, request: Reques
     """Seller approves (at the card price, or at `unit_price`) or rejects an order waiting in NEEDS_SELLER."""
     store, received = request.app.state.store, now_ms()
     require_console(request.headers.get("authorization"))
+    if body.unit_price is not None and body.unit_price < 0:
+        raise HTTPException(409, "a negative price cannot be approved")
     intent = await request_body(request, "order-decision")
     if await store.attachment_binding(session_id) is not None:
         from app.attachment_orders import decide as attachment_order_decide

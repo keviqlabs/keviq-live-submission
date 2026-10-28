@@ -177,12 +177,12 @@ class Runner:
         if not events:
             return
         sid = events[0]["session_id"]
-        headers = (
-            {"Authorization": "Bearer " + self.attachment_auth[sid]["source_token"]}
+        options = (
+            {"headers": {"Authorization": "Bearer " + self.attachment_auth[sid]["source_token"]}}
             if sid in self.attachment_auth
             else {}
         )
-        r = await self.http.post(f"/api/sessions/{sid}/events", json=events, headers=headers)
+        r = await self.http.post(f"/api/sessions/{sid}/events", json=events, **options)
         r.raise_for_status()
         self.evidence.posted(events, r.json()["accepted"] if sid in self.attachment_auth else None)
 

@@ -247,6 +247,95 @@ async def test_coverage_does_not_resolve_unknown_reference(world, kind, sku):
     assert not [e for e in await world.events() if e["type"] in {"order", "comment_attachment"}]
 
 
+@pytest.mark.parametrize("kind", ["current_card", "explicit_sku"])
+async def test_production_labeler_context_and_http_guard_share_the_frame_snapshot(world, kind):
+    from types import SimpleNamespace
+
+    from worker.brain.labels import Labeler, Pending
+    from worker.runner import Ctx, Runner
+
+    w = world
+    old = await w.card(10, "GIAY-01", 150000)
+    previous = await w.card(20, "BOOT-02", 200000)
+    current = await w.card(30, "TUI-03", 300000)
+    if kind == "current_card":
+        latest = max(
+            (e for e in await w.events() if e["type"] == "card" and e["card_id"] == current["card_id"]),
+            key=lambda e: e["version"],
+        )
+        retired = {k: v for k, v in latest.items() if k not in {"seq", "ingested_ms"}}
+        retired.update(
+            event_id="retired-" + w.sid, version=3, status="retired", caused_by=[latest["event_id"]]
+        )
+        await w.ingest(retired)
+    comment = make_event(
+        "comment",
+        w.sid,
+        35,
+        "sim",
+        comment_id="production-labeler",
+        user_ref="synthetic-buyer",
+        text="synthetic reference",
+        reply_to=None,
+    )
+    await w.ingest(comment)
+    await w.frame(40)
+    context = []
+
+    class Classifier:
+        async def responses(self, prompt, *args, **kwargs):
+            import json
+
+            context.append(json.loads(prompt[-1]["content"]))
+            return SimpleNamespace(
+                data={
+                    "items": [
+                        {
+                            "comment_id": comment["comment_id"],
+                            "label": "order",
+                            "reference_kind": kind,
+                            "sku": "GIAY-01" if kind == "explicit_sku" else None,
+                            "size": "38",
+                            "color": None,
+                            "qty": 1,
+                            "contact": "none",
+                        }
+                    ]
+                },
+                infer_start_ms=w.now,
+                infer_end_ms=w.now,
+            )
+
+    runner = Runner(
+        "http://test",
+        {},
+        http=w.client,
+        attachment_auth={w.sid: {"epoch": w.epoch, "source_token": w.source, "system_token": w.system}},
+    )
+    labeler = Labeler(client_for=lambda ctx: Classifier())
+    pending = Pending(comment, Ctx(comment, runner, received_ms=w.now), [], "none")
+    try:
+        versions = await w.store.card_versions(w.sid)
+        items, infer = await labeler._ask([pending], versions)
+        assert context[0]["comments"][0]["current_card"]["card_id"] == current["card_id"]
+        assert context[0]["comments"][0]["previous_card"]["card_id"] == previous["card_id"]
+        emitted = await labeler._consequences(pending, items[comment["comment_id"]], versions, infer)
+        assert len(emitted) == 1 and emitted[0]["type"] == "comment_labeled"
+        assert emitted[0]["order_draft"]["referenced_card_id"] is None
+        await runner.post(emitted)
+        result = await w.system_request(await w.proof((comment, emitted[0])))
+        if kind == "current_card":
+            assert result["attachment"]["outcome"] == "ready"
+            assert result["attachment"]["selected_card_id"] == current["card_id"]
+            assert old["card_id"] != result["attachment"]["selected_card_id"]
+        else:
+            assert result["pending"] is True  # A real older SKU outside the pair grants no target.
+            assert not [e for e in await w.events() if e["type"] == "comment_attachment"]
+        assert not [e for e in await w.events() if e["type"] in {"order", "message_out"}]
+    finally:
+        await runner.evidence.close()
+
+
 @pytest.mark.parametrize(
     "damage", ["missing_lower", "missing_card", "wrong_frame", "future_cursor", "old_output_epoch"]
 )

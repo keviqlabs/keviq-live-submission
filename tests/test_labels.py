@@ -177,17 +177,20 @@ def test_previous_card_is_the_card_shown_before_the_live_one():
 
 
 def test_retired_card_and_explicit_sku():
-    # card-03 is retired at 199.5 s, card-04 goes live at 200 s. In between the newest live card is card-02
-    # (earlier cards stay live in the store); "the one just now" is still the retired card-03.
+    # card-03 is retired at 199.5 s; its last frame appearance still makes it current until card-04 appears.
     current, previous = cards_at(cards(), 199_800)
-    assert (current["card_id"], previous["card_id"]) == ("card-02", "card-03")
+    assert (current["card_id"], previous["card_id"]) == ("card-03", "card-02")
     assert cards_at(cards(), 1_000) == (None, None)
     assert resolve(item("current_card"), cards(), 1_000, set())["reference_kind"] == "unresolved"
     # After card-04 goes live, "the one before" is the retired card-03.
     assert cards_at(cards(), 205_000)[1]["card_id"] == "card-03"
     skus = {"GIAY-01", "TUI-03", "GIAY-02"}
     shown = resolve(item("explicit_sku", sku="GIAY-01"), cards(), 300_000, skus)
-    assert (shown["referenced_card_id"], shown["sku"]) == ("card-01", "GIAY-01")
+    assert (shown["referenced_card_id"], shown["sku"], shown["reference_kind"]) == (
+        None,
+        "GIAY-01",
+        "explicit_sku",
+    )  # An earlier shown SKU outside the current/previous pair does not grant a target.
     not_shown = resolve(item("explicit_sku", sku="GIAY-02"), cards(), 300_000, skus)
     assert (not_shown["referenced_card_id"], not_shown["sku"], not_shown["reference_kind"]) == (
         None,

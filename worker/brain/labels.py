@@ -193,7 +193,7 @@ class Labeler:
         known = {(c["card_id"], c["version"]) for c in self.cards[sid]}
         if (event["card_id"], event["version"]) not in known:
             self.cards[sid].append(event)
-        if sid in getattr(ctx.runner, "attachment_auth", {}) and sid not in self.history:
+        if sid in getattr(getattr(ctx, "runner", None), "attachment_auth", {}) and sid not in self.history:
             # Load the actual prefix while no comment is waiting; a later batch awaits this same task.
             self.history[sid] = self._spawn(self._load_history(sid, ctx.runner))
         return []
