@@ -1,0 +1,84 @@
+{
+  "baseline": "650fe39d73e48560187803da699088b3dfceb1d8",
+  "test_file": "tests/test_sku_ambiguity.py",
+  "test_sha256": "499719a0b4a4a45560254912cc01ab9fa0484505804c902b95553cfc853df245",
+  "catalog_sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73",
+  "raw_log_sha256": "407f9f1cc85aa379f389301b73a7fbfef75a97e7e2920af2d317f4ebc3532c18",
+  "pytest_result": "19 passed in 0.11s",
+  "red_count": 0,
+  "reproduction_command": "MODEL_API_KEY= uv run pytest -q -s tests/test_sku_ambiguity.py --tb=short",
+  "exact_kind_colour_collision_pairs": [],
+  "coarse_category_colour_collision_pairs": {
+    "other/black": [
+      "SP07",
+      "SP09"
+    ],
+    "other/white": [
+      "SP08",
+      "SP10"
+    ]
+  },
+  "handler_cases": [
+    {
+      "case": "SP07",
+      "observation": {
+        "category": "other",
+        "color": "\u0111en",
+        "is_new": true
+      },
+      "prior_card_id": "card-prior",
+      "prior_versions_unchanged": 2,
+      "new_card_id": "card-next",
+      "new_sku": null,
+      "new_price": null,
+      "new_status": "draft",
+      "model_call_events": 0
+    },
+    {
+      "case": "SP09",
+      "observation": {
+        "category": "other",
+        "color": "\u0111en",
+        "is_new": true
+      },
+      "prior_card_id": "card-prior",
+      "prior_versions_unchanged": 2,
+      "new_card_id": "card-next",
+      "new_sku": null,
+      "new_price": null,
+      "new_status": "draft",
+      "model_call_events": 0
+    },
+    {
+      "case": "SP08",
+      "observation": {
+        "category": "other",
+        "color": "tr\u1eafng",
+        "is_new": true
+      },
+      "prior_card_id": "card-prior",
+      "prior_versions_unchanged": 2,
+      "new_card_id": "card-next",
+      "new_sku": null,
+      "new_price": null,
+      "new_status": "draft",
+      "model_call_events": 0
+    },
+    {
+      "case": "SP10",
+      "observation": {
+        "category": "other",
+        "color": "tr\u1eafng",
+        "is_new": true
+      },
+      "prior_card_id": "card-prior",
+      "prior_versions_unchanged": 2,
+      "new_card_id": "card-next",
+      "new_sku": null,
+      "new_price": null,
+      "new_status": "draft",
+      "model_call_events": 0
+    }
+  ],
+  "scope": "In-memory store and in-process ASGI app, no database or Model API client."
+}
