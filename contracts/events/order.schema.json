@@ -87,6 +87,17 @@
             "type": "string",
             "pattern": "^[A-Za-z0-9._:-]{1,96}$"
           },
+          "candidates": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,96}$"
+            },
+            "description": "Optional unresolved item choices, current then previous at the comment's media time. Existence, session membership, order state and seller selection require runtime history checks."
+          },
           "card_version": {
             "type": "integer",
             "minimum": 1

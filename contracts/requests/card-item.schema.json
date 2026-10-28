@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keviq:requests:card-item:v1",
+  "title": "Seller draft item assignment request",
+  "description": "Body of POST /api/sessions/{id}/cards/{card_id}/item. A SKU assigns the unresolved draft; null explicitly leaves it unresolved. Structural validation only; catalog membership, authority and latest-version checks require runtime context.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "card_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sku": {
+      "type": ["string", "null"],
+      "minLength": 1
+    }
+  },
+  "required": ["card_version", "sku"]
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:keviq:requests:order-decision:v1",
+  "title": "Seller order decision request",
+  "description": "Body of POST /api/sessions/{id}/orders/{order_id}/decision. Structural validation only; candidate membership, session, authority and state are runtime checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "enum": ["approve", "reject"]
+    },
+    "unit_price": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "card_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,96}$",
+      "description": "Explicit seller choice on approval; must belong to the pending line's candidates in the same session."
+    }
+  },
+  "required": ["decision"],
+  "if": {
+    "properties": {"decision": {"const": "reject"}},
+    "required": ["decision"]
+  },
+  "then": {
+    "not": {"required": ["card_id"]}
+  }
+}
