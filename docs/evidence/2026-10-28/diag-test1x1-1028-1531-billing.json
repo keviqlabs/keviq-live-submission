@@ -1,0 +1,17 @@
+{
+ "before": {
+  "at_vn": "2026-10-28 15:20",
+  "credit_usd": 146.7,
+  "balance_vnd": 158783
+ },
+ "after": {
+  "at_vn": "2026-10-28 15:41",
+  "credit_usd": 146.18,
+  "balance_vnd": 158783
+ },
+ "credit_change_usd": 0.52,
+ "ledger_session_usd": 0.51845225,
+ "matches_ledger_to_two_decimals": true,
+ "evidence": "Screenshot values reported by the operator; image files kept outside the repository",
+ "limitation": "Rounded agreement does not prove the cancelled call was unbilled"
+}

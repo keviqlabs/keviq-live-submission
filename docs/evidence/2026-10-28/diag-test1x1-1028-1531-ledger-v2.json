@@ -1,0 +1,50 @@
+{
+ "run": "diag-test1x1-1028-1531",
+ "day_bounds_ms": [
+  1793120400000,
+  1793206800000
+ ],
+ "rows": 294,
+ "cost_usd": 0.51845225,
+ "rows_outside_today": 0,
+ "cost_usd_today": 0.51845225,
+ "not_ok": 1,
+ "first_ingested_ms": 1793176268339,
+ "last_ingested_ms": 1793176619542,
+ "by_purpose": {
+  "card_cutout": {
+   "n": 9,
+   "cost_usd": 0.0225,
+   "not_ok": 0
+  },
+  "card_from_speech": {
+   "n": 61,
+   "cost_usd": 0.1570485,
+   "not_ok": 0
+  },
+  "label_comments": {
+   "n": 77,
+   "cost_usd": 0.1126442,
+   "not_ok": 0
+  },
+  "product_seen": {
+   "n": 146,
+   "cost_usd": 0.20870955,
+   "not_ok": 1
+  },
+  "transcribe": {
+   "n": 1,
+   "cost_usd": 0.01755,
+   "not_ok": 0
+  }
+ },
+ "rows_ok": 293,
+ "cost_usd_ok": 0.51845225,
+ "cost_usd_not_ok": 0.0,
+ "not_ok_by_purpose_error": {
+  "product_seen/cancelled": {
+   "n": 1,
+   "cost_usd": 0.0
+  }
+ }
+}

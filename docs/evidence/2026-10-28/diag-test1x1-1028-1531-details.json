@@ -1,0 +1,456 @@
+{
+ "run": "diag-test1x1-1028-1531",
+ "source_sha": "650fe39d73e48560187803da699088b3dfceb1d8",
+ "frames": 351,
+ "skipped": 205,
+ "stale": 0,
+ "successful_product_seen_model_calls": 145,
+ "failed_lower_bound": 1,
+ "failed_upper_bound": 1,
+ "counts_are_lane_exact": false,
+ "all_frames_have_outcome": true,
+ "digit_phones": {
+  "n": 3,
+  "rows": [
+   {
+    "comment_id": "c5-1-002",
+    "comment_ingested_ms": 1793176272008,
+    "first_hide_event_id": "comment_labeled_e6a13ade3cb040caad12",
+    "first_hide_ingested_ms": 1793176272020,
+    "delay_s": 0.012
+   },
+   {
+    "comment_id": "c5-1-007",
+    "comment_ingested_ms": 1793176295147,
+    "first_hide_event_id": "comment_labeled_725a189b181549cabfd8",
+    "first_hide_ingested_ms": 1793176295164,
+    "delay_s": 0.017
+   },
+   {
+    "comment_id": "c5-1-041",
+    "comment_ingested_ms": 1793176400581,
+    "first_hide_event_id": "comment_labeled_aca0495fe4fe4442b2a0",
+    "first_hide_ingested_ms": 1793176400609,
+    "delay_s": 0.028
+   }
+  ],
+  "max_s": 0.028,
+  "pass": true
+ },
+ "cards": {
+  "opened": 9,
+  "first_version": {
+   "n": 9,
+   "p50_s": 3.687,
+   "max_s": 4.616,
+   "le_10s": 9
+  },
+  "first_live": {
+   "n": 9,
+   "p50_s": 14.62,
+   "max_s": 30.335,
+   "le_10s": 1
+  },
+  "rows": [
+   {
+    "card_id": "card-e5994acb61f5",
+    "sku": "SP01",
+    "source_s": 22.0,
+    "first_version_lag_s": 3.991,
+    "first_live_lag_s": 30.335
+   },
+   {
+    "card_id": "card-9957806a909e",
+    "sku": "SP02",
+    "source_s": 58.0,
+    "first_version_lag_s": 3.834,
+    "first_live_lag_s": 21.227
+   },
+   {
+    "card_id": "card-bc094ad23d08",
+    "sku": "SP04",
+    "source_s": 135.0,
+    "first_version_lag_s": 2.563,
+    "first_live_lag_s": 9.209
+   },
+   {
+    "card_id": "card-c5b8549fde6d",
+    "sku": "SP05",
+    "source_s": 169.0,
+    "first_version_lag_s": 3.687,
+    "first_live_lag_s": 11.229
+   },
+   {
+    "card_id": "card-39fa182ce480",
+    "sku": "SP06",
+    "source_s": 190.0,
+    "first_version_lag_s": 3.408,
+    "first_live_lag_s": 18.468
+   },
+   {
+    "card_id": "card-275d3ef551eb",
+    "sku": null,
+    "source_s": 229.0,
+    "first_version_lag_s": 2.894,
+    "first_live_lag_s": 10.93
+   },
+   {
+    "card_id": "card-03e5cce2e0f7",
+    "sku": null,
+    "source_s": 250.0,
+    "first_version_lag_s": 2.211,
+    "first_live_lag_s": 10.418
+   },
+   {
+    "card_id": "card-e16f7dbe7caf",
+    "sku": null,
+    "source_s": 271.0,
+    "first_version_lag_s": 4.616,
+    "first_live_lag_s": 24.452
+   },
+   {
+    "card_id": "card-10e014cb322c",
+    "sku": null,
+    "source_s": 308.0,
+    "first_version_lag_s": 3.791,
+    "first_live_lag_s": 14.62
+   }
+  ]
+ },
+ "every_card_has_version1": true,
+ "items": [
+  {
+   "item": "SP01",
+   "mark_s": 12.8,
+   "span_s": [
+    10.0,
+    49.4
+   ],
+   "first_seen": {
+    "event_id": "product_seen_e5994acb61f548dfa094",
+    "category": "sneaker",
+    "after_mark_s": 9.2,
+    "emit_lag_s": 3.936,
+    "color": "đen",
+    "ingested_after_gold_s": 13.136
+   },
+   "new_version1_cards": [
+    "card-e5994acb61f5"
+   ],
+   "card_consequences": [
+    {
+     "card_id": "card-e5994acb61f5",
+     "version": 1,
+     "sku": "SP01",
+     "event_id": "card_9580428fd7594bccbcac"
+    }
+   ],
+   "no_new_card_reason": null
+  },
+  {
+   "item": "SP02",
+   "mark_s": 58.6,
+   "span_s": [
+    49.4,
+    86.6
+   ],
+   "first_seen": {
+    "event_id": "product_seen_9957806a909e4495b603",
+    "category": "sneaker",
+    "after_mark_s": -0.6,
+    "emit_lag_s": 3.799,
+    "color": "trắng",
+    "ingested_after_gold_s": 3.199
+   },
+   "new_version1_cards": [
+    "card-9957806a909e"
+   ],
+   "card_consequences": [
+    {
+     "card_id": "card-9957806a909e",
+     "version": 1,
+     "sku": "SP02",
+     "event_id": "card_e227e9741d0e47d68654"
+    }
+   ],
+   "no_new_card_reason": null
+  },
+  {
+   "item": "SP03",
+   "mark_s": 92.9,
+   "span_s": [
+    86.6,
+    114.6
+   ],
+   "first_seen": {
+    "event_id": "product_seen_e0fd770dcde34b6f80fb",
+    "category": "sandal",
+    "after_mark_s": 3.1,
+    "emit_lag_s": 3.539,
+    "color": "trắng",
+    "ingested_after_gold_s": 6.639
+   },
+   "new_version1_cards": [],
+   "card_consequences": [
+    {
+     "card_id": "card-9957806a909e",
+     "version": 5,
+     "sku": "SP02",
+     "event_id": "card_a74a428fefec4483b2ea"
+    }
+   ],
+   "no_new_card_reason": "updated_existing_open_card"
+  },
+  {
+   "item": "SP04",
+   "mark_s": 124.9,
+   "span_s": [
+    117.7,
+    160.7
+   ],
+   "first_seen": {
+    "event_id": "product_seen_bc094ad23d0843ba8871",
+    "category": "tshirt",
+    "after_mark_s": 10.1,
+    "emit_lag_s": 2.518,
+    "color": "đen",
+    "ingested_after_gold_s": 12.618
+   },
+   "new_version1_cards": [
+    "card-bc094ad23d08"
+   ],
+   "card_consequences": [
+    {
+     "card_id": "card-bc094ad23d08",
+     "version": 1,
+     "sku": "SP04",
+     "event_id": "card_7da508cdece9462f9dcf"
+    }
+   ],
+   "no_new_card_reason": null
+  },
+  {
+   "item": "SP05",
+   "mark_s": 169.3,
+   "span_s": [
+    160.7,
+    182.8
+   ],
+   "first_seen": {
+    "event_id": "product_seen_c5b8549fde6d4f8ba502",
+    "category": "shirt",
+    "after_mark_s": -0.3,
+    "emit_lag_s": 3.631,
+    "color": "trắng",
+    "ingested_after_gold_s": 3.331
+   },
+   "new_version1_cards": [
+    "card-c5b8549fde6d"
+   ],
+   "card_consequences": [
+    {
+     "card_id": "card-c5b8549fde6d",
+     "version": 1,
+     "sku": "SP05",
+     "event_id": "card_753bfc21b0444738909b"
+    }
+   ],
+   "no_new_card_reason": null
+  },
+  {
+   "item": "SP06",
+   "mark_s": 189.5,
+   "span_s": [
+    182.8,
+    213.7
+   ],
+   "first_seen": {
+    "event_id": "product_seen_39fa182ce480487f90c2",
+    "category": "tshirt",
+    "after_mark_s": 0.5,
+    "emit_lag_s": 3.365,
+    "color": "xanh",
+    "ingested_after_gold_s": 3.865
+   },
+   "new_version1_cards": [
+    "card-39fa182ce480"
+   ],
+   "card_consequences": [
+    {
+     "card_id": "card-39fa182ce480",
+     "version": 1,
+     "sku": "SP06",
+     "event_id": "card_26e1ccad9ae34cc7a66d"
+    }
+   ],
+   "no_new_card_reason": null
+  },
+  {
+   "item": "SP07",
+   "mark_s": 225.1,
+   "span_s": [
+    216.9,
+    248.2
+   ],
+   "first_seen": {
+    "event_id": "product_seen_275d3ef551eb4555b7f6",
+    "category": "other",
+    "after_mark_s": 3.9,
+    "emit_lag_s": 2.841,
+    "color": "đen",
+    "ingested_after_gold_s": 6.741
+   },
+   "new_version1_cards": [
+    "card-275d3ef551eb"
+   ],
+   "card_consequences": [
+    {
+     "card_id": "card-275d3ef551eb",
+     "version": 1,
+     "sku": null,
+     "event_id": "card_c4b6d3a81207410bb97f"
+    }
+   ],
+   "no_new_card_reason": null
+  },
+  {
+   "item": "SP08",
+   "mark_s": 249.7,
+   "span_s": [
+    248.2,
+    263.1
+   ],
+   "first_seen": {
+    "event_id": "product_seen_03e5cce2e0f74daa95fa",
+    "category": "other",
+    "after_mark_s": 0.3,
+    "emit_lag_s": 2.174,
+    "color": "trắng",
+    "ingested_after_gold_s": 2.474
+   },
+   "new_version1_cards": [
+    "card-03e5cce2e0f7"
+   ],
+   "card_consequences": [
+    {
+     "card_id": "card-03e5cce2e0f7",
+     "version": 1,
+     "sku": null,
+     "event_id": "card_19cc14822aea4dddb438"
+    }
+   ],
+   "no_new_card_reason": null
+  },
+  {
+   "item": "SP09",
+   "mark_s": 264.5,
+   "span_s": [
+    263.1,
+    292.8
+   ],
+   "first_seen": {
+    "event_id": "product_seen_e16f7dbe7caf48c880bc",
+    "category": "other",
+    "after_mark_s": 6.5,
+    "emit_lag_s": 4.563,
+    "color": "đen",
+    "ingested_after_gold_s": 11.063
+   },
+   "new_version1_cards": [
+    "card-e16f7dbe7caf"
+   ],
+   "card_consequences": [
+    {
+     "card_id": "card-e16f7dbe7caf",
+     "version": 1,
+     "sku": null,
+     "event_id": "card_84e7f3bbbd394ff1b239"
+    }
+   ],
+   "no_new_card_reason": null
+  },
+  {
+   "item": "SP10",
+   "mark_s": 311.3,
+   "span_s": [
+    292.8,
+    323.1
+   ],
+   "first_seen": {
+    "event_id": "product_seen_10e014cb322c4b8ba2f9",
+    "category": "other",
+    "after_mark_s": -3.3,
+    "emit_lag_s": 3.739,
+    "color": "trắng",
+    "ingested_after_gold_s": 0.439
+   },
+   "new_version1_cards": [
+    "card-10e014cb322c"
+   ],
+   "card_consequences": [
+    {
+     "card_id": "card-10e014cb322c",
+     "version": 1,
+     "sku": null,
+     "event_id": "card_c150ae6a5c224aeba9a4"
+    }
+   ],
+   "no_new_card_reason": null
+  },
+  {
+   "item": "SP01",
+   "mark_s": 325.8,
+   "span_s": [
+    323.1,
+    347.0
+   ],
+   "first_seen": {
+    "event_id": "product_seen_88016756fde84c68b226",
+    "category": "sneaker",
+    "after_mark_s": 7.2,
+    "emit_lag_s": 3.172,
+    "color": "đen",
+    "ingested_after_gold_s": 10.372
+   },
+   "new_version1_cards": [],
+   "card_consequences": [
+    {
+     "card_id": "card-e5994acb61f5",
+     "version": 6,
+     "sku": "SP01",
+     "event_id": "card_d288261012e84ba2bef9"
+    }
+   ],
+   "no_new_card_reason": "updated_existing_open_card"
+  }
+ ],
+ "receipt_live_image_check": {
+  "rows": [
+   {
+    "order_id": "o-c5-1-016",
+    "order_event_id": "mi.m-diag-test1x1-1028-1531-c5-1-m02.o-c5-1-016.reply",
+    "card_id": "card-e5994acb61f5",
+    "card_version": 5,
+    "card_version_exists": true,
+    "image_matches_cited_version": true,
+    "image_is_valid_png": true,
+    "image_bytes": 43262,
+    "image_sha256": "5e52130315944f33b469225f196e52b42a28d85146abfaadbee5513f55216e70"
+   },
+   {
+    "order_id": "o-c5-1-029",
+    "order_event_id": "mi.m-diag-test1x1-1028-1531-c5-1-m03.o-c5-1-029.reply",
+    "card_id": "card-9957806a909e",
+    "card_version": 5,
+    "card_version_exists": true,
+    "image_matches_cited_version": true,
+    "image_is_valid_png": true,
+    "image_bytes": 3714,
+    "image_sha256": "9f15f3542c7c1f334ce6c6e277bb803ae4cfd54038ba24884ad4887a75072251"
+   }
+  ],
+  "n": 2,
+  "passed": 2,
+  "scope": "Image bytes exist in the receipt and match the cited version; no visual-quality claim"
+ }
+}
