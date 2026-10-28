@@ -9,6 +9,8 @@ const versions = new Map();  // card_id -> every version seen
 const proposals = new Map(); // card_id -> price_proposal events (D-024)
 const typed = new Map();     // card_id -> price the seller typed, kept across renders and errors
 const cardNotes = new Map(); // card_id -> {text, kind} under the card: the last price save's error or note
+const itemCodes = new Map(); // card_id -> catalog code typed by the seller
+const itemNotes = new Map(); // card_id -> item selection result
 const comments = new Map();  // comment_id -> {comment, labeled}
 const orders = new Map();    // order_id -> latest order event
 const vnd = (n) => (n == null ? "giá chưa có" : n.toLocaleString("vi-VN") + " ₫");
@@ -26,6 +28,7 @@ function isOpen(p) {
 
 function priceHtml(c) {
   if (c.status === "retired") return "";
+  if (c.status === "draft" && c.sku === null) return `<div class="prov">Chọn mã món trước khi duyệt giá.</div>`;
   const id = esc(c.card_id), note = cardNotes.get(c.card_id);
   const open = (proposals.get(c.card_id) || []).filter(isOpen).sort((a, b) => b.ts_ms - a.ts_ms);
   return `${open.map((p) => `<div class="proposal">Nghe được ${vnd(p.heard_price)} lúc ${time(p.ts_ms)} (đang ${vnd(p.current_price)})
@@ -39,6 +42,7 @@ function priceHtml(c) {
 
 function renderCards() {
   const focused = document.activeElement?.dataset?.cardPrice;
+  const focusedItem = document.activeElement?.dataset?.cardSku;
   const list = [...cards.values()].sort((a, b) => b.ts_ms - a.ts_ms);
   $("cards").innerHTML = list.map((c) => `
     <div class="item">
@@ -46,9 +50,48 @@ function renderCards() {
       <div class="row"><b>${esc(c.name)}</b><span class="tag ${esc(c.status)}">${esc(c.status)} v${c.version}</span></div>
       <div>${vnd(c.price)} · ${esc(c.sku ?? "no sku")} · stock ${c.stock}</div>
       <div class="prov">frame ${c.provenance.frame_ts_ms ? time(c.provenance.frame_ts_ms) : "–"} · speech ${esc(c.provenance.speech_event_ids.join(", ") || "–")} · ${c.provenance.edited_by ? "edited by " + esc(c.provenance.edited_by) : "model"}</div>
+      ${itemHtml(c)}
       ${priceHtml(c)}
     </div>`).join("");
   if (focused) document.querySelector(`[data-card-price="${CSS.escape(focused)}"]`)?.focus();
+  if (focusedItem) document.querySelector(`[data-card-sku="${CSS.escape(focusedItem)}"]`)?.focus();
+}
+
+function itemHtml(c) {
+  if (c.sku !== null || c.status === "retired") return "";
+  if (c.status !== "draft") return `<div class="prov">Chưa xác định mã món. Thẻ này chưa hỗ trợ gán mã khi đã có giá.</div>`;
+  const id = esc(c.card_id), note = itemNotes.get(c.card_id);
+  return `<div class="actions">
+    <input type="text" data-card-sku="${id}" value="${esc(itemCodes.get(c.card_id) ?? "")}" placeholder="mã món trong danh mục" aria-label="mã món cho ${id}">
+    <button data-act="assign-item" data-cid="${id}">Chọn mã món</button>
+    <button data-act="keep-item" data-cid="${id}">Giữ chưa rõ</button>
+    </div>${note ? `<div class="${note.kind}">${esc(note.text)}</div>` : ""}`;
+}
+
+async function itemAction(act, cid) {
+  const c = cards.get(cid);
+  if (!c || c.status !== "draft" || c.sku !== null) return;
+  const sku = act === "keep-item" ? null : String(itemCodes.get(cid) ?? "").trim();
+  if (sku === "") {
+    itemNotes.set(cid, { text: "Nhập đúng mã món trong danh mục.", kind: "err" });
+    return renderCards();
+  }
+  try {
+    const r = await fetch(api(`/cards/${encodeURIComponent(cid)}/item`), {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ card_version: c.version, sku }),
+    });
+    const out = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      itemNotes.set(cid, { text: `Không chọn được (${r.status}): ${typeof out.detail === "string" ? out.detail : r.statusText}`, kind: "err" });
+    } else {
+      if (out.changed) itemCodes.delete(cid);
+      itemNotes.set(cid, { text: out.changed ? "Đã chọn món. Thẻ vẫn chờ duyệt giá." : "Giữ món chưa rõ; chưa tạo đơn.", kind: "prov" });
+    }
+  } catch {
+    itemNotes.set(cid, { text: "Chưa nhận được kết quả. Tải lại thẻ trước khi chọn tiếp.", kind: "err" });
+  }
+  renderCards();
 }
 
 // The seller's price for a card (POST /cards/{id}/price): errors stay under the card with the typed text.
@@ -183,11 +226,18 @@ document.addEventListener("input", (ev) => {
   const id = ev.target.dataset?.price, cid = ev.target.dataset?.cardPrice;
   if (id) prices.set(id, ev.target.value);
   if (cid) typed.set(cid, ev.target.value);
+  if (ev.target.dataset?.cardSku) itemCodes.set(ev.target.dataset.cardSku, ev.target.value);
 });
 document.addEventListener("click", async (ev) => {
   const b = ev.target.closest("button[data-act]");
   if (!b) return;
   const oid = b.dataset.oid, act = b.dataset.act;
+  if (act === "assign-item" || act === "keep-item") {
+    b.disabled = true;
+    await itemAction(act, b.dataset.cid);
+    b.disabled = false;
+    return;
+  }
   if (act === "use" || act === "save") {
     b.disabled = true;
     await cardAction(act, b.dataset.cid, b.dataset.pid);
