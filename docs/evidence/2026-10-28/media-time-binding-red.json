@@ -1,7 +1,7 @@
 {
   "baseline": "650fe39d73e48560187803da699088b3dfceb1d8",
   "test_file": "tests/test_media_time_binding.py",
-  "test_sha256": "baa14d4f33e93fecc56842082eefc7cf930ea2484a596bec8026552b5316daa2",
+  "test_sha256": "e4bbb08f571a996519d95234dfeb669de01c62ec024e89327ca299fc3b2a372e",
   "command": "MODEL_API_KEY= uv run python -m tests.db_lock -- pytest -q -s tests/test_media_time_binding.py --tb=short",
   "result": "4 failed in 6.07s; expected assertion failures, no setup errors",
   "red_count": 4,
@@ -558,5 +558,11 @@
       ],
       "session": "slow-vision-de81ee23e065"
     }
-  ]
+  ],
+  "executed_test_sha256": "baa14d4f33e93fecc56842082eefc7cf930ea2484a596bec8026552b5316daa2",
+  "wording_only_update": {
+    "behavior_changed": false,
+    "tests_rerun": false,
+    "verification": "Python AST unchanged after excluding the module docstring; original baseline result and log retained."
+  }
 }

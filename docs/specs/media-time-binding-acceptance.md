@@ -1,6 +1,6 @@
 # Media-time binding acceptance
 
-Test-only draft, based on DEC-101 rule 1 in `current-item-and-stock-rules.md`. Dependency: the app/PostgreSQL
+Test-only draft, based on rule 1 of `docs/specs/current-item-and-stock-rules.md`. Dependency: the app/PostgreSQL
 test seam and shared database lock from #47. Production baseline: main `650fe39` (after #47 merged).
 No worker, measure, app, schema, price authority or order-state implementation is changed.
 
@@ -43,5 +43,5 @@ not evidence from gold injected into a runtime. The shared file lock is held for
    Main creates/confirms an A order immediately instead of waiting for the watermark and routing expiry to the seller.
 
 The two-candidate line/decision representation requires the separate contracts-owner approval described in
-DEC-101. Tests assert the proposed optional `candidates` on the order line but do not add it to a schema.
+rule 1 of `docs/specs/current-item-and-stock-rules.md`. Tests assert the proposed optional `candidates` on the order line but do not add it to a schema.
 Changing an event field requires the existing contracts process. No stock-hold or stock-reply feature is requested here.

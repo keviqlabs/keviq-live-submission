@@ -20,7 +20,13 @@ four-scenario regression. Historical #47 evidence is unchanged. Candidate fields
 contracts-owner process; no production implementation or schema is changed. The draft intentionally makes
 `make check` red until the reviewed binding implementation is applied; it must not be merged alone.
 
-Test file SHA-256: `baa14d4f33e93fecc56842082eefc7cf930ea2484a596bec8026552b5316daa2`.
+Current test file SHA-256: `e4bbb08f571a996519d95234dfeb669de01c62ec024e89327ca299fc3b2a372e`.
+Executed baseline test file SHA-256: `baa14d4f33e93fecc56842082eefc7cf930ea2484a596bec8026552b5316daa2`.
 Raw baseline log SHA-256: `973ecefcab6de961638b8ac218dc69092019f1f5c4f1b95d82e69ef801ba5a38`.
 [Structured event evidence](media-time-binding-red.json) retains event IDs and versions without raw input text.
 Lint and formatting passed. Independent implementation/review is pending.
+
+Wording edited, no behavior change: the module docstring and specification now cite rule 1 of
+`docs/specs/current-item-and-stock-rules.md`. The Python AST is unchanged after excluding the module
+docstring. Tests were not rerun for this wording-only update; the four failures and log hash above remain
+the original executed baseline, whose source hash is preserved separately.

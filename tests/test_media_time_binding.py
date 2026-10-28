@@ -1,4 +1,7 @@
-"""Four DEC-101 timelines through the app/runner seam. Intentionally red until media-time binding exists."""
+"""Four timelines for rule 1 of docs/specs/current-item-and-stock-rules.md.
+
+Through the app/runner seam; intentionally red until media-time binding exists.
+"""
 
 import asyncio
 import importlib
