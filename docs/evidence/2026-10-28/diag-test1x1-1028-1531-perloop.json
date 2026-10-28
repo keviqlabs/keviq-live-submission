@@ -1,0 +1,130 @@
+{
+ "run": "diag-test1x1-1028-1531",
+ "loops": [
+  {
+   "loop": 1,
+   "order_comments": 30,
+   "with_gold_item": 28,
+   "unresolved": [
+    "c5-1-001",
+    "c5-1-036"
+   ],
+   "outcomes": {
+    "unresolved": 4,
+    "order": 24,
+    "ask_variant": 2
+   },
+   "references": {
+    "right": 7,
+    "n": 28,
+    "by_kind": {
+     "current_card": {
+      "n": 24,
+      "right": 6
+     },
+     "previous_card": {
+      "n": 4,
+      "right": 1
+     }
+    },
+    "why_wrong": {
+     "no_card": 2,
+     "item_card_live_after_comment": 11,
+     "item_card_live_before_comment": 4,
+     "no_card_for_item": 4
+    }
+   },
+   "interventions": {
+    "n": 19,
+    "by_cause": {
+     "order:stock": 17,
+     "card:price": 1,
+     "order:price": 1
+    }
+   },
+   "proposals": {
+    "n": 3,
+    "right_card": 2,
+    "right_price": 2,
+    "both": 1,
+    "stale_on_arrival": [],
+    "outcomes": {
+     "dropped": 2,
+     "used": 1
+    }
+   },
+   "receipts": {
+    "n": 2,
+    "version_ok": 2,
+    "right_item": 0,
+    "with_image": 2,
+    "rows": [
+     {
+      "order_id": "o-c5-1-016",
+      "card_id": "card-e5994acb61f5",
+      "card_version": 5,
+      "card_item": "SP01",
+      "gold_item": "SP02",
+      "right_item": false,
+      "draft_card_same": true,
+      "version_ok": true,
+      "image": true,
+      "image_path": "NOT_RUN",
+      "image_sha256": "5e52130315944f33b469225f196e52b42a28d85146abfaadbee5513f55216e70",
+      "missing": [
+       "source_session",
+       "source_t"
+      ]
+     },
+     {
+      "order_id": "o-c5-1-029",
+      "card_id": "card-9957806a909e",
+      "card_version": 5,
+      "card_item": "SP02",
+      "gold_item": "SP03",
+      "right_item": false,
+      "draft_card_same": true,
+      "version_ok": true,
+      "image": true,
+      "image_path": "NOT_RUN",
+      "image_sha256": "9f15f3542c7c1f334ce6c6e277bb803ae4cfd54038ba24884ad4887a75072251",
+      "missing": [
+       "source_session",
+       "source_t"
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "total": {
+  "order_comments": 30,
+  "with_gold_item": 28,
+  "unresolved": 2,
+  "references_right": 7,
+  "interventions": 19,
+  "stale_on_arrival": 0,
+  "receipts": 2,
+  "receipts_right_item": 0,
+  "receipts_with_image": 2,
+  "scorer": {
+   "order_ids_n": 30,
+   "order_ids_in_n": 28,
+   "references": {
+    "n": 28,
+    "right": 7,
+    "accuracy": 0.25,
+    "gate": false
+   },
+   "interventions_total": 19,
+   "proposals_stale": 0,
+   "receipts": {
+    "n": 2,
+    "version_ok": 2,
+    "rate": 1.0,
+    "with_image": 2,
+    "image_path_run": 0
+   }
+  }
+ }
+}
