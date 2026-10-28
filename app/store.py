@@ -171,6 +171,20 @@ class MemoryStore:
             and (session_id is None or e["session_id"] == session_id)
         )
 
+    async def costs(self, start_ms: int, end_ms: int, session_id: str | None = None) -> dict[str, float]:
+        """today / total / test_today / test_total / session, as cost_usd counts them, in one pass."""
+        out = dict.fromkeys(("today", "total", "test_today", "test_total", "session"), 0.0)
+        for e in self._events:
+            if e["type"] != "model_call":
+                continue
+            today = start_ms <= e["ingested_ms"] < end_ms
+            test = e["session_id"].startswith(TEST_SESSION_PREFIXES)
+            hits = {"today": today, "total": True, "test_today": test and today, "test_total": test,
+                    "session": e["session_id"] == session_id}  # fmt: skip
+            for k, hit in hits.items():
+                out[k] += e.get("cost_usd", 0) if hit else 0
+        return out
+
 
 class PgStore:
     kind = "pg"
@@ -382,6 +396,20 @@ class PgStore:
             ),
         )
         return float(rows[0]["usd"])
+
+    async def costs(self, start_ms: int, end_ms: int, session_id: str | None = None) -> dict[str, float]:
+        """today / total / test_today / test_total / session, as cost_usd counts them, in one statement: one
+        snapshot, so a call recorded meanwhile is in every sum or in none (session is 0 when session_id is None)."""
+        rows = await self._fetch(
+            "SELECT COALESCE(SUM(usd) FILTER (WHERE today), 0) AS today, COALESCE(SUM(usd), 0) AS total,"
+            " COALESCE(SUM(usd) FILTER (WHERE test AND today), 0) AS test_today,"
+            " COALESCE(SUM(usd) FILTER (WHERE test), 0) AS test_total,"
+            " COALESCE(SUM(usd) FILTER (WHERE session_id = %s), 0) AS session"
+            " FROM (SELECT (body->>'cost_usd')::numeric AS usd, session_id, session_id LIKE ANY(%s) AS test,"
+            " ingested_ms >= %s AND ingested_ms < %s AS today FROM events WHERE type = 'model_call') AS m",
+            (session_id, [p + "%" for p in TEST_SESSION_PREFIXES], start_ms, end_ms),
+        )
+        return {k: float(v) for k, v in rows[0].items()}
 
 
 async def session_state(store, session_id: str, ts_ms: int | None = None) -> dict:

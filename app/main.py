@@ -138,23 +138,24 @@ def create_app(store=None) -> FastAPI:
         """Spend the caps check (all model_call rows; today = recorded today, VN day), plus the part caused by
         test sessions, shown apart. With `?session=<id>`, also `session_usd`: that session's spend, all time, which
         the per-session cap checks, and `session_cap_usd` / `session_warn_usd` from this process's environment
-        (null when unset)."""
+        (null when unset). All the sums come from one read, so they agree: a call recorded meanwhile is in all of
+        them or in none."""
         start, end = vn_day_bounds(now_ms())
-        store = st(request)
+        spent = await st(request).costs(start, end, session)
         body = {
-            "today_usd": round(await store.cost_usd(start, end), 6),
-            "total_usd": round(await store.cost_usd(), 6),
+            "today_usd": round(spent["today"], 6),
+            "total_usd": round(spent["total"], 6),
             "daily_cap_usd": env_float("MODEL_DAILY_CAP_USD", 30),
             "daily_warn_usd": env_float("MODEL_DAILY_WARN_USD", 20),
             "total_cap_usd": env_float("MODEL_TOTAL_CAP_USD", 300),
             "test_sessions": {
                 "prefixes": list(TEST_SESSION_PREFIXES),
-                "today_usd": round(await store.cost_usd(start, end, test_only=True), 6),
-                "total_usd": round(await store.cost_usd(test_only=True), 6),
+                "today_usd": round(spent["test_today"], 6),
+                "total_usd": round(spent["test_total"], 6),
             },
         }
         if session is not None:
-            body["session_usd"] = round(await store.cost_usd(session_id=session), 6)
+            body["session_usd"] = round(spent["session"], 6)
             body["session_cap_usd"] = env_usd("MODEL_SESSION_CAP_USD")
             body["session_warn_usd"] = env_usd("MODEL_SESSION_WARN_USD")
         return body
