@@ -15,14 +15,17 @@ and the simulated Messenger are the real ones.
 
 Per loop: worker up (it reads from the head, as after a restart), media up; t0 = the first frame's ts_ms minus its
 index * 1000 (media posts frame i at t0 + i * 1000); comments and customers on that clock; at t0 + loop + tail
-media is stopped if still running, the shop and customers finish, every open card gets a retired version, then
-the worker gets SIGTERM and prints its waits snapshot (HQ419). A session_cap refusal ends the run after its loop.
+media is stopped if still running, the shop and customers finish, the runner waits at the barrier (Watch.barrier: the
+worker has finished every event of the session, by its own count; never on silence alone), every open card gets a
+retired version, the barrier again, then the worker gets SIGTERM and prints its waits snapshot (HQ419). A session_cap
+refusal ends the run after its loop. A barrier that times out is INCOMPLETE in the loop row, with what was left.
 Child logs go to --out next to the evidence files and are not evidence: they may hold utterances and comment text.
 
 Code checks run on keviq_test at the end: the operator holds the keviq_test lock for the whole run. The ledger is
 read from DATABASE_URL (the .env the app reads)."""
 
 import asyncio
+import bisect
 import json
 import logging
 import os
@@ -64,6 +67,7 @@ class Child:
         self.wait_lines: list[str] = []
         self.cutouts: list[dict] = []
         self.failures, self.ready, self.summary = 0, asyncio.Event(), None
+        self.progress, self.progress_at = None, None  # the worker's last progress line, when it came
         self.proc = self.reader = None
 
     async def start(self) -> None:
@@ -79,7 +83,10 @@ class Child:
             self.lines.append(line)
             if line.startswith(c5_proc.TAG):
                 said = json.loads(line[len(c5_proc.TAG) :])
-                self.said.setdefault(said["kind"], said)
+                if said["kind"] == "progress":
+                    self.progress, self.progress_at = said, time.monotonic()
+                else:
+                    self.said.setdefault(said["kind"], said)
                 if said["kind"] == "cutout":
                     self.cutouts.append(said)
             elif "price wait:" in line:
@@ -129,27 +136,27 @@ class Watch:
     def __init__(self, http, sid: str, feed, shop):
         self.http, self.sid, self.feed, self.shop = http, sid, feed, shop
         self.frames: list[dict] = []
-        self.last_new, self.capped, self.cap = time.monotonic(), None, asyncio.Event()
+        self.seqs: list[int] = []  # the session's seqs seen, in order; the last is the head
+        self.polls, self.capped, self.cap = 0, None, asyncio.Event()
         self.stopping = asyncio.Event()
 
     async def poll(self) -> None:
         from worker.runner import parse_sse
 
-        n = 0
         params = {"cursor": self.feed.cursor, "follow": "false"}
         async with self.http.stream("GET", f"/api/sessions/{self.sid}/events", params=params) as resp:
             resp.raise_for_status()
             async for seq, ev in parse_sse(resp.aiter_lines()):
                 self.feed.add(seq, ev)
                 self.shop.see(ev)
-                n += 1
+                if seq is not None:
+                    self.seqs.append(seq)
                 if ev["type"] == "frame":
                     self.frames.append(ev)
                 elif ev["type"] == "model_call" and str(ev.get("error") or "").startswith("session_cap"):
                     self.capped = self.capped or ev["event_id"]
                     self.cap.set()
-        if n:
-            self.last_new = time.monotonic()
+        self.polls += 1
 
     async def run(self) -> None:
         import httpx
@@ -180,14 +187,48 @@ class Watch:
             await asyncio.sleep(0.1)
         return self.frames[n]
 
-    async def quiet(self, tasks: list[set], calm_s: float = 3.0, timeout_s: float = 120.0) -> bool:
-        """No new event for calm_s and every shop/customer task done."""
-        end = time.monotonic() + timeout_s
-        while time.monotonic() < end:
-            if time.monotonic() - self.last_new >= calm_s and all(t.done() for s in tasks for t in s):
-                return True
+    def check(self, worker: "Child", tasks: list[set]) -> dict:
+        """One look at the work left: the worker's progress line (measure/c5_progress) against the session head."""
+        p = worker.progress or {}
+        head = self.seqs[-1] if self.seqs else None
+        done = p.get("done_seq")
+        if p.get("delivered"):
+            at_head = done == head
+        else:  # nothing delivered yet: fine only if the worker started at or after the head
+            at_head = p.get("start_seq") is not None and (head is None or p["start_seq"] >= head)
+        age = None if worker.progress_at is None else int((time.monotonic() - worker.progress_at) * 1000)
+        busy = sum(not t.done() for s in tasks for t in s)
+        row = {"head_seq": head, "done_seq": done,
+               "behind": len(self.seqs) - (bisect.bisect_right(self.seqs, done) if done is not None else 0),
+               **{k: p.get(k) for k in ("delivered", "finished", "errors", "pending", "running")},
+               "tasks_running": busy, "progress_age_ms": age}  # fmt: skip
+        ok = bool(p) and age is not None and age <= 2000 and p.get("pending") == 0 and at_head and busy == 0
+        return {**row, "ok": ok, "n": p.get("n", 0), "polls": self.polls}
+
+    async def barrier(self, worker: "Child", tasks: list[set], timeout_s: float = 120.0) -> dict:
+        """The loop's work is done, never just quiet (RC2): the worker's last progress line under 2 s old, nothing
+        pending, its done_seq at the session head, and no shop/customer task running; seen on two checks with the
+        same head, a newer progress line and two polls of the session between them. At the timeout the result is
+        INCOMPLETE with what was still left (events behind, pending, running, tasks)."""
+        start = time.monotonic()
+        first = None
+        while True:
+            row = self.check(worker, tasks)
+            if (row["ok"] and first and first["head_seq"] == row["head_seq"] and row["n"] > first["n"]
+                    and self.polls >= first["polls"] + 2):  # fmt: skip
+                status = "SETTLED"
+                break
+            if time.monotonic() - start >= timeout_s:
+                status = "INCOMPLETE"
+                break
+            if not row["ok"]:
+                first = None
+            elif not first or first["head_seq"] != row["head_seq"]:
+                first = row
             await asyncio.sleep(0.5)
-        return False
+        drop = ("ok", "n", "polls")
+        return {"status": status, "waited_ms": int((time.monotonic() - start) * 1000),
+                **{k: v for k, v in row.items() if k not in drop}}  # fmt: skip
 
 
 async def read_all(http, sid: str) -> list[dict]:
@@ -345,14 +386,16 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                 seen_log = None if watch.capped or not seen else await seen
                 speech_log = None if watch.capped or not speaking else {"posted": len(speech),
                                                                          "late_max_ms": await speaking}  # fmt: skip
-                calm = await watch.quiet([shop.tasks, customers.tasks])
+                ends = [await watch.barrier(worker, [shop.tasks, customers.tasks])]
                 retired = c5.retire_events(feed, run)
                 if retired:
                     (await http.post(f"/api/sessions/{run}/events", json=retired)).raise_for_status()
-                calm = await watch.quiet([shop.tasks, customers.tasks]) and calm
+                ends.append(await watch.barrier(worker, [shop.tasks, customers.tasks]))
+                calm = all(e["status"] == "SETTLED" for e in ends)
                 worker_rc = await worker.term()
                 snapshot = (worker.said.get("waits") or {}).get("waits", {}).get(run, {})
-                loop_rows.append({"k": k, "t0_ms": t0, "end_ms": now_ms(), "settled": calm,
+                loop_rows.append({"k": k, "t0_ms": t0, "end_ms": now_ms(), "settled": calm, "barrier": ends,
+                                  "worker_progress": worker.progress,
                                   "wait_lines": worker.wait_lines, "waits": snapshot,
                                   "waits_line": "waits" in worker.said, "retired": len(retired),
                                   "runner_failures": worker.failures, "comments_late_max_ms": late_ms,
@@ -360,7 +403,10 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                                   "worker_rc": worker_rc, "proofs": proofs, "capped": watch.capped,
                                   "replay_seen": seen_log, "replay_speech": speech_log,
                                   "cutouts": worker.cutouts})  # fmt: skip
-                print(f"loop {k}: done, retired {len(retired)}, waits {snapshot}, failures {worker.failures}")
+                print(
+                    f"loop {k}: done, {'/'.join(e['status'] for e in ends)} behind {ends[-1]['behind']}, retired "
+                    f"{len(retired)}, waits {snapshot}, failures {worker.failures}"
+                )
                 if watch.capped:
                     print(f"loop {k}: session_cap refusal {watch.capped}, run stops")
                     break
