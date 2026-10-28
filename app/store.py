@@ -10,7 +10,9 @@ import contextlib
 import json
 import logging
 
+from app.attachment_store import AttachmentDeadlinePassed, AttachmentStorage
 from app.contracts import now_ms
+from app.current import appearance_ids
 
 log = logging.getLogger("store")
 
@@ -62,22 +64,24 @@ def _strip_meta(event: dict) -> dict:
 
 
 def live_cards_from(versions: list[dict], ts_ms: int) -> list[dict]:
-    """Cards live at ts_ms: latest version with ts_ms <= t per card, status live/edited; newest card first."""
+    """Latest live/edited versions known at t, ordered by their last frame-time appearance."""
     latest: dict[str, dict] = {}
-    first_seen: dict[str, int] = {}
+    known = []
     for card in sorted(versions, key=lambda c: (c["ts_ms"], c["version"])):
         if card["ts_ms"] > ts_ms:
             continue
-        first_seen.setdefault(card["card_id"], card["ts_ms"])
+        known.append(card)
         latest[card["card_id"]] = card
     live = [c for c in latest.values() if c["status"] in LIVE_STATUSES]
-    return sorted(live, key=lambda c: first_seen[c["card_id"]], reverse=True)
+    rank = {cid: i for i, cid in enumerate(appearance_ids(known, ts_ms))}
+    return sorted(live, key=lambda c: rank.get(c["card_id"], len(rank)))
 
 
-class MemoryStore:
+class MemoryStore(AttachmentStorage):
     kind = "memory"
 
     def __init__(self) -> None:
+        self._init_attachment_storage()
         self.notifier = Notifier()
         self._events: list[dict] = []
         self._by_id: dict[str, int] = {}
@@ -92,19 +96,50 @@ class MemoryStore:
         pass
 
     async def append(self, event: dict) -> tuple[int, bool]:
+        async with self.session_transaction(event["session_id"]):
+            prepared_origin = None
+            if event["type"] == "comment_attachment" and event["action"] == "ready":
+                if self.event_origin() is not None:
+                    raise ValueError("source writer cannot create an attachment")
+                binding = await self.attachment_binding(event["session_id"])
+                if binding is not None:
+                    prepared_origin = self.origin_body(_strip_meta(event), binding, self.event_origin())
+                if now_ms() >= event["deadline_ms"]:
+                    raise AttachmentDeadlinePassed()
+            result = self._append(event)
+            if result[1]:
+                if prepared_origin is not None:
+                    await self.record_source_receipt(event["event_id"], prepared_origin)
+                else:
+                    await self.record_event_origin(_strip_meta(event))
+            return result
+
+    def _append(self, event: dict) -> tuple[int, bool]:
         body = _strip_meta(event)
         if body["event_id"] in self._by_id:
+            if (
+                body["session_id"] in self._binding_rows
+                and _strip_meta(self._events[self._by_id[body["event_id"]] - 1]) != body
+            ):
+                raise VersionTaken("event ID already has another canonical payload")
             return self._by_id[body["event_id"]], False
         if body["type"] == "card" and any(
             c["card_id"] == body["card_id"] and c["version"] == body["version"]
             for c in self._cards.get(body["session_id"], [])
         ):
             raise VersionTaken(f"{body['card_id']} v{body['version']}")
+        if body["type"] == "comment_attachment" and any(
+            c["type"] == "comment_attachment"
+            and c["session_id"] == body["session_id"]
+            and c["attachment_id"] == body["attachment_id"]
+            and c["version"] == body["version"]
+            for c in self._events
+        ):
+            raise VersionTaken("attachment logical version already exists")
         seq = len(self._events) + 1
         self._events.append(_with_meta(body, seq, now_ms()))
         self._by_id[body["event_id"]] = seq
         self._project(body)
-        self.notifier.notify()
         return seq, True
 
     def _project(self, e: dict) -> None:
@@ -121,6 +156,10 @@ class MemoryStore:
             )["labeled"] = e
         elif e["type"] == "order":
             self._orders.setdefault(sid, {})[e["order_id"]] = e
+        elif e["type"] == "comment_attachment":
+            old = self._attachments.setdefault(sid, {}).get(e["attachment_id"])
+            if old is None or old["version"] < e["version"]:
+                self._attachments[sid][e["attachment_id"]] = e
 
     async def read(self, session_id: str | None, after_seq: int = 0, limit: int = 500) -> list[dict]:
         out = []
@@ -186,18 +225,26 @@ class MemoryStore:
         return out
 
 
-class PgStore:
+class PgStore(AttachmentStorage):
     kind = "pg"
 
     def __init__(self, url: str) -> None:
+        self._init_attachment_storage()
         self.url = url
         self.notifier = Notifier()
         self._conn = None
         self._lock = asyncio.Lock()
+        self._write_conn = None
+        self._write_lock = asyncio.Lock()
         self._listener: asyncio.Task | None = None
 
     async def open(self) -> None:
         self._conn = await self._connect()
+        try:
+            self._write_conn = await self._connect()
+        except BaseException:
+            await self._conn.close()
+            raise
         self._listener = asyncio.create_task(self._listen())
 
     async def _connect(self):
@@ -214,6 +261,10 @@ class PgStore:
         that lands mid-query can leave a command or transaction on the connection, and every later query then
         fails with "another command is already in progress". Closing that connection ends its transaction on
         the server without a commit."""
+        active = self._active_attachment_connection()
+        if active is not None:
+            yield active
+            return
         from psycopg.pq import TransactionStatus
 
         async with self._lock:
@@ -226,9 +277,26 @@ class PgStore:
                 self._conn = await self._connect()
             yield self._conn
 
+    @contextlib.asynccontextmanager
+    async def _writer_session(self):
+        """A reader can observe committed history while another task holds an open write transaction."""
+        from psycopg.pq import TransactionStatus
+
+        async with self._write_lock:
+            status = self._write_conn.info.transaction_status
+            if self._write_conn.closed or status != TransactionStatus.IDLE:
+                if status == TransactionStatus.ACTIVE:
+                    await self._write_conn.cancel_safe(timeout=2.0)
+                await self._write_conn.close()
+                self._write_conn = await self._connect()
+            yield self._write_conn
+
     async def close(self) -> None:
         if self._listener:
             self._listener.cancel()
+            await asyncio.gather(self._listener, return_exceptions=True)
+        if self._write_conn:
+            await self._write_conn.close()
         if self._conn:
             await self._conn.close()
 
@@ -254,32 +322,140 @@ class PgStore:
             return await cur.fetchall()
 
     async def append(self, event: dict) -> tuple[int, bool]:
+        import psycopg
+
+        try:
+            async with self.session_transaction(event["session_id"]):
+                return await self._append(event)
+        except psycopg.errors.UniqueViolation as exc:
+            if exc.diag.constraint_name == "events_attachment_version":
+                raise VersionTaken("attachment logical version already exists") from exc
+            raise
+
+    async def _append(self, event: dict) -> tuple[int, bool]:
         body = _strip_meta(event)
-        async with self._session() as conn, conn.transaction():
-            cur = await self._conn.execute(
-                "INSERT INTO events (event_id, session_id, type, ts_ms, ingested_ms, body)"
-                " VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (event_id) DO NOTHING RETURNING seq",
-                (
-                    body["event_id"],
-                    body["session_id"],
-                    body["type"],
-                    body["ts_ms"],
-                    now_ms(),
-                    json.dumps(body),
-                ),
+        async with self._session() as conn:
+            cache, scope = (
+                self._attachment_cache.get(),
+                "source" if self.event_origin() is not None else "server",
             )
+            if cache.get(("write_scope",)) != scope:
+                await conn.execute("SELECT set_config('keviq.attachment_write_scope', %s, true)", (scope,))
+                cache[("write_scope",)] = scope
+            if body["type"] == "comment_attachment":
+                binding = await self.attachment_binding(body["session_id"])
+                if binding is not None:
+                    return await self._append_attachment(body, binding)
+            written_ms = now_ms()
+            values = (
+                body["event_id"],
+                body["session_id"],
+                body["type"],
+                body["ts_ms"],
+                written_ms,
+                json.dumps(body),
+            )
+            origin = self.event_origin()
+            receipt = None
+            if origin is not None:
+                binding = await self.attachment_binding(body["session_id"])
+                if binding is None or body["type"] in {"comment_attachment", "order", "message_out"}:
+                    raise ValueError("source writer requires an admitted non-decision event")
+                receipt = self.origin_body(body, binding, origin)
+                projection = (
+                    ", projected AS (INSERT INTO cards(session_id,card_id,version,ts_ms,status,sku,price,event_id,body) "
+                    "SELECT session_id,body->>'card_id',(body->>'version')::integer,(body->>'ts_ms')::bigint,"
+                    "body->>'status',body->>'sku',(body->>'price')::bigint,event_id,body FROM inserted "
+                    "ON CONFLICT DO NOTHING RETURNING version)"
+                    if body["type"] == "card"
+                    else ""
+                )
+                cur = await conn.execute(
+                    "WITH inserted AS (INSERT INTO events(event_id,session_id,type,ts_ms,ingested_ms,body) "
+                    "VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT(event_id) DO NOTHING "
+                    "RETURNING seq,event_id,session_id,body), "
+                    "receipt AS (INSERT INTO attachment_source_receipts(event_id,session_id,body) "
+                    "SELECT event_id,session_id,%s::jsonb FROM inserted RETURNING event_id) "
+                    + projection
+                    + (
+                        " SELECT seq,EXISTS(SELECT 1 FROM projected) AS projected FROM inserted"
+                        if projection
+                        else " SELECT seq FROM inserted"
+                    ),
+                    (*values, json.dumps(receipt)),
+                )
+            else:
+                cur = await conn.execute(
+                    "INSERT INTO events (event_id, session_id, type, ts_ms, ingested_ms, body)"
+                    " VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (event_id) DO NOTHING RETURNING seq",
+                    values,
+                )
             row = await cur.fetchone()
             if row is None:
-                cur = await self._conn.execute(
-                    "SELECT seq FROM events WHERE event_id = %s", (body["event_id"],)
+                cur = await conn.execute(
+                    "SELECT seq,body FROM events WHERE event_id = %s", (body["event_id"],)
                 )
-                return (await cur.fetchone())["seq"], False
-            await self._project(body)
+                canonical = await cur.fetchone()
+                if (
+                    await self.attachment_binding(body["session_id"]) is not None
+                    and canonical["body"] != body
+                ):
+                    raise VersionTaken("event ID already has another canonical payload")
+                return canonical["seq"], False
+            if receipt is not None and body["type"] == "card":
+                if not row["projected"]:
+                    raise VersionTaken(f"{body['card_id']} v{body['version']}")
+                if ("cards", body["session_id"]) in cache:
+                    cache[("cards", body["session_id"])] = [*cache[("cards", body["session_id"])], body]
+            else:
+                await self._project(body)
+            if receipt is None:
+                await self.record_event_origin(body)
+            else:
+                cache[("origin", body["event_id"])] = receipt
+            cache[("written", body["event_id"])] = _with_meta(body, row["seq"], written_ms)
+        self.notifier.notify()
+        return row["seq"], True
+
+    async def _append_attachment(self, body, binding):
+        if self.event_origin() is not None:
+            raise ValueError("source writer cannot create an attachment")
+        serialized = json.dumps(body)
+        origin = json.dumps(self.origin_body(body, binding))
+        written_ms = now_ms()
+        if body["action"] == "ready" and written_ms >= body["deadline_ms"]:
+            raise AttachmentDeadlinePassed()
+        cur = await self._active_attachment_connection().execute(
+            "WITH inserted AS (INSERT INTO events(event_id,session_id,type,ts_ms,ingested_ms,body) "
+            "VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT(event_id) DO NOTHING RETURNING seq,event_id,session_id,body), "
+            "projected AS (INSERT INTO attachments(session_id,attachment_id,version,event_id,body,summary) "
+            "SELECT session_id,body->>'attachment_id',(body->>'version')::bigint,event_id,body, "
+            "body-'readiness_evidence' FROM inserted ON CONFLICT(session_id,attachment_id) DO UPDATE SET "
+            "version=EXCLUDED.version,event_id=EXCLUDED.event_id,body=EXCLUDED.body,summary=EXCLUDED.summary "
+            "WHERE attachments.version < EXCLUDED.version RETURNING event_id), "
+            "receipt AS (INSERT INTO attachment_source_receipts(event_id,session_id,body) "
+            "SELECT event_id,session_id,%s::jsonb FROM inserted RETURNING event_id) SELECT seq FROM inserted",
+            (
+                body["event_id"],
+                body["session_id"],
+                body["type"],
+                body["ts_ms"],
+                written_ms,
+                serialized,
+                origin,
+            ),
+        )
+        row = await cur.fetchone()
+        if row is None:
+            rows = await self._fetch("SELECT seq,body FROM events WHERE event_id=%s", (body["event_id"],))
+            if rows[0]["body"] != body:
+                raise VersionTaken("attachment event ID already has another canonical payload")
+            return rows[0]["seq"], False
         self.notifier.notify()
         return row["seq"], True
 
     async def _project(self, e: dict) -> None:
-        sid, ex = e["session_id"], self._conn.execute
+        sid, ex = e["session_id"], self._active_attachment_connection().execute
         if e["type"] == "card":
             cur = await ex(
                 "INSERT INTO cards (session_id, card_id, version, ts_ms, status, sku, price, event_id, body)"
@@ -298,6 +474,23 @@ class PgStore:
             )
             if await cur.fetchone() is None:  # raising here rolls back the event insert too
                 raise VersionTaken(f"{e['card_id']} v{e['version']}")
+            cache = self._attachment_cache.get()
+            if ("cards", sid) in cache:
+                cache[("cards", sid)] = [*cache[("cards", sid)], e]
+        elif e["type"] == "comment_attachment":
+            await ex(
+                "INSERT INTO attachments(session_id,attachment_id,version,event_id,body,summary) VALUES (%s,%s,%s,%s,%s,%s) "
+                "ON CONFLICT(session_id,attachment_id) DO UPDATE SET version=EXCLUDED.version,event_id=EXCLUDED.event_id,body=EXCLUDED.body,summary=EXCLUDED.summary "
+                "WHERE attachments.version < EXCLUDED.version",
+                (
+                    sid,
+                    e["attachment_id"],
+                    e["version"],
+                    e["event_id"],
+                    json.dumps(e),
+                    json.dumps({k: v for k, v in e.items() if k != "readiness_evidence"}),
+                ),
+            )
         elif e["type"] == "comment":
             await ex(
                 "INSERT INTO comments (session_id, comment_id, ts_ms, user_ref, text) VALUES (%s,%s,%s,%s,%s)"
@@ -353,6 +546,9 @@ class PgStore:
         )
 
     async def card_versions(self, session_id: str) -> list[dict]:
+        cache = self._attachment_cache.get() if self._active_attachment_connection() is not None else None
+        if cache is not None and ("cards", session_id) in cache:
+            return list(cache[("cards", session_id)])
         rows = await self._fetch(
             "SELECT body FROM cards WHERE session_id = %s ORDER BY ts_ms, version", (session_id,)
         )
@@ -426,6 +622,8 @@ async def session_state(store, session_id: str, ts_ms: int | None = None) -> dic
         "comments": await store.comments(session_id),
         "orders": orders,
         "approval_queue": [o for o in orders if o["state"] == "NEEDS_SELLER"],
+        "attachments": await store.attachments(session_id),
+        "attachment_enabled": await store.attachment_binding(session_id) is not None,
         "cost": {"today_usd": await store.cost_usd(day_start, day_end), "total_usd": await store.cost_usd()},
     }
 

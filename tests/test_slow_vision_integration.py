@@ -62,48 +62,91 @@ class AppClient(httpx.AsyncClient):
 
 @pytest.fixture
 async def pg_app(pg_url):
+    import psycopg
+    from psycopg.rows import dict_row
+
     assert is_test_database(pg_url) and not os.environ.get("MODEL_API_KEY")
     with locked_test_database():
-        store = PgStore(pg_url)
-        await store.open()
-        rows = await store._fetch("SELECT pg_try_advisory_lock(hashtext('keviq_test')) AS locked")
-        if not rows[0]["locked"]:
-            await store.close()
-            pytest.fail("keviq_test advisory lock is held by another run")
-        app = create_app(store)
-        app.state.store = store
+        store, app, guard, guard_conn = PgStore(pg_url), None, None, None
         loop = asyncio.get_running_loop()
         prior_factory = loop.get_task_factory()
-
-        def task_factory(loop, coro, context=None):
-            task = (
-                prior_factory(loop, coro, context=context)
-                if prior_factory
-                else asyncio.Task(coro, loop=loop, context=context)
-            )
-            if context.get(SERVER_CONTEXT, False) if context is not None else SERVER_CONTEXT.get():
-                SERVER_TASKS.add(task)
-            return task
-
-        async def server(scope, receive, send):
-            token = SERVER_CONTEXT.set(True)
-            try:
-                await app(scope, receive, send)
-            finally:
-                SERVER_CONTEXT.reset(token)
-
-        loop.set_task_factory(task_factory)
-        sid = "slow-vision-" + uuid.uuid4().hex[:12]
+        factory_installed = False
         try:
+            guard_conn = await psycopg.AsyncConnection.connect(pg_url, autocommit=True, row_factory=dict_row)
+            cursor = await guard_conn.execute(
+                "SELECT pg_try_advisory_lock(hashtext('keviq_test')) AS locked, pg_backend_pid() AS backend_pid"
+            )
+            rows = await cursor.fetchall()
+            if not rows[0]["locked"]:
+                pytest.fail("keviq_test advisory lock is held by another run")
+            guard = rows[0]["backend_pid"]
+            await store.open()
+            app = create_app(store)
+            app.state.store = store
+            await app.state.attachments.start()
+            SERVER_TASKS.add(app.state.attachments.task)
+
+            def task_factory(loop, coro, context=None):
+                task = (
+                    prior_factory(loop, coro, context=context)
+                    if prior_factory
+                    else asyncio.Task(coro, loop=loop, context=context)
+                )
+                if context.get(SERVER_CONTEXT, False) if context is not None else SERVER_CONTEXT.get():
+                    SERVER_TASKS.add(task)
+                return task
+
+            async def server(scope, receive, send):
+                token = SERVER_CONTEXT.set(True)
+                try:
+                    await app(scope, receive, send)
+                finally:
+                    SERVER_CONTEXT.reset(token)
+
+            loop.set_task_factory(task_factory)
+            factory_installed = True
+            sid = "slow-vision-" + uuid.uuid4().hex[:12]
             async with AppClient(transport=httpx.ASGITransport(app=server), base_url="http://test") as client:
+                client.app = app
                 yield store, client, sid
         finally:
-            loop.set_task_factory(prior_factory)
-            await store.close()  # closes the advisory-lock connection; test rows are retained
+            if factory_installed:
+                loop.set_task_factory(prior_factory)
+            try:
+                if app is not None:
+                    await app.state.attachments.close()
+            finally:
+                try:
+                    await (
+                        store.close()
+                    )  # the guard survives every application connection closing/reconnecting
+                finally:
+                    try:
+                        if guard is not None:
+                            cursor = await guard_conn.execute(
+                                "SELECT pg_advisory_unlock(hashtext('keviq_test')) AS unlocked, "
+                                "pg_backend_pid() AS backend_pid"
+                            )
+                            released = (await cursor.fetchall())[0]
+                            print(
+                                "PG_TEST_GUARD "
+                                + json.dumps(
+                                    {"process_pid": os.getpid(), "acquired_backend_pid": guard, **released},
+                                    sort_keys=True,
+                                )
+                            )
+                            assert released["unlocked"] and released["backend_pid"] == guard
+                    finally:
+                        if guard_conn is not None:
+                            await guard_conn.close()
 
 
 async def ingest(client, event):
-    response = await client.post(f"/api/sessions/{event['session_id']}/events", json=[event])
+    response = await client.post(
+        f"/api/sessions/{event['session_id']}/events",
+        json=[event],
+        headers=getattr(client, "source_headers", {}),
+    )
     assert response.status_code == 200, response.text
     return response.json()["accepted"][0]["seq"]
 
@@ -126,7 +169,7 @@ def counts_valid(stats):
 
 
 @asynccontextmanager
-async def running(client, handlers, sid, monkeypatch, speed=SPEED, progress=False):
+async def running(client, handlers, sid, monkeypatch, speed=SPEED, progress=False, attachment_auth=None):
     assert speed >= 1
     monkeypatch.setattr(labels, "BATCH_WAIT_S", 1 / speed)
     monkeypatch.setattr(runner_mod, "VISION_TIMEOUT_S", 10 / speed, raising=False)
@@ -139,7 +182,7 @@ async def running(client, handlers, sid, monkeypatch, speed=SPEED, progress=Fals
         monkeypatch.setattr(c5_progress, "BEAT_S", 1 / speed)
         reporter = Receipt()
         reporter.counter = c5_progress.install(reporter.say)
-    worker = Runner("http://test", handlers, http=client)
+    worker = Runner("http://test", handlers, http=client, attachment_auth=attachment_auth)
     task = asyncio.create_task(worker.run(cursor=0, session=sid))
     if reporter:
         await asyncio.sleep(0)  # run() has installed the reporter's own-task set before its first HTTP read

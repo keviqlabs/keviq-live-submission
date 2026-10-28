@@ -17,6 +17,7 @@ events in its lanes resumes after them and they are lost.
 """
 
 import asyncio
+import copy
 import json
 import logging
 from collections import Counter, deque
@@ -127,7 +128,12 @@ class Runner:
     KINDS = ("fast", "vision")  # lane kinds
 
     def __init__(
-        self, base_url: str, handlers: dict[str, list[Handler]], http: httpx.AsyncClient | None = None
+        self,
+        base_url: str,
+        handlers: dict[str, list[Handler]],
+        http: httpx.AsyncClient | None = None,
+        *,
+        attachment_auth=None,
     ):
         self.base_url, self.handlers = base_url, handlers
         self.http = http or httpx.AsyncClient(base_url=base_url, timeout=httpx.Timeout(10, read=None))
@@ -137,6 +143,20 @@ class Runner:
         self.fast = Lane(self, "fast")
         self.vision: dict[str, Lane] = {}  # session_id -> its vision lane
         self.counts = {kind: Counter(dict.fromkeys(("received", *OUTCOMES), 0)) for kind in self.KINDS}
+        self.attachment_auth = copy.deepcopy(attachment_auth or {})
+        self._attachment_sessions = {}
+        from worker.attachments import FrameEvidence
+
+        self.evidence = FrameEvidence(self, self.attachment_auth)
+
+    async def attachment_enabled(self, sid):
+        if sid in self.attachment_auth:
+            return True
+        if sid not in self._attachment_sessions:
+            response = await self.http.get(f"/api/sessions/{sid}/state")
+            response.raise_for_status()
+            self._attachment_sessions[sid] = response.json().get("attachment_enabled", False)
+        return self._attachment_sessions[sid]
 
     def client_for(self, event: dict):
         from meta.client import MetaClient
@@ -156,8 +176,15 @@ class Runner:
     async def post(self, events: list[dict]) -> None:
         if not events:
             return
-        r = await self.http.post(f"/api/sessions/{events[0]['session_id']}/events", json=events)
+        sid = events[0]["session_id"]
+        headers = (
+            {"Authorization": "Bearer " + self.attachment_auth[sid]["source_token"]}
+            if sid in self.attachment_auth
+            else {}
+        )
+        r = await self.http.post(f"/api/sessions/{sid}/events", json=events, headers=headers)
         r.raise_for_status()
+        self.evidence.posted(events, r.json()["accepted"] if sid in self.attachment_auth else None)
 
     async def consequences(self, event: dict, received_ms: int | None = None) -> tuple[list[dict], int]:
         """The event's handlers in order: the consequence events they return, built, and how many failed."""
@@ -192,16 +219,23 @@ class Runner:
             out, failed = await asyncio.wait_for(self.consequences(event, received_ms), limit_s)
         except TimeoutError:
             log.warning("handlers of %s cancelled after %s s", event["event_id"], limit_s)
+            if event["type"] == "frame":
+                self.evidence.frame_finished(event, [], read_error=True)
             return "failed"
         try:
             await self.post(out)
         except Exception as exc:  # refused, or the app is unreachable: these consequences are lost (C7)
             log.exception("posting the consequences of %s failed: %s", event["event_id"], exc)
             return "failed"
+        if event["type"] == "frame":
+            self.evidence.frame_finished(event, out, read_error=bool(failed))
+        elif event["type"] == "product_seen" and not failed:
+            self.evidence.product_finished(event)
         return "failed" if failed else "done"
 
     def receive(self, event: dict) -> None:
         """Put a stream event in its lane: a frame in its session's vision lane, any other event in the fast lane."""
+        self.evidence.receive(event)
         if event["type"] in SLOW:
             sid = event["session_id"]
             if sid not in self.vision:
@@ -255,6 +289,7 @@ class Runner:
                     log.warning("worker: stream dropped (%s); resuming from seq %s", exc, self.cursor)
                     await asyncio.sleep(1)
         finally:
+            await self.evidence.close()
             for lane in [self.fast, *self.vision.values()]:
                 if lane.task:
                     lane.task.cancel()

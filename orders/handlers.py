@@ -26,6 +26,8 @@ async def load_view(ctx, session_id: str) -> flow.View:
 
 
 async def on_labeled(event: dict, ctx) -> list[dict]:
+    if hasattr(ctx.runner, "attachment_enabled") and await ctx.runner.attachment_enabled(event["session_id"]):
+        return []
     if event.get("label") not in flow.TRIGGER_LABELS or flow.is_fixture(event["event_id"]):
         return []
     view = await load_view(ctx, event["session_id"])
@@ -33,6 +35,8 @@ async def on_labeled(event: dict, ctx) -> list[dict]:
 
 
 async def on_message(event: dict, ctx) -> list[dict]:
+    if hasattr(ctx.runner, "attachment_enabled") and await ctx.runner.attachment_enabled(event["session_id"]):
+        return []
     kind, _ = flow.customer_reply(event.get("template"), event.get("payload") or {})
     if kind == "keep" or flow.is_fixture(event["event_id"]):
         return []  # other text may answer an open ask_variant question, so it reaches the flow

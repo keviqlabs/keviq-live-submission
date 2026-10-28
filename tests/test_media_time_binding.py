@@ -14,6 +14,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from app.attachment_auth import SOURCE_KINDS, binding_definition
 from app.contracts import make_event
 from orders import handlers as order_handlers
 from tests.test_slow_vision_integration import NoModel, frame, ingest, pg_app, running  # noqa: F401
@@ -215,6 +216,23 @@ async def scenario(pg_app, monkeypatch, request):  # noqa: F811
     monkeypatch.setattr(card, "SESSIONS", {})
     monkeypatch.setattr(window, "HOLD_MS", 4168)
     monkeypatch.setattr(runner_mod.Runner, "client_for", lambda self, event: NoModel())
+    credentials = {"epoch": "epoch-" + sid, "source_token": "source-" + sid, "system_token": "system-" + sid}
+    client.source_headers = {"Authorization": "Bearer " + credentials["source_token"]}
+    client.app.state.attachments.sleep_scale = SPEED
+    await client.app.state.attachments.configure(
+        binding_definition(
+            sid,
+            credentials["epoch"],
+            credentials["system_token"],
+            [
+                {
+                    "token": credentials["source_token"],
+                    "principal": "synthetic-source",
+                    "kinds": {kind: ["sim", "replay"] for kind in SOURCE_KINDS},
+                }
+            ],
+        )
+    )
     labeler = labels.Labeler(client_for=lambda ctx: Classifier(clock))
     monkeypatch.setitem(runner_mod.BACKLOGS, "labels", labeler.backlog)
     plans = {}
@@ -258,7 +276,9 @@ async def scenario(pg_app, monkeypatch, request):  # noqa: F811
 
     monkeypatch.setattr(runner_mod.Runner, "release", released)
     try:
-        async with running(client, dict(handlers), sid, monkeypatch, speed=SPEED):
+        async with running(
+            client, dict(handlers), sid, monkeypatch, speed=SPEED, attachment_auth={sid: credentials}
+        ):
             yield value
     finally:
         snapshot = await value.snapshot()
