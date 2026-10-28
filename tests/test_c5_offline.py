@@ -1,16 +1,19 @@
-"""Unpaid C5 live run: the worker's stand-ins are stored test1 output (gold labels, stored cut-outs), never a model."""
+"""Unpaid C5 live run: the worker's stand-ins are stored test1 output (gold labels, stored cut-outs of the same
+call), never a model; a receipt's image is RUN only with its whole provenance."""
 
 import asyncio
 import base64
+import hashlib
 import json
 
 import pytest
 
 from measure import c5, c5_dry, c5_live, c5_offline, c5_proc
+from measure.c5_score import Run, image_source
 from measure.c5_shop import Gold
+from worker.vision import sam
 
 T0 = 1_793_000_000_000
-CATALOG = json.loads((c5.C5 / "catalog.json").read_text())
 
 
 def gold() -> Gold:
@@ -27,59 +30,71 @@ def sam_dir(tmp_path, rows):
 
 
 def test_only_decoded_cutouts_with_a_file_are_stored(tmp_path):
-    path = sam_dir(tmp_path, [{"t": 24, "product": "SP01", "mask_decoded": True},
-                              {"t": 30, "product": "SP01", "mask_decoded": False},
-                              {"t": 36, "product": "SP01"},
-                              {"t": 67, "product": "SP02", "mask_decoded": True, "file": False}])  # fmt: skip
-    assert {k: [t for t, _ in v] for k, v in c5_offline.stored_cutouts(path).items()} == {"SP01": [24]}
+    path = sam_dir(tmp_path, [{"t": 24, "product": "SP01", "noun": "shoe", "mask_decoded": True},
+                              {"t": 30, "product": "SP01", "noun": "shoe", "mask_decoded": False},
+                              {"t": 36, "product": "SP01", "noun": "shoe"},
+                              {"t": 67, "product": "SP02", "noun": "shoe", "mask_decoded": True, "file": False}])  # fmt: skip
+    stored = c5_offline.stored_cutouts(path)
+    assert {t: [(r["noun"], r["sku"], r["png"].name) for r in v] for t, v in stored.items()} == {
+        24: [("shoe", "SP01", "cut_024_SP01.png")]
+    }
+
+
+@pytest.fixture
+def no_gold(monkeypatch):
+    """Choosing an image never reads the gold: any read of it fails the test."""
+    for name in ("__init__", "load", "held_at", "card_item", "prices", "price_at", "right_price"):
+        monkeypatch.setattr(Gold, name, lambda *a, **k: pytest.fail("the gold was read to choose an image"))
+
+
+def cut(tmp_path, t, sku, noun="sneaker"):
+    png = tmp_path / f"cut_{t:03d}_{sku}.png"
+    png.write_bytes(f"png {t} {sku}".encode())
+    return {"noun": noun, "sku": sku, "png": png}
 
 
 def cuts(stored):
-    out = c5_offline.Cutouts(gold(), CATALOG, stored)
-    for i in (5, 30, 58, 100, 140, 270):
+    out = c5_offline.Cutouts(stored, sam.noun)
+    for i in (5, 30, 58):
         out.note({"jpeg_path": f"data/local/test1/frames/f_{i:05d}.jpg"}, f"jpeg{i}".encode())
     return out
 
 
-def test_a_frame_gets_the_nearest_stored_cutout_of_the_item_held_at_it(tmp_path):
-    out = cuts({"SP01": [(24, tmp_path / "a.png"), (36, tmp_path / "b.png"), (47, tmp_path / "c.png")]})
-    png, row = out.pick(b"jpeg30", "sneaker")
-    assert (png.name, row["frame"], row["item"], row["held"], row["source_t"], row["reason"]) == (
-        "a.png",
-        30,
-        "SP01",
-        "SP01",
-        24,
-        None,
-    )
-    png, row = out.pick(b"jpeg30", "sandal")  # another label of the same item (membership)
-    assert png.name == "a.png"
-
-
-def test_a_frame_in_a_change_band_gets_the_cutout_of_the_card_item_not_of_the_one_still_held(tmp_path):
-    out = cuts({"SP01": [(47, tmp_path / "sp01.png")], "SP02": [(67, tmp_path / "sp02.png")]})
-    png, row = out.pick(b"jpeg58", "sneaker")  # 58 s: SP01 held until 58.6 s, SP02's band from 49.4 s
-    assert (png.name, row["item"], row["held"], row["source_t"]) == ("sp02.png", "SP02", "SP01", 67)
+def test_a_frame_gets_the_stored_cutout_of_the_same_frame_and_noun_whatever_its_label(tmp_path, no_gold):
+    stored = {30: [cut(tmp_path, 30, "SP09")], 24: [cut(tmp_path, 24, "SP01")]}  # SP09: not a sneaker
+    png, row = cuts(stored).pick(b"jpeg30", "sneaker")
+    assert png.name == "cut_030_SP09.png" and row == {
+        "source_session": "test1", "frame": 30, "frame_sha256": hashlib.sha256(b"jpeg30").hexdigest(),
+        "category": "sneaker", "noun": "sneaker", "source_t": 30, "stored_sku": "SP09", "png": "cut_030_SP09.png",
+        "png_sha256": hashlib.sha256(b"png 30 SP09").hexdigest(), "reason": None,
+    }  # fmt: skip
 
 
 @pytest.mark.parametrize("jpeg, category, reason", [
-    (b"jpeg30", "shirt", "item SP01 is not of category shirt"),
-    (b"jpeg5", "sneaker", "no item for a card at this frame"),
-    (b"jpeg100", "sneaker", "no stored cut-out of SP03 on this machine"),
-    (b"jpeg270", "other", "no stored cut-out of SP09 on this machine"),
     (b"never", "sneaker", "frame not seen by this worker"),
+    (b"jpeg5", "sneaker", "no stored cut-out of frame 5 for 'sneaker'"),  # one at 24: the nearest is not taken
+    (b"jpeg30", "shirt", "no stored cut-out of frame 30 for 'shirt'"),  # the noun is an input of the call
+    (b"jpeg58", "sneaker", "several stored cut-outs of frame 58 for 'sneaker'"),
 ])  # fmt: skip
-def test_no_stored_cutout_means_no_image_and_a_reason(tmp_path, jpeg, category, reason):
-    png, row = cuts({"SP01": [(24, tmp_path / "a.png")], "SP04": [(136, tmp_path / "d.png")]}).pick(
-        jpeg, category
+def test_no_stored_cutout_of_the_same_call_means_no_image_and_a_reason(
+    tmp_path, no_gold, jpeg, category, reason
+):
+    stored = {24: [cut(tmp_path, 24, "SP01")], 30: [cut(tmp_path, 30, "SP01")],
+              58: [cut(tmp_path, 58, "SP01"), cut(tmp_path, 58, "SP02")]}  # fmt: skip
+    png, row = cuts(stored).pick(jpeg, category)
+    assert (png, row["png"], row["png_sha256"], row["source_t"], row["reason"]) == (
+        None,
+        None,
+        None,
+        None,
+        reason,
     )
-    assert (png, row["png"], row["reason"]) == (None, None, reason)
 
 
-def test_install_puts_gold_labels_and_stored_cutouts_in_the_worker(monkeypatch, tmp_path):
+def test_install_puts_gold_labels_and_stored_cutouts_in_the_worker(monkeypatch, tmp_path, no_gold):
     from worker import runner
     from worker.brain import card, labels
-    from worker.vision import frames, sam
+    from worker.vision import frames
 
     for mod, name in (
         (labels.LABELER, "client_for"),
@@ -90,14 +105,12 @@ def test_install_puts_gold_labels_and_stored_cutouts_in_the_worker(monkeypatch, 
         monkeypatch.setattr(mod, name, getattr(mod, name))  # undone after the test
     (tmp_path / "labels.json").write_text(json.dumps({"products": {}}))
     monkeypatch.setattr(c5, "LABELS", tmp_path / "labels.json")
-    monkeypatch.setattr(card, "CATALOG", CATALOG)  # the worker of a C5 run has CATALOG_PATH = the c5 catalog
     (tmp_path / "cut.png").write_bytes(b"stored png")
-    monkeypatch.setattr(c5_offline, "stored_cutouts", lambda: {"SP01": [(24, tmp_path / "cut.png")]})
+    stored = {30: [{"noun": "sneaker", "sku": "SP01", "png": tmp_path / "cut.png"}]}
+    monkeypatch.setattr(c5_offline, "stored_cutouts", lambda: stored)
     said = []
     info = c5_offline.install(3, lambda kind, **f: said.append((kind, f)))
-    assert (
-        info["loop"] == 3 and info["gold_rows"] == len(c5.streams(3)[0]) and info["cutout_items"] == ["SP01"]
-    )
+    assert info["loop"] == 3 and info["gold_rows"] == len(c5.streams(3)[0]) and info["cutout_frames"] == [30]
     client = labels.LABELER.client_for(None)
     assert isinstance(client, c5_dry.GoldClient) and set(client.rows) == {
         r["comment_id"] for r in c5.streams(3)[0]
@@ -116,10 +129,53 @@ def test_install_puts_gold_labels_and_stored_cutouts_in_the_worker(monkeypatch, 
         ctx.client().responses([], {})
     spoken, _ = asyncio.run(card.read_speech("hai trăm nghìn", ctx))  # the rule reader, as with no key
     assert spoken.price == 200_000
-    assert [(k, f["item"], f["png"]) for k, f in said] == [
-        ("cutout", "SP01", "cut.png"),
-        ("cutout", "SP01", None),
+    assert [(k, f["frame"], f["stored_sku"], f["png_sha256"]) for k, f in said] == [
+        ("cutout", 30, "SP01", hashlib.sha256(b"stored png").hexdigest()),
+        ("cutout", 30, None, None),
     ]
+
+
+def receipt_run(image: bytes, cutouts: list[dict], frame_ts: int = T0 + 30_000) -> Run:
+    url = "data:image/png;base64," + base64.b64encode(image).decode()
+    card = {
+        "type": "card",
+        "card_id": "c1",
+        "status": "live",
+        "price": 1,
+        "provenance": {"frame_ts_ms": T0 + 30_000},
+    }
+    events = [
+        {"event_id": "f30", "type": "frame", "ts_ms": frame_ts, "jpeg_path": "data/local/test1/frames/f_00030.jpg"},
+        {"event_id": "ps1", "type": "product_seen", "ts_ms": T0 + 30_500, "frame_ts_ms": T0 + 30_000,
+         "caused_by": ["f30"]},
+        {**card, "event_id": "c1v1", "ts_ms": T0 + 31_000, "version": 1, "image_url": None, "caused_by": ["ps1"]},
+        {**card, "event_id": "c1v2", "ts_ms": T0 + 32_000, "version": 2, "image_url": url,
+         "caused_by": ["sp1", "f30"]},
+    ]  # fmt: skip
+    return Run(events, [{"k": 1, "t0_ms": T0, "cutouts": cutouts}], gold())
+
+
+def test_a_receipt_image_is_run_only_with_its_whole_provenance():
+    logged = {"kind": "cutout", "source_session": "test1", "frame": 30, "source_t": 30,
+              "png_sha256": hashlib.sha256(b"png").hexdigest()}  # fmt: skip
+    receipt = {"card_id": "c1", "card_version": 2, "image_url": "data:image/png;base64,cG5n"}  # b"png"
+    src = image_source(receipt_run(b"png", [logged]), receipt)
+    assert src == {
+        "card_id": "c1", "card_version": 2, "product_seen": "ps1", "frame_ts_ms": T0 + 30_000, "frame_event": "f30",
+        "source_frame": 30, "image_sha256": hashlib.sha256(b"png").hexdigest(), "source_session": "test1",
+        "source_t": 30, "image_path": "RUN", "missing": [],
+    }  # fmt: skip
+    assert image_source(receipt_run(b"png", []), receipt)["missing"] == ["source_session", "source_t"]
+    other = image_source(receipt_run(b"png", [{**logged, "frame": 31}]), receipt)  # another frame's cut-out
+    assert (other["image_path"], other["missing"]) == ("NOT_RUN", ["source_session", "source_t"])
+    late = image_source(receipt_run(b"png", [logged], frame_ts=T0 + 31_000), receipt)  # not the opening frame
+    assert (late["image_path"], late["missing"]) == ("NOT_RUN", ["frame_event", "source_frame", "source_session",
+                                                                 "source_t"])  # fmt: skip
+    none = image_source(receipt_run(b"png", [logged]), {**receipt, "image_url": None})
+    assert (none["image_path"], none["missing"]) == (
+        "NOT_RUN",
+        ["image_sha256", "source_session", "source_t"],
+    )
 
 
 def test_the_stand_ins_refuse_a_model_key(monkeypatch):
