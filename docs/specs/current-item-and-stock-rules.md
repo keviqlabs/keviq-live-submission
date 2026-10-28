@@ -153,10 +153,11 @@ prices 150 000, 200 000 and 120 000.
    - The seller sets B's price to 210 000 at 33 (B v3, edited). It is not an appearance: B v3 keeps frame 20.
    - A comment at 34 is attached to A: `order` on A's latest version at 150 000.
    - `/cards/live?ts_ms=34000` lists A first, then B; the console lists A first.
-3. **Price spoken before the card opens.** P is live at 120 000 (frame 5). A line "price 150 000" ends at 9.5 and is
-   received at 10.0. A's frame is at 10.0, its `product_seen` arrives at 13.8 and A v1 is written at 14.0. The line
-   is decided at 14.2 (received + `HOLD_MS`) and lands on A through the D-025 span `[frame − 1000, …)`: A v2 live at
-   150 000, written 14.3.
+3. **Price spoken before the card opens.** P is a shirt, live at 120 000 (frame 5). A is a pair of sneakers. A line
+   "giày này 150 nghìn" ends at 9.5 and is received at 10.0. A's frame is at 10.0, its `product_seen` arrives at 13.8
+   and A v1 is written at 14.0. The line is decided at 14.2 (received + `HOLD_MS`). It overlaps P's span
+   `[4000, 10000)` and A's D-025 span `[frame − 1000, …)`, so both are candidates; "giày" names A's kind, so it lands
+   on A (`window.choose`): A v2 live at 150 000, written 14.3. Without a kind word the price would wait (`many`).
    - An order comment at 11 is ready when frames 10.0 and 11.0 are handled (11.0 read done at 14.5) and is attached
      to A: `order` on A v2 at 150 000.
    - Variant: A v2 is written at 16.0 instead. The order waits (no `order` event at 14.5) and is drafted on A v2 at
