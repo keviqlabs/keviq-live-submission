@@ -6,7 +6,6 @@ See docs/specs/slow-vision-integration.md for clocks, transport limitations and 
 import asyncio
 import contextlib
 import contextvars
-import fcntl
 import json
 import os
 import time
@@ -26,6 +25,7 @@ from app.store import PgStore
 from connectors.sim.moderator import SimModerator
 from measure import c5_live, c5_progress
 from measure.c5_shop import Feed
+from tests.db_lock import locked_test_database
 from worker import runner as runner_mod
 from worker.brain import card, labels, window
 from worker.runner import Runner
@@ -64,12 +64,7 @@ class AppClient(httpx.AsyncClient):
 @pytest.fixture
 async def pg_app(pg_url):
     assert is_test_database(pg_url) and not os.environ.get("MODEL_API_KEY")
-    lock_file = await asyncio.to_thread(Path("/tmp/keviq_test.lock").open, "a")
-    with lock_file as lock:
-        try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            pytest.fail("keviq_test is busy; do not run a second replay")
+    with locked_test_database():
         store = PgStore(pg_url)
         await store.open()
         rows = await store._fetch("SELECT pg_try_advisory_lock(hashtext('keviq_test')) AS locked")

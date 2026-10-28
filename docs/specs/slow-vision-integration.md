@@ -42,7 +42,10 @@ The ASGI transport buffers streaming bodies. The test client requests the app's 
 `follow=false`, then the unmodified runner opens the next cursor read. This tests app/store/runner integration,
 not network chunking, reconnects or TCP backpressure. Tasks created under the ASGI app context are tagged as
 server infrastructure and excluded from worker background counts; worker lane/label tasks remain counted. All writes remain in a unique session in `keviq_test`.
-The test holds both a local test-database file lock and a PostgreSQL advisory lock; it never deletes run rows.
+The command holds the main checkout’s `.scratch/keviq_test.lock` for the entire pytest suite, across all worktrees.
+A child fixture reuses its parent command’s token and also holds a PostgreSQL advisory lock. Foreign lock files
+are never overwritten or removed. The command releases its own lock on exit; test rows are never deleted.
+`make check` uses this wrapper automatically. For a direct pytest run, use `uv run python -m tests.db_lock -- pytest ...`.
 
 ## Verification and delivery
 
