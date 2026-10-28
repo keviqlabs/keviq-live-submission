@@ -4,7 +4,7 @@
   "actions": {
     "create_draft_card":          {"decision": "auto",      "check": "none"},
     "answer_product_question":    {"decision": "auto",      "check": "answer from live card data only"},
-    "draft_order":                {"decision": "auto",      "check": "unit price = live card price at comment ts_ms; qty <= stock"},
+    "draft_order":                {"decision": "auto",      "check": "unit price = attached card's approved live/edited price, pinned when drafted; qty <= stock"},
     "send_confirmation":          {"decision": "auto",      "check": "order passed draft checks; within 24h of the customer's last message"},
     "hide_comment_contact_or_link": {"decision": "auto",    "check": "logged; seller can unhide in one tap"},
     "discount":                   {"decision": "seller",    "check": "order -> NEEDS_SELLER; customer only hears 'waiting for the shop to confirm'"},

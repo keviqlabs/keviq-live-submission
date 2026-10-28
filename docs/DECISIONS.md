@@ -2,6 +2,64 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-28 — seller identifies an unresolved draft
+
+**D-028 The seller may assign a catalog SKU to an unresolved draft, or explicitly leave it unresolved.**
+Contract only: new `POST /api/sessions/{id}/cards/{card_id}/item` request shape in
+`contracts/requests/card-item.schema.json`; the result uses the existing `card` event. No new event field/type,
+order state or automatic permission; v1 is retained. Route implementation is pending.
+
+- Body: required `card_version` and `sku` (a non-empty string or null). Only the seller console can make the
+  choice. Body shape does not establish authority; customer text cannot grant it.
+- Only the latest draft with no SKU is eligible. Runtime checks the card belongs to the session, its highest
+  version matches the request, and a chosen SKU belongs to the session's active catalog, atomically with writing.
+- A SKU appends version + 1 of that same card with catalog identity/variants/stock and `edited_by: "seller"`.
+  It preserves frame/speech provenance, this card's own price and draft status, and cites the prior event.
+  It never copies another item's or the catalog's price, rewrites history, confirms an order or sends a message.
+- `sku: null` is an explicit no-op, after the same status/version checks: unresolved card, version and price
+  stay as they are; no event, order or message. It does not reset attachment deadlines or assert readiness.
+- Existing order pins and known-SKU cards cannot be reassigned through this route. Unknown SKU is 422; stale
+  version, ineligible card or concurrent-write conflict is 409. Full response/check semantics are in the contract.
+
+Why: category/colour can identify several catalog items. The seller must choose rather than deriving SKU
+authority from a price, text or array order. Structural schema tests do not prove cross-event history,
+catalog membership, permissions, concurrency or route enforcement.
+
+## 2026-10-28 — current item, attached price and seller item choice
+
+**D-027 Current item follows frame-time appearances; uncertain attachment lets the seller choose between two
+known items. An order uses only the attached item's approved price and pins the version that supplied it.**
+Contract only: optional `order.lines[].candidates`, new optional decision-body `card_id`, request schema and
+contract wording. Existing required fields, order states and permission decisions stay unchanged; v1 is retained.
+
+- Appearance = first non-null frame time of a card or a version with a changed frame time. Sort by
+  `(frame_ts_ms, version)`; current at t is the latest appearance ≤ t and previous is the latest other card.
+  Price, size, status and SKU edits keep frame time and do not create appearances. `/cards/live` retains its
+  live-at-t membership but orders by last appearance, current first. A labeler may use later-known versions;
+  a replay endpoint only uses versions written by t.
+- At attachment, use the attached card's latest version when it is live/edited with an approved price. If it has none, no order
+  is written yet; its next live/edited priced version supplies the price and is pinned. No price is written
+  into an earlier version, taken from another card/customer text or changed on an already sent order.
+- Optional `candidates` is exactly two distinct card IDs, current then previous at the comment's media time,
+  using versions known at expiry. It is a frozen unresolved-choice snapshot, not permission to confirm.
+- Seller approval must name one candidate through optional `card_id` on the existing decision route. Runtime
+  checks membership, same session, order state and selected approved version; it pins the selected card's price,
+  reruns the existing checks and records actor seller. It never carries the old line price to a different card.
+  Without candidates, existing decision bodies work as before; a rejection makes no item choice.
+- Only one line requiring candidate choice is covered by this body; selecting several lines requires a further
+  contract decision. No new line index, event, state or assistant permission is added here.
+
+Validation boundary: JSON Schema proves two distinct syntactically valid IDs and request shapes. It cannot
+prove card existence, membership in a stored session/order, price/version provenance, actor authority or valid
+transitions. Those checks and the route/worker/order/UI changes require separate runtime implementation and tests.
+Older strict event validators need the new optional field before accepting candidate-bearing events.
+
+Open **SPEC_GAP**: expiry with a missing approved price or fewer than two known cards cannot be represented by
+the existing required order line plus this two-candidate field. No placeholder zero, prior-item price,
+nullability change, delayed deadline or invented readiness is authorized. A persisted ready/expired outcome
+between attachment and the order consumer is also undecided; `comment_labeled` is unchanged. Both require an
+owner decision before implementing those cases. This contract alone does not open all remaining runtime gates.
+
 ## 2026-10-28 — CATALOG_PATH and category lists
 
 **D-026 `CATALOG_PATH` changes only the items on sale; the vision and speech prompts keep the words of `data/catalog.json`. An item may list `categories`, and a label plus colour that names exactly one SKU opens that SKU's card.** No contract change: no new field or event, no API change, `v` stays 1. HQ417, HQ423.
