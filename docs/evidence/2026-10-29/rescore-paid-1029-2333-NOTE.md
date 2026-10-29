@@ -50,7 +50,8 @@ ledger held 10 `comment_attachment` rows, all `expired`, and the app log had no 
 file `rescore-paid-1029-2333.json` (scorer, situations, `code_checks`, the worker and media process logs with their
 `model_key_set` proofs, the `C5PROC` sha) and the last progress line were not written. Nothing in this note therefore
 claims a situation result, a vision `done/skipped/stale` count from the worker, or a `model_key_set: true` proof; the
-evidence that the key was set is the wrapper line `MODEL_API_KEY set: yes` and the 77 `ok: true` model calls with cost.
+evidence that the key was set is the wrapper line `MODEL_API_KEY set: yes` and the 76 `ok: true` model calls with cost
+(the 77th, below, failed at the provider after the key was accepted).
 
 After the SIGTERM the worker process started by the runner (`measure.c5_proc worker --session rescore-paid-1029-2333`)
 was left with parent pid 1 and kept its SSE stream open, so uvicorn stayed in `Waiting for connections to close` and the
@@ -98,10 +99,13 @@ muse-spark-1.3 | product_seen | 34 | 0.0453 | 2794
 muse-spark-1.3 | label_comments | 28 | 0.0380 | 2425
 muse-spark-1.3 | card_from_speech | 12 | 0.0322 | 4182
 sam-3.1 | card_cutout | 2 | 0.0050 | 1048
-muse-voice-transcribe-1.0 | transcribe | 1 | 0.0044 | 94054
+muse-voice-transcribe-1.0 | transcribe | 1 | 0.0044 | 94054   (ok false: ConnectionClosedError; the cost is still metered)
 SELECT count(*), SUM((body->>'cost_usd')::numeric) FROM events WHERE type='model_call' AND session_id='rescore-paid-1029-2333';
 77 | 0.12486890
 ```
+
+`ok` by row: `true` 76 (0.12046890 USD), `false` 1 (0.0044 USD): the single `transcribe` call, `error` `ConnectionClosedError`,
+latency 94054 ms; the ledger meters its cost all the same, so the 0.12486890 USD above includes it.
 
 Events stored for the session by type: frame 94, model_call 77, comment_labeled 39, comment 34, speech 13, order 12,
 comment_attachment 10, card 10, message_out 6, product_seen 2, price_proposal 1. The 77 rows are exported as
