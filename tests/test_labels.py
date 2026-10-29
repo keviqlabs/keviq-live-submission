@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from app.contracts import now_ms
+from app.contracts import make_event, now_ms
 from app.settings import ROOT
 from connectors.sim.comments import SESSION, events
 from connectors.sim.moderator import SimModerator
@@ -209,6 +209,46 @@ def test_late_comment_pins_to_the_card_live_when_it_was_written():
         assert cards_at(cards(), g["arrives_ms"])[0]["card_id"] != g["order"]["referenced_card_id"]
         draft = resolve(item(g["order"]["reference_kind"], sku=g["order"]["sku"]), cards(), g["ts_ms"], set())
         assert draft["referenced_card_id"] == g["order"]["referenced_card_id"], g["comment_id"]
+
+
+def version(card_id, number, status, price, ts_ms, frame_ts_ms):
+    """A card version as the store keeps it: only the fields the timeline reads."""
+    return {
+        "card_id": card_id,
+        "version": number,
+        "status": status,
+        "price": price,
+        "sku": f"SKU-{card_id[-1]}",
+        "ts_ms": ts_ms,
+        "provenance": {"frame_ts_ms": frame_ts_ms},
+    }
+
+
+DRAFT_THEN_LIVE = [
+    version("card-A", 1, "live", 150_000, 10_000, 10_000),
+    version("card-B", 1, "draft", None, 12_000, 12_000),
+    version("card-B", 2, "live", 200_000, 13_000, 12_000),
+]
+
+
+def ident(card):
+    return card and (card["card_id"], card["version"])
+
+
+def test_live_snapshot_skips_an_unpriced_draft():
+    # The media-time snapshot knows the draft; the live snapshot (sessions without a binding) does not.
+    # (media-time identity carries each card's latest supplied version, so the prefix pins the draft version)
+    current, previous = cards_at(DRAFT_THEN_LIVE, 12_500)
+    assert (current["card_id"], previous["card_id"]) == ("card-B", "card-A")
+    current, previous = cards_at(DRAFT_THEN_LIVE[:2], 12_500)
+    assert (ident(current), ident(previous)) == (("card-B", 1), ("card-A", 1))
+    # Live current is card-A; previous is the latest other card shown, the draft's first version, as on the base.
+    current, previous = cards_at(DRAFT_THEN_LIVE, 12_500, live_only=True)
+    assert (ident(current), ident(previous)) == (("card-A", 1), ("card-B", 1))
+    current, previous = cards_at(DRAFT_THEN_LIVE, 13_500, live_only=True)
+    assert (ident(current), ident(previous)) == (("card-B", 2), ("card-A", 1))
+    draft = resolve(item("current_card"), DRAFT_THEN_LIVE, 12_500, set(), live_only=True)
+    assert draft["referenced_card_id"] == "card-A"
 
 
 # --- the stream end to end on the in-memory app
@@ -473,3 +513,88 @@ def test_measure_order_fields_and_shield():
     scam = next(c for c, g in GOLD.items() if g["label"] == "scam" and g["has_link"])
     sh = measure_labels.shield([comment(scam), labeled(scam, "scam", action="warn")], {scam: GOLD[scam]})
     assert sh["scam_contact_hide_rate"] == 0.0 and sh["scam_hide_or_warn_rate"] == 1.0
+
+
+class FixedTransport:
+    """Labels the given comment ids as an order for the current card, size 40."""
+
+    def __init__(self, comment_ids: set[str]):
+        self.comment_ids = comment_ids
+
+    async def post(self, path: str, body: dict) -> Reply:
+        comments = json.loads(body["input"][1]["content"])["comments"]
+        items = [
+            {
+                "comment_id": c["comment_id"],
+                "label": "order" if c["comment_id"] in self.comment_ids else "other",
+                "reference_kind": "current_card" if c["comment_id"] in self.comment_ids else "none",
+                "sku": None,
+                "size": "40" if c["comment_id"] in self.comment_ids else None,
+                "color": None,
+                "qty": 1 if c["comment_id"] in self.comment_ids else None,
+                "contact": "none",
+            }
+            for c in comments
+        ]
+        return responses_reply(json.dumps({"items": items}, ensure_ascii=False), 900, 300)
+
+    async def aclose(self):
+        pass
+
+
+def card_event(sid, card_id, number, status, price, ts_ms, frame_ts_ms):
+    return make_event(
+        "card",
+        sid,
+        ts_ms,
+        "sim",
+        event_id=f"{sid}-{card_id}-v{number}",
+        card_id=card_id,
+        sku="GIAY-01",
+        name="Sneaker",
+        price=price,
+        currency="VND",
+        variants=[{"size": "40", "color": "trắng", "stock": 2}],
+        stock=2,
+        image_url=f"sim://{sid}/{card_id}.png",
+        version=number,
+        status=status,
+        provenance={"frame_ts_ms": frame_ts_ms, "speech_event_ids": [], "edited_by": None},
+    )
+
+
+def order_comment(sid, comment_id, ts_ms):
+    return make_event(
+        "comment",
+        sid,
+        ts_ms,
+        "sim",
+        event_id=comment_id,
+        comment_id=comment_id,
+        user_ref="u-1",
+        text="chốt đôi này size 40",
+        reply_to=None,
+    )
+
+
+async def test_session_without_binding_orders_from_the_live_card_not_the_draft(mem_app, monkeypatch):
+    monkeypatch.setattr(labels_mod, "BATCH_WAIT_S", 0.01)
+    _, store, client = mem_app
+    sid = "nobinding1"
+    labeler, runner = wire(client, FixedTransport({"nb-1", "nb-2"}))
+    assert await runner.attachment_enabled(sid) is False
+    first = [card_event(sid, "card-A", 1, "live", 150_000, 10_000, 10_000)]
+    first += [card_event(sid, "card-B", 1, "draft", None, 12_000, 12_000), order_comment(sid, "nb-1", 12_500)]
+    await feed(client, runner, [(0, e) for e in first])
+    await drain(labeler)
+    later = [
+        card_event(sid, "card-B", 2, "live", 200_000, 13_000, 12_000),
+        order_comment(sid, "nb-2", 13_500),
+    ]
+    await feed(client, runner, [(0, e) for e in later])
+    await drain(labeler)
+    labeled = {e["comment_id"]: e for e in await store.read(sid, 0, 100) if e["type"] == "comment_labeled"}
+    draft = labeled["nb-1"]["order_draft"]
+    assert (draft["referenced_card_id"], draft["reference_kind"]) == ("card-A", "current_card")
+    draft = labeled["nb-2"]["order_draft"]
+    assert (draft["referenced_card_id"], draft["reference_kind"]) == ("card-B", "current_card")
