@@ -17,8 +17,12 @@
 <script>
   const sid = decodeURIComponent(location.pathname.split("/").filter(Boolean).pop());
   const cards = new Map();
+  const appearances = new Map();
   const show = () => {
-    const live = [...cards.values()].filter((c) => c.status === "live" || c.status === "edited" || c.status === "draft").sort((a, b) => b.ts_ms - a.ts_ms)[0];
+    const live = [...cards.values()].filter((c) => c.status === "live" || c.status === "edited" || c.status === "draft").sort((a, b) => {
+      const x = appearances.get(a.card_id) || [-1, 0], y = appearances.get(b.card_id) || [-1, 0];
+      return y[0] - x[0] || y[1] - x[1];
+    })[0];
     const el = document.getElementById("card");
     if (!live) { el.style.display = "none"; return; }
     el.style.display = "flex";
@@ -33,7 +37,13 @@
     document.getElementById("meta").textContent = (live.status === "draft" ? "đang cập nhật · " : "") + (sizes.length ? "size " + sizes.join(" · ") : "");
   };
   const es = new EventSource(`/api/sessions/${encodeURIComponent(sid)}/events?cursor=0`);
-  es.addEventListener("card", (m) => { const c = JSON.parse(m.data); const cur = cards.get(c.card_id); if (!cur || cur.version <= c.version) cards.set(c.card_id, c); show(); });
+  es.addEventListener("card", (m) => {
+    const c = JSON.parse(m.data), cur = cards.get(c.card_id), frame = c.provenance.frame_ts_ms;
+    if (!cur || cur.version <= c.version) cards.set(c.card_id, c);
+    const position = appearances.get(c.card_id) || [-1, 0];
+    if (frame != null && (frame > position[0] || (frame === position[0] && c.version > position[1]))) appearances.set(c.card_id, [frame, c.version]);
+    show();
+  });
 </script>
 </body>
 </html>

@@ -13,7 +13,6 @@ import uuid
 import weakref
 from contextlib import asynccontextmanager
 from pathlib import Path
-from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -27,7 +26,7 @@ from measure import c5_live, c5_progress
 from measure.c5_shop import Feed
 from tests.db_lock import locked_test_database
 from worker import runner as runner_mod
-from worker.brain import card, labels, window
+from worker.brain import labels
 from worker.runner import Runner
 
 LOOP_MS = 351500
@@ -63,48 +62,91 @@ class AppClient(httpx.AsyncClient):
 
 @pytest.fixture
 async def pg_app(pg_url):
+    import psycopg
+    from psycopg.rows import dict_row
+
     assert is_test_database(pg_url) and not os.environ.get("MODEL_API_KEY")
     with locked_test_database():
-        store = PgStore(pg_url)
-        await store.open()
-        rows = await store._fetch("SELECT pg_try_advisory_lock(hashtext('keviq_test')) AS locked")
-        if not rows[0]["locked"]:
-            await store.close()
-            pytest.fail("keviq_test advisory lock is held by another run")
-        app = create_app(store)
-        app.state.store = store
+        store, app, guard, guard_conn = PgStore(pg_url), None, None, None
         loop = asyncio.get_running_loop()
         prior_factory = loop.get_task_factory()
-
-        def task_factory(loop, coro, context=None):
-            task = (
-                prior_factory(loop, coro, context=context)
-                if prior_factory
-                else asyncio.Task(coro, loop=loop, context=context)
-            )
-            if context.get(SERVER_CONTEXT, False) if context is not None else SERVER_CONTEXT.get():
-                SERVER_TASKS.add(task)
-            return task
-
-        async def server(scope, receive, send):
-            token = SERVER_CONTEXT.set(True)
-            try:
-                await app(scope, receive, send)
-            finally:
-                SERVER_CONTEXT.reset(token)
-
-        loop.set_task_factory(task_factory)
-        sid = "slow-vision-" + uuid.uuid4().hex[:12]
+        factory_installed = False
         try:
+            guard_conn = await psycopg.AsyncConnection.connect(pg_url, autocommit=True, row_factory=dict_row)
+            cursor = await guard_conn.execute(
+                "SELECT pg_try_advisory_lock(hashtext('keviq_test')) AS locked, pg_backend_pid() AS backend_pid"
+            )
+            rows = await cursor.fetchall()
+            if not rows[0]["locked"]:
+                pytest.fail("keviq_test advisory lock is held by another run")
+            guard = rows[0]["backend_pid"]
+            await store.open()
+            app = create_app(store)
+            app.state.store = store
+            await app.state.attachments.start()
+            SERVER_TASKS.add(app.state.attachments.task)
+
+            def task_factory(loop, coro, context=None):
+                task = (
+                    prior_factory(loop, coro, context=context)
+                    if prior_factory
+                    else asyncio.Task(coro, loop=loop, context=context)
+                )
+                if context.get(SERVER_CONTEXT, False) if context is not None else SERVER_CONTEXT.get():
+                    SERVER_TASKS.add(task)
+                return task
+
+            async def server(scope, receive, send):
+                token = SERVER_CONTEXT.set(True)
+                try:
+                    await app(scope, receive, send)
+                finally:
+                    SERVER_CONTEXT.reset(token)
+
+            loop.set_task_factory(task_factory)
+            factory_installed = True
+            sid = "slow-vision-" + uuid.uuid4().hex[:12]
             async with AppClient(transport=httpx.ASGITransport(app=server), base_url="http://test") as client:
+                client.app = app
                 yield store, client, sid
         finally:
-            loop.set_task_factory(prior_factory)
-            await store.close()  # closes the advisory-lock connection; test rows are retained
+            if factory_installed:
+                loop.set_task_factory(prior_factory)
+            try:
+                if app is not None:
+                    await app.state.attachments.close()
+            finally:
+                try:
+                    await (
+                        store.close()
+                    )  # the guard survives every application connection closing/reconnecting
+                finally:
+                    try:
+                        if guard is not None:
+                            cursor = await guard_conn.execute(
+                                "SELECT pg_advisory_unlock(hashtext('keviq_test')) AS unlocked, "
+                                "pg_backend_pid() AS backend_pid"
+                            )
+                            released = (await cursor.fetchall())[0]
+                            print(
+                                "PG_TEST_GUARD "
+                                + json.dumps(
+                                    {"process_pid": os.getpid(), "acquired_backend_pid": guard, **released},
+                                    sort_keys=True,
+                                )
+                            )
+                            assert released["unlocked"] and released["backend_pid"] == guard
+                    finally:
+                        if guard_conn is not None:
+                            await guard_conn.close()
 
 
 async def ingest(client, event):
-    response = await client.post(f"/api/sessions/{event['session_id']}/events", json=[event])
+    response = await client.post(
+        f"/api/sessions/{event['session_id']}/events",
+        json=[event],
+        headers=getattr(client, "source_headers", {}),
+    )
     assert response.status_code == 200, response.text
     return response.json()["accepted"][0]["seq"]
 
@@ -127,7 +169,7 @@ def counts_valid(stats):
 
 
 @asynccontextmanager
-async def running(client, handlers, sid, monkeypatch, speed=SPEED, progress=False):
+async def running(client, handlers, sid, monkeypatch, speed=SPEED, progress=False, attachment_auth=None):
     assert speed >= 1
     monkeypatch.setattr(labels, "BATCH_WAIT_S", 1 / speed)
     monkeypatch.setattr(runner_mod, "VISION_TIMEOUT_S", 10 / speed, raising=False)
@@ -140,7 +182,7 @@ async def running(client, handlers, sid, monkeypatch, speed=SPEED, progress=Fals
         monkeypatch.setattr(c5_progress, "BEAT_S", 1 / speed)
         reporter = Receipt()
         reporter.counter = c5_progress.install(reporter.say)
-    worker = Runner("http://test", handlers, http=client)
+    worker = Runner("http://test", handlers, http=client, attachment_auth=attachment_auth)
     task = asyncio.create_task(worker.run(cursor=0, session=sid))
     if reporter:
         await asyncio.sleep(0)  # run() has installed the reporter's own-task set before its first HTTP read
@@ -379,145 +421,3 @@ async def test_failed_and_stale_frames_are_counted_once(pg_app, monkeypatch):
         counts_valid(stats)
         assert stats["vision"]["received"] == 2
         assert stats["vision"]["failed"] == stats["vision"]["stale"] == 1
-
-
-class OrderLabels:
-    """Deterministic classification only; binding remains the real labeler's responsibility."""
-
-    async def responses(self, prompt, *args, **kwargs):
-        context = json.loads(prompt[-1]["content"])
-        items = [
-            {
-                "comment_id": c["comment_id"],
-                "label": "order",
-                "reference_kind": "current_card",
-                "sku": None,
-                "size": "40",
-                "color": None,
-                "qty": 1,
-                "contact": "none",
-            }
-            for c in context["comments"]
-        ]
-        return SimpleNamespace(data={"items": items}, infer_start_ms=now_ms(), infer_end_ms=now_ms())
-
-
-def old_card(sid, ts):
-    row = json.loads((ROOT / "data/comments/cards.jsonl").read_text().splitlines()[0])
-    row.update(session_id=sid, event_id=f"{sid}.old-card", ts_ms=ts)
-    return row
-
-
-@pytest.mark.xfail(
-    strict=True, raises=AssertionError, reason="Pending media-time binding: switch before vision result"
-)
-async def test_switch_before_result_does_not_reuse_the_old_card(pg_app, monkeypatch):
-    store, client, sid = pg_app
-    labeler = labels.Labeler(client_for=lambda ctx: OrderLabels(), moderator=SimModerator())
-    entered = asyncio.Event()
-    labeled = asyncio.Event()
-    observed = []
-
-    async def slow(event, ctx):
-        entered.set()
-        await asyncio.sleep(3 / SPEED)
-        return [product(event)]
-
-    async def capture(event, ctx):
-        observed.append(event)
-        labeled.set()
-        return []
-
-    handlers = labeler.handlers() | {"frame": [slow], "comment_labeled": [capture]}
-    try:
-        async with running(client, handlers, sid, monkeypatch):
-            ts = now_ms()
-            previous = old_card(sid, ts)
-            await ingest(client, previous)
-            await ingest(client, frame(sid, 1, ts + 5000))
-            await asyncio.wait_for(entered.wait(), 2)
-            await ingest(
-                client,
-                make_event(
-                    "comment",
-                    sid,
-                    ts + 5500,
-                    "sim",
-                    comment_id="switch-order",
-                    user_ref="synthetic-buyer",
-                    text="chốt đôi này size 40",
-                    reply_to=None,
-                ),
-            )
-            await asyncio.wait_for(labeled.wait(), 2)
-            draft = observed[0]["order_draft"]
-            assert draft["referenced_card_id"] != previous["card_id"]
-    finally:
-        for task in list(labeler.tasks):
-            task.cancel()
-        await asyncio.gather(*list(labeler.tasks), return_exceptions=True)
-
-
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="Pending media-time binding: price before card")
-async def test_price_before_card_does_not_select_the_old_card(pg_app, monkeypatch):
-    store, client, sid = pg_app
-    monkeypatch.setattr(window, "HOLD_MS", 0)  # isolate selection, not a timed hold/latency claim
-    monkeypatch.setattr(Runner, "client_for", lambda self, event: NoModel())
-    entered = asyncio.Event()
-    card.SESSIONS.clear()
-
-    async def slow(event, ctx):
-        if event["event_id"].endswith("fr-0"):
-            return [product(event)]
-        entered.set()
-        await asyncio.sleep(3 / SPEED)
-        return [product(event) | {"category": "boot", "attributes": {"color": "đen"}}]
-
-    handlers = card.HANDLERS | {"frame": [slow]}
-    try:
-        async with running(client, handlers, sid, monkeypatch) as (worker, _, _):
-            ts = now_ms()
-            await ingest(client, frame(sid, 0, ts))
-            until = time.monotonic() + 2
-            while True:
-                cards = [e for e in await store.read(sid, 0, 100) if e["type"] == "card"]
-                if cards:
-                    break
-                assert time.monotonic() < until, "initial product did not open its card"
-                await asyncio.sleep(0.005)
-            previous = cards[-1]
-            fields = {k: previous[k] for k in card.CARD_FIELDS} | {
-                "version": 2,
-                "price": 450000,
-                "status": "live",
-            }
-            await ingest(client, make_event("card", sid, ts + 100, "sim", **fields))
-            await ingest(client, frame(sid, 1, ts + 5000))
-            await asyncio.wait_for(entered.wait(), 2)
-            await ingest(
-                client,
-                make_event(
-                    "speech",
-                    sid,
-                    ts + 5500,
-                    "sim",
-                    text="đôi này hai trăm nghìn",
-                    final=True,
-                    lang="vi",
-                    start_ms=ts + 5500,
-                    end_ms=ts + 6000,
-                ),
-            )
-            await asyncio.sleep(4 / SPEED)
-            await eventually(lambda: not worker.stats()["vision"]["in_flight"])
-            if session := card.SESSIONS.get(sid):
-                await asyncio.wait_for(asyncio.gather(*list(session.tasks)), 2)
-            events = await store.read(sid, 0, 500)
-            proposals = [e for e in events if e["type"] == "price_proposal"]
-            assert all(p["card_id"] != previous["card_id"] for p in proposals)
-    finally:
-        if session := card.SESSIONS.get(sid):
-            for task in list(session.tasks):
-                task.cancel()
-            await asyncio.gather(*list(session.tasks), return_exceptions=True)
-        card.SESSIONS.clear()

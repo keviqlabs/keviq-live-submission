@@ -1,0 +1,82 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import vm from "node:vm";
+
+const source = readFileSync(new URL("../app/static/console.js", import.meta.url), "utf8");
+
+function setup() {
+  const nodes = new Map(), requests = [], listeners = new Map();
+  const document = {
+    activeElement: null,
+    getElementById(id) { if (!nodes.has(id)) nodes.set(id, {}); return nodes.get(id); },
+    querySelector() { return null; },
+    addEventListener(kind, listener) { listeners.set(kind, listener); },
+  };
+  const context = vm.createContext({
+    document, location: { pathname: "/console/synthetic-binding" }, CSS: { escape: (s) => s },
+    EventSource: class { addEventListener() {} }, setInterval() {}, setTimeout() {}, clearTimeout() {},
+    async fetch(url, options) {
+      if (url === "/api/cost") return { json: async () => ({ today_usd: 0, daily_cap_usd: 30 }) };
+      requests.push({ url, body: JSON.parse(options.body) });
+      return { ok: true, json: async () => ({}) };
+    },
+  });
+  vm.runInContext(source, context);
+  const run = (code) => vm.runInContext(code, context);
+  run(`for (const [id, frame] of [["a", 10], ["b", 20]]) handlers.card({
+    type: "card", event_id: id + "-v1", card_id: id, version: 1, sku: id.toUpperCase(), status: "edited",
+    name: "Item " + id, price: 150000, stock: 5, ts_ms: frame, image_url: null,
+    provenance: { frame_ts_ms: frame, speech_event_ids: [] }
+  });`);
+  return { run, nodes, requests, async click(dataset) {
+    const button = { dataset, disabled: false };
+    await listeners.get("click")({ target: { closest: () => button } });
+  } };
+}
+
+function expired(ui, candidates = ["b", "a"]) {
+  ui.run(`handlers.comment({ event_id: "comment-event", comment_id: "intent", user_ref: "synthetic-buyer", ts_ms: 25, text: "chốt" });
+    handlers.comment_attachment({ event_id: "attachment-v1", attachment_id: "attachment", version: 1,
+      comment_id: "intent", comment_event_id: "comment-event", label_event_id: "label-event",
+      outcome: "expired", action: "expire", selected_card_id: null, deadline_ms: 4000,
+      candidates: ${JSON.stringify(candidates.map((card_id) => ({ card_id })))} });`);
+}
+
+test("a returning item stays current after the previous item's later seller edit", () => {
+  const ui = setup();
+  ui.run(`handlers.card({ ...cards.get("a"), event_id: "a-v2", version: 2, ts_ms: 32, provenance: { frame_ts_ms: 30, speech_event_ids: [] } });
+    handlers.card({ ...cards.get("b"), event_id: "b-v7", version: 7, ts_ms: 99 });`);
+  const html = ui.nodes.get("cards").innerHTML;
+  assert.ok(html.indexOf("Item a") < html.indexOf("Item b"));
+});
+
+test("pre-order selection sends only explicit identity and expected attachment version", async () => {
+  const ui = setup();
+  expired(ui);
+  await ui.click({ act: "attachment-select", aid: "attachment", choice: "a" });
+  assert.deepEqual(ui.requests, [{ url: "/api/sessions/synthetic-binding/attachments/attachment/decision",
+    body: { attachment_version: 1, decision: "select", card_id: "a" } }]);
+});
+
+test("an empty snapshot has keep/reject controls without an invented selection", async () => {
+  const ui = setup();
+  expired(ui, []);
+  assert.doesNotMatch(ui.nodes.get("comments").innerHTML, /attachment-select/);
+  assert.match(ui.nodes.get("comments").innerHTML, /attachment-keep/);
+  await ui.click({ act: "attachment-keep", aid: "attachment" });
+  assert.deepEqual(ui.requests[0].body, { attachment_version: 1, decision: "keep_unresolved" });
+});
+
+test("once an order exists, only its explicit candidate approve/reject controls remain", async () => {
+  const ui = setup();
+  expired(ui);
+  ui.run(`handlers.order({ type: "order", order_id: "different-id-encoding", state: "NEEDS_SELLER", ts_ms: 4000,
+    actor: "assistant", reason: "seller choice", amount: 150000, customer_ref: "synthetic-buyer",
+    caused_by: ["comment-event", "attachment-v1"], lines: [{ sku: "B", card_id: "b", card_version: 1,
+      qty: 1, unit_price: 150000, candidates: ["b", "a"] }] });`);
+  assert.doesNotMatch(ui.nodes.get("comments").innerHTML, /attachment-select|attachment-keep|attachment-reject/);
+  assert.match(ui.nodes.get("queue").innerHTML, /choose-order/);
+  await ui.click({ act: "choose-order", oid: "different-id-encoding", choice: "a" });
+  assert.deepEqual(ui.requests[0].body, { decision: "approve", card_id: "a" });
+});
