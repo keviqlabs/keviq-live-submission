@@ -146,3 +146,139 @@ missing worker frame reads, not a measurement of the reference logic.
 
 Paths inside the artifacts are reduced to `<outside-git>/…` (observation set) and `<scratch>/…` (run output);
 the hash of the observation set is unchanged. No token appears in any artifact.
+
+## Appendix — cost estimate of a paid run on the same frames (written 29 Oct, 0 USD, nothing run)
+
+Added after the run; the sections above are unchanged. Purpose: what a paid run that lets the worker read the
+351 test1 frames itself would cost, so that the "does the bound path run for real" question can be priced.
+Every number below is a `SELECT` on the `keviq` ledger (`events` rows of type `model_call`) or a constant in
+the code; no model was called.
+
+### What the paid run is
+
+`measure.c5 --paid` and `--observations` exclude each other (`measure/c5.py:227-228`): a paid run does not
+replay the stored `product_seen` / `speech` events, it regenerates them — the media child reads the same test1
+frame sequence, the worker's vision reads the frames (`product_seen`, Spark, effort `minimal`:
+`worker/vision/spark.py:22`), the media voice transcribes (`transcribe`), the speech brain opens cards
+(`card_from_speech`), the labels brain labels the 100 comments (`label_comments`) and SAM cuts the card image
+(`card_cutout`). That is exactly what `diag-test1x1-1028-1531` was (paid, 28 October, same frames), so its
+ledger is the closest base; the fleet average over every session is the second base.
+
+### Ledger, fleet (every session), by purpose and model
+
+```
+SELECT body->>'purpose' AS purpose, body->>'model' AS model, count(*) AS n,
+       round(avg((body->>'cost_usd')::numeric),5) AS avg_usd, round(max((body->>'cost_usd')::numeric),5) AS max_usd,
+       round(sum((body->>'cost_usd')::numeric),4) AS sum_usd
+FROM events WHERE type='model_call' GROUP BY 1,2 ORDER BY 1,2;
+       purpose        |           model           |  n   | avg_usd | max_usd | sum_usd
+----------------------+---------------------------+------+---------+---------+---------
+ card_cutout          | sam-3.1                   |   61 | 0.00250 | 0.00250 |  0.1525
+ card_from_speech     | muse-spark-1.3            |  347 | 0.00281 | 0.01286 |  0.9754
+ label_comments       | muse-spark-1.3            |  938 | 0.00162 | 0.01716 |  1.5241
+ label_comments_probe | muse-spark-1.3            |    3 | 0.00378 | 0.00494 |  0.0113
+ probe_sam            | sam-3.1                   |    1 | 0.00250 | 0.00250 |  0.0025
+ probe_spark          | muse-spark-1.3            |    1 | 0.00099 | 0.00099 |  0.0010
+ probe_voice          | muse-voice-transcribe-1.0 |    1 | 0.00050 | 0.00050 |  0.0005
+ product_seen         | muse-spark-1.3            | 2630 | 0.00266 | 0.01855 |  7.0027
+ transcribe           | muse-voice-transcribe-1.0 |    8 | 0.01638 | 0.01755 |  0.1311
+(9 rows)
+```
+
+`product_seen` over the fleet: 2630 calls, 2629 ok, 1 error (`cancelled`, 0.0 USD), avg 0.00266 USD, p95
+0.00672, max 0.01855, avg 846 tokens in / 426 out, avg latency 3827 ms. The fleet average mixes prompts: the
+27 October probe sessions sent ~1,400 input tokens per frame (`probe-test1-6b-1950` avg 0.00234,
+`probe-test1` avg 0.00531 and the 0.01855 maximum); the sessions on the current prompt send ~500
+(`diag-test1x1-1028-1531` avg 0.00143, max 0.00260; `c5-test1x5-1028-1000` avg 0.00110, n 991).
+
+```
+SELECT session_id, count(*) AS n, round(avg((body->>'cost_usd')::numeric),5) AS avg_usd,
+       round(max((body->>'cost_usd')::numeric),5) AS max_usd, round(avg((body->>'tokens_in')::numeric)) AS avg_in
+FROM events WHERE type='model_call' AND body->>'purpose'='product_seen'
+GROUP BY 1 ORDER BY max(ts_ms) DESC LIMIT 4;
+          session_id           |  n  | avg_usd | max_usd | avg_in
+-------------------------------+-----+---------+---------+--------
+ diag-test1x1-1028-1531        | 146 | 0.00143 | 0.00260 |    498
+ c5-test1x5-1028-1000          | 991 | 0.00110 | 0.00235 |    502
+ probe-test1-6b-1950           | 351 | 0.00234 | 0.00471 |   1398
+ probe-test1-6b20-1947-default |  20 | 0.00559 | 0.00728 |   1398
+```
+
+### Ledger of the paid run on these frames (28 October)
+
+```
+SELECT body->>'purpose' AS purpose, count(*) AS n, count(*) FILTER (WHERE (body->>'ok')::boolean) AS ok,
+       round(avg((body->>'cost_usd')::numeric),5) AS avg_usd, round(max((body->>'cost_usd')::numeric),5) AS max_usd,
+       round(sum((body->>'cost_usd')::numeric),4) AS sum_usd, round(avg((body->>'tokens_in')::numeric)) AS avg_in,
+       round(avg((body->>'tokens_out')::numeric)) AS avg_out, round(avg((body->>'latency_ms')::numeric)) AS avg_ms
+FROM events WHERE type='model_call' AND session_id='diag-test1x1-1028-1531' GROUP BY 1 ORDER BY 1;
+     purpose      |  n  | ok  | avg_usd | max_usd | sum_usd | avg_in | avg_out | avg_ms
+------------------+-----+-----+---------+---------+---------+--------+---------+--------
+ card_cutout      |   9 |   9 | 0.00250 | 0.00250 |  0.0225 |      0 |       0 |   1343
+ card_from_speech |  61 |  61 | 0.00257 | 0.00393 |  0.1570 |    138 |     565 |   3562
+ label_comments   |  77 |  77 | 0.00146 | 0.00385 |  0.1126 |   1194 |     250 |   2236
+ product_seen     | 146 | 145 | 0.00143 | 0.00260 |  0.2087 |    498 |     212 |   2357
+ transcribe       |   1 |   1 | 0.01755 | 0.01755 |  0.0176 |      0 |       0 | 352512
+(5 rows)
+```
+
+Sum 0.5184 USD for 294 calls. The session has 351 frames over 350 s (one per second); the worker read 146 of
+them, because a session's vision lane reads one frame at a time and a newer frame replaces the one waiting
+(`worker/runner.py:8-12`): at 2.4 s per read, about 40 % of the frames are read, the rest are `skipped` or
+`stale` without a call. The two slow-vision integration runs of 29 October show the same ratio (149 and 174
+reads of 351). 351 reads is therefore the ceiling, not the expectation.
+
+### Formula and numbers
+
+cost = N_vision × c_vision + N_speech_cards × c_speech + N_labels × c_label + N_cutout × c_cutout + N_transcribe × c_transcribe
+
+| Scenario | Vision | Other purposes | Total |
+| --- | --- | --- | --- |
+| A. Like for like: the 28 October counts and per-call costs of this frame set (current prompt) | 146 × 0.00143 = 0.209 | 61 × 0.00257 + 77 × 0.00146 + 9 × 0.00250 + 1 × 0.01755 = 0.310 | **≈ 0.52 USD** |
+| B. Every frame read, fleet averages (the 0.00266 figure) | 351 × 0.00266 = 0.934 | 61 × 0.00281 + 77 × 0.00162 + 9 × 0.00250 + 1 × 0.01638 = 0.335 | **≈ 1.27 USD** |
+| C. Every frame read at the fleet p95 (0.00672) | 2.36 | 0.335 | ≈ 2.7 USD |
+| D. Bound: every frame read twice (schema retry, `meta/client.py:228`) at the fleet maximum 0.01855 | 13.0 | — | capped: the session cap refuses further calls at 8 USD |
+
+Retries: HTTP 429/5xx are retried up to 4 attempts with backoff (`meta/client.py:26-27`); a failed attempt is
+logged with no usage, i.e. 0 USD (the one fleet error row is 0.0), so retries cost nothing unless the reply is
+a billed 200 that fails the schema, which is retried once (scenario D). Expected cost of a paid run with the
+binding on: **0.5–1.3 USD**, with a hard ceiling of 8 USD from `MODEL_SESSION_CAP_USD` (the runner ends the
+loop on a cap refusal, `measure/c5_live.py:439`). The ledger of the `keviq` database holds 9.80 USD over all
+sessions (27 October 7.35, 28 October 2.45, nothing on 29 October) against the 30 USD/day and 300 USD caps.
+
+One accounting point: the trial app of these runs uses `keviq_test`, and the meter computes the day/total
+spend from the database the app it talks to uses (`meta/meter.py:103-116`), so a paid run against a trial app
+on `keviq_test` writes its `model_call` rows there, not into the `keviq` ledger above; the test database is
+also reset by the test suite. A paid run whose spend must stay on the record needs its app on a database that
+is kept.
+
+### Environment and flags: this run versus a paid run (names only, no values)
+
+| Item | This run (`rescore-bind-1029-2218`) | Paid run |
+| --- | --- | --- |
+| `measure.c5` mode | `--observations <jsonl>` (stored media output replayed) | `--paid`; the two exclude each other (`measure/c5.py:227-228`) |
+| `MODEL_API_KEY` | forced blank for the children (`measure/c5_live.py:360`); proof `model_key_set: false` | inherited from the environment; `meta/transport.py:21` refuses to start without it; proof `model_key_set: true` |
+| `C5_OFFLINE` | set per loop (`measure/c5_live.py:397`): stand-ins, no model client | unset; `measure/c5_proc.py:124` refuses `C5_OFFLINE` with a key set |
+| media `--no-voice` | present: no transcribe, speech replayed from the store | absent: `transcribe` and `card_from_speech` calls |
+| comment labels | gold labels through the stand-in client | labels brain with the model (`label_comments`) |
+| card image | stored cutout output | SAM `card_cutout` calls |
+| `MODEL_SESSION_CAP_USD` / `MODEL_SESSION_WARN_USD` | 8 / 6 (env); never reached, 0 calls | same mechanism; the loop ends on a cap refusal |
+| `MODEL_DAILY_CAP_USD` / `MODEL_DAILY_WARN_USD` / `MODEL_TOTAL_CAP_USD` | defaults 30 / 20 / 300 (`meta/meter.py:43-45`), read by the app | same; computed from the app's own database (see above) |
+| vision timeout | `VISION_TIMEOUT_S = 10.0`, a constant, no environment override (`worker/runner.py:34`); transport timeout 60 s (`meta/transport.py:16`) | same constants; they only matter when a call is made |
+| retries | none happen | up to 4 attempts on 429/5xx, schema retry once (`meta/client.py:26-27,228`) |
+| `MODEL_SPARK`, `MODEL_SAM`, `MODEL_VOICE`, `MODEL_IMAGE`, `MODEL_API_BASE_URL`, `MODEL_VOICE_WS_URL` | defaults (`meta/client.py:139-142`), unused | defaults, used; Spark effort `minimal` is a constant |
+| `C5_BIND_SESSION`, `C5_BIND_EPOCH`, `C5_BIND_SOURCE_TOKEN`, `C5_BIND_SYSTEM_TOKEN` | set by the wrapper (bound session) | must be set the same way, or the session runs unbound (`measure/c5_live.py:361`) |
+| `CATALOG_PATH`, `CARDS_FROM_REPLAY` | `data/comments/c5/catalog.json`; removed | same |
+
+### What the paid run would and would not show
+
+With the binding on, the worker's own reads give every frame a `product_seen`, `no_product_seen` or
+`read_error` record, so attachments can reach `ready` and the 30 order comments can be decided on the media-time
+path: the run answers whether the bound path runs end to end for real, and what this frame set's reference
+accuracy is under it. It is one loop of one observation set with scripted shop actions: n = 28 references
+against a ceiling of 25/28 (23/28 if a draft card at comment time does not qualify), so it cannot meet the
+reference criterion of 0.9 on n ≥ 50, and its intervention rate stays a scripted figure. Two further points
+the run would expose that the 0 USD replay cannot: whether the worker's terminal records arrive inside the 4 s
+`wait_ms` for comments written during a 2.4 s read (a timing expiry would look like the expiry above), and
+whether the regenerated `product_seen` set differs from the 28 October one (11 events), which changes which
+card is on screen at each comment and thus the reference answers themselves.
