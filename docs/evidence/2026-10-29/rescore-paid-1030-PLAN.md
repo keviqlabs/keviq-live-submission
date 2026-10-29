@@ -1,7 +1,7 @@
 # Plan for the paid bound rescore — rescore-paid-1030 (NOT RUN)
 
-A plan, not a result. Nothing below has been executed: no model call, no database created, no process
-started. It is the run that the cost appendix of `rescore-bind-1029-2218-NOTE.md` estimated (scenario C,
+A plan, not a result. Nothing paid below has been executed: no model call. The 0 USD preparations of
+29 October (ledger database, two dry runs, the wrapper file) are in the last section. It is the run that the cost appendix of `rescore-bind-1029-2218-NOTE.md` estimated (scenario C,
 about 2.7 USD, bounded by the 8 USD session cap), written so that the go decision can be taken on the exact
 commands. Everything is derived from the code at revision `d8c7f5e` (`measure/c5_live.py`, `measure/c5_bind.py`,
 `measure/c5_proc.py`, `app/attachments.py`, `worker/runner.py`, `worker/attachments.py`, `app/migrate.py`,
@@ -13,7 +13,7 @@ commands. Everything is derived from the code at revision `d8c7f5e` (`measure/c5
 | Revision | the branch head at run time (`measure/`, `tests/`, `docs/evidence/` only differ from main `f2c2dba`) |
 | Model calls | yes: worker vision reads (Spark), card cut-outs (SAM), comment labels, media transcribe; one loop, 350 s of frames at 1 fps |
 | Cap | `MODEL_SESSION_CAP_USD=8`, `MODEL_SESSION_WARN_USD=6` on the app and on the runner (the runner refuses to start if the app's `/api/cost?session=<run>` reports different values, `measure/c5_live.py:377-379`) |
-| Who runs it | the operator who holds the key; the wrapper below reads `MODEL_API_KEY` from the repo `.env` through `settings.load_dotenv` (`measure/c5_live.py:353`) and never prints it |
+| Who runs it | the branch owner, from this worktree; the wrapper below exports `MODEL_API_KEY` read from the main checkout's `.env` into its own process (`settings.load_dotenv` does not replace an exported value, and this worktree's `.env` has no key line) and never prints it |
 
 ## (a) Which database keeps the `model_call` ledger
 
@@ -28,8 +28,8 @@ third database on the same PostgreSQL server (the compose container `keviq-live-
   the same server to issue `CREATE DATABASE`; the Founder's `keviq` database is not opened):
 
 ```
-TEST_DATABASE_URL=postgresql://keviq:<password from .env>@127.0.0.1:55433/keviq_paid_test \
-  uv run python -m app.migrate --test
+DBURL="$(sed -n 's/^DATABASE_URL=//p' .env | tr -d '"')"   # the compose URL of .env, never printed
+TEST_DATABASE_URL="${DBURL%/*}/keviq_paid_test" uv run python -m app.migrate --test
 ```
 
   Expected output: `created the test database` then `migrations applied: 001_events.sql, 002_attachments.sql,
@@ -57,50 +57,86 @@ also share its ledger with the live app's caps), and `keviq_test` (reset by the 
 
 ## (b) The wrapper command
 
-The 2218 wrapper, with three changes: `MODEL_API_KEY` is not blanked, `--paid` replaces `--observations`, and
-the app writes its own INFO lines (needed for (c), see there). The four binding variables are generated into
-shell variables and exported; no value is printed, the log shows only the session id and the epoch
-(`measure/c5_bind.py` `public()` exposes session, epoch and principal). The runner refuses to start if
+The 2218 wrapper rewritten for the paid run; the full text is below and the file `rescore-paid-run.sh`
+(sha256 `31f7dee5d31ef812d2cf0c117238fb307317ed6f13fc27d204a37ff2ee03c053`) is committed beside the run's evidence after the run. One stage per call:
+`bash rescore-paid-run.sh <run> <out> <seconds> [port]`. Differences from 2218: the model key is read from the
+main checkout's `.env` into the wrapper process only (never printed, never written; the worktree's own `.env`
+has no key line and `load_dotenv` keeps an exported value); `--paid` replaces `--observations`; `--seconds` is
+an argument; `TEST_DATABASE_URL` is set to the ledger URL, because `app/settings.py` `testing_database_url()`
+appends `_test` to `DATABASE_URL` when it is unset and `app.migrate --test` would otherwise create
+`keviq_paid_test_test`; the app writes its own INFO lines (needed for (c), see there); the image guard's window
+is the stage length, at most 300 s; `C5_OFFLINE` is unset before the runner starts. The four binding variables
+are generated into shell variables and exported; no value is printed, the log shows only the session id and the
+epoch (`measure/c5_bind.py` `public()` exposes session, epoch and principal). The runner refuses to start if
 `C5_BIND_SESSION` differs from `--run` (`measure/c5_live.py:362-363`).
 
-```
+```bash
 #!/bin/bash
-# rescore-paid-run.sh <run> <out> [port]   — run from the repo root by the operator who holds the key
+# Paid bound rescore, one stage per call: rescore-paid-run.sh <run> <out> <seconds> [port]
+#   stage 1: <run>=rescore-paid-1030-<HHMM>  seconds=120
+#   stage 2: a new run id, seconds=350, only when stage 1 had a `covered=True` line or a comment_attachment
+#            that is not expired.
+# The model key is read from the main checkout's .env into this process only: never printed, never written.
+# Both tokens of the binding are generated here and never printed. The ledger database is keviq_paid_test.
 set -uo pipefail
-RUN=$1; OUT=$2; PORT=${3:-8040}
+RUN=$1; OUT=$2; SECS=$3; PORT=${4:-8040}
 BASE=http://127.0.0.1:$PORT
+MAIN_ENV=${MAIN_ENV:?set MAIN_ENV to the path of the main checkout .env}
 mkdir -p "$OUT"
-export DATABASE_URL="postgresql://keviq:<password from .env>@127.0.0.1:55433/keviq_paid_test"
-echo "DATABASE_URL name: ${DATABASE_URL##*/}"                       # prints: keviq_paid_test
-echo "MODEL_API_KEY set: $([ -n "${MODEL_API_KEY:-}" ] && echo yes || echo 'no (the runner reads .env)')"
-export MODEL_SESSION_CAP_USD=8 MODEL_SESSION_WARN_USD=6
-export CATALOG_PATH=data/comments/c5/catalog.json
-unset C5_OFFLINE                                                     # the runner sets it only for unpaid loops; never inherited here
+[ -f measure/c5_bind.py ] || { echo "run from the worktree root"; exit 1; }
+[ -f "$OUT/log-config.json" ] || { echo "missing $OUT/log-config.json"; exit 1; }
+case "$RUN" in rescore-paid-*) ;; *) echo "run id must start with rescore-paid-"; exit 1;; esac
+DBURL="$(sed -n 's/^DATABASE_URL=//p' .env | tr -d '"' | tr -d "'")"
+export DATABASE_URL="${DBURL%/*}/keviq_paid_test"
+export TEST_DATABASE_URL="$DATABASE_URL"
+echo "DATABASE_URL name: /${DATABASE_URL##*/}"
+export MODEL_API_KEY="$(sed -n 's/^MODEL_API_KEY=//p' "$MAIN_ENV" | tr -d '"' | tr -d "'")"
+echo "MODEL_API_KEY set: $([ -n "$MODEL_API_KEY" ] && echo yes || echo no)"
+[ -n "$MODEL_API_KEY" ] || { echo "no model key: refusing a paid run"; exit 1; }
+export MODEL_SESSION_CAP_USD=8 MODEL_SESSION_WARN_USD=6 CATALOG_PATH=data/comments/c5/catalog.json
+unset C5_OFFLINE
 export C5_BIND_SESSION="$RUN" C5_BIND_EPOCH="epoch-$RUN"
-C5_BIND_SOURCE_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')
-C5_BIND_SYSTEM_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')
+C5_BIND_SOURCE_TOKEN=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+C5_BIND_SYSTEM_TOKEN=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
 export C5_BIND_SOURCE_TOKEN C5_BIND_SYSTEM_TOKEN
 echo "binding: session $C5_BIND_SESSION epoch $C5_BIND_EPOCH (two tokens generated, not shown)"
-TEST_DATABASE_URL="$DATABASE_URL" uv run python -m app.migrate --test || exit 1
+uv run python -m app.migrate --test || exit 1
 if curl -s --max-time 1 "$BASE/healthz" >/dev/null 2>&1; then echo "port $PORT already answers; refusing"; exit 1; fi
-uv run uvicorn measure.c5_bind:app --host 127.0.0.1 --port "$PORT" \
-  --log-config "$OUT/log-config.json" > "$OUT/$RUN-app.log" 2>&1 &
+uv run uvicorn measure.c5_bind:app --host 127.0.0.1 --port "$PORT" --log-config "$OUT/log-config.json" > "$OUT/$RUN-app.log" 2>&1 &
 APP=$!
 for i in $(seq 1 60); do curl -s --max-time 1 "$BASE/healthz" >/dev/null 2>&1 && break; sleep 0.5; done
 echo "healthz: $(curl -s --max-time 2 "$BASE/healthz")"
-echo "cost before: $(curl -s --max-time 2 "$BASE/api/cost?session=$RUN")"
-curl -s --max-time 2 "$BASE/api/cost?session=$RUN" | python3 -c 'import json,sys; c=json.load(sys.stdin); ok=(c["session_usd"],c["session_cap_usd"],c["session_warn_usd"])==(0.0,8.0,6.0); print("cost pre-flight", "ok" if ok else "WRONG", c); sys.exit(0 if ok else 1)' || { kill $APP; exit 1; }
-uv run python -m measure.c5 --base-url "$BASE" --loops 1 --seconds 350 --paid \
-  --run "$RUN" --out "$OUT" > "$OUT/$RUN-runner.log" 2>&1 &
+COST_BEFORE="$(curl -s --max-time 2 "$BASE/api/cost?session=$RUN")"
+echo "cost before: $COST_BEFORE"
+if ! python3 - "$COST_BEFORE" <<'PY'
+import json, sys
+d = json.loads(sys.argv[1])
+got = (d.get("session_usd"), d.get("session_cap_usd"), d.get("session_warn_usd"))
+ok = got == (0.0, 8.0, 6.0)
+print("cost pre-flight", "ok" if ok else f"WRONG {got}")
+sys.exit(0 if ok else 1)
+PY
+then kill $APP 2>/dev/null; wait $APP 2>/dev/null; echo "app stopped, nothing run"; exit 1; fi
+uv run python -m measure.c5 --base-url "$BASE" --loops 1 --seconds "$SECS" --paid --run "$RUN" --out "$OUT" > "$OUT/$RUN-runner.log" 2>&1 &
 RUNNER=$!
-uv run python docs/evidence/2026-10-28/scripts/paid-image-5min.py --base-url "$BASE" --run "$RUN" > "$OUT/$RUN-image-5min.log" 2>&1 &
+WINDOW=$SECS; [ "${WINDOW%.*}" -gt 300 ] && WINDOW=300
+uv run python docs/evidence/2026-10-28/scripts/paid-image-5min.py --base-url "$BASE" --run "$RUN" --window-s "$WINDOW" > "$OUT/$RUN-image-guard.log" 2>&1 &
 GUARD=$!
 wait $RUNNER; rc=$?
-wait $GUARD; grc=$?; echo "image guard rc=$grc"; tail -3 "$OUT/$RUN-image-5min.log"
-echo "runner rc=$rc"; tail -40 "$OUT/$RUN-runner.log"
+echo "runner rc=$rc"
+if kill -0 $GUARD 2>/dev/null; then
+  kill $GUARD 2>/dev/null; wait $GUARD 2>/dev/null; echo "guard: still polling at runner exit (stopped): no IMAGE_OK within the run"
+else
+  wait $GUARD; echo "guard rc=$?"
+fi
+grep -E 'IMAGE_OK|IMAGE_MISSING' "$OUT/$RUN-image-guard.log" | head -3
+grep -v '^wrote ' "$OUT/$RUN-runner.log" | head -30
 echo "cost after: $(curl -s --max-time 2 "$BASE/api/cost?session=$RUN")"
-echo "state after: $(curl -s --max-time 2 "$BASE/api/sessions/$RUN/state" | python3 -c 'import json,sys; s=json.load(sys.stdin); print({k: s.get(k) for k in ("attachment_enabled", "head_seq")})')"
-kill $APP 2>/dev/null; wait $APP 2>/dev/null; echo "app stopped"; exit $rc
+echo "state after: $(curl -s --max-time 2 "$BASE/api/sessions/$RUN/state" | python3 -c 'import sys,json; d=json.load(sys.stdin); print({k: d.get(k) for k in ("attachment_enabled",)})')"
+echo "app log: attachments INFO lines $(grep -c ' attachments INFO ' "$OUT/$RUN-app.log"), covered=True $(grep -c 'covered=True' "$OUT/$RUN-app.log")"
+kill $APP 2>/dev/null; wait $APP 2>/dev/null
+echo "app stopped"
+exit $rc
 ```
 
 `$OUT/log-config.json`, written before the start (root logger at INFO so that the `app` logger's lines reach
@@ -115,8 +151,9 @@ the app log; uvicorn's own access lines keep their handler):
 
 Why: in the 2218 app log there are 0 `attachment evaluation` lines for 211 readiness posts — `app/main.py`
 does not configure logging and uvicorn's default config leaves the root logger at WARNING, so the INFO line of
-`app/attachments.py:444` was never written. The dict above was checked offline with `logging.config.dictConfig`
-and a test `app` logger line (printed as expected); it was not checked against a running app.
+`app/attachments.py:444` was never written. The dict above was checked against a running app on 29 October (last section): the app's only INFO site
+is `app/attachments.py:444`, logger `attachments`; the `app` logger of `app/main.py` has no INFO line, so the
+count to watch is `attachments INFO`, and a healthz-only app writes none of them.
 
 What the runner then verifies by itself before any model call (`measure/c5_live.py:354-395`): cap/warn equal
 on app and runner; the session is empty; `attachment_enabled` is true for the bound session; the worker child's
@@ -230,11 +267,43 @@ Do not stop for: situations 3 and 4 failing (expected, unchanged by this branch)
 drafts (the media-time path working as specified); `422` on `/orders/<id>/decision` from the scripted shop
 (the 2218 run had 7, the shop's scripted decision does not fit a two-candidate draft; counted, not a stop).
 
+## (e) Two stages, one go line
+
+Stage 1: run id `rescore-paid-1030-<HHMM>`, `--seconds 120`: the first 10 order comments (`c5-1-001` to
+`c5-1-032`, deadlines within ≈ 115 s of the loop in 2218) get rule (d) on a 2 minute loop. Stage 2: a new run
+id (the runner requires an empty session), `--seconds 350`, started only when stage 1 has at least one
+`covered=True` line in its app log or at least one `comment_attachment` whose `outcome` is not `expired`:
+
+```
+grep -c 'covered=True' <out>/<stage 1>-app.log
+psql "$DATABASE_URL" -At -c "SELECT body->>'outcome', count(*) FROM events WHERE type='comment_attachment'
+  AND session_id='<stage 1>' GROUP BY 1;"
+```
+
+When stage 1 has all 10 expired and no `covered=True` line: stop, no stage 2; the NOTE records the 10
+classifications of (c) and the stage's cost. The go line names stage 1's run id and stage 2's condition; stage
+2 is one more wrapper call with the new run id.
+
+## (f) Operator, ledger, NOTE, revision
+
+- Operator: the branch owner, from this worktree, with the wrapper of (b). The key is read by the wrapper from
+  the main checkout's `.env` into the wrapper process; no command prints it (`MODEL_API_KEY set: yes|no` only),
+  no file receives it, the NOTE does not carry it.
+- `keviq_paid_test` is kept after the run until the NOTE is accepted; no `DROP DATABASE` before that.
+- The NOTE after the run: the five numbers of (c) (`missing read`, `timing`, `unresolved`, `evidence
+  rejected`, `ready`) plus `ambiguous`, over n = the order comments whose deadline fell inside the loop window
+  (not the scenario's 30); the session's `model_call` events as a jsonl file beside the NOTE with its sha256;
+  total cost = `SUM(cost_usd)` of the session's `model_call` rows in the ledger (the runner's final SQL), to be
+  set against the provider's billing page as photographed by the Founder after the run.
+- `C5PROC` sha in the run file = the head of this branch, not main; accepted because `app/`, `worker/`,
+  `orders/`, `meta/`, `contracts/` and `migrations/` on this branch equal main `f2c2dba`.
+
 ## Go checklist (one command or one checkable sentence per item)
 
 1. **Ledger database.** `keviq_paid_test` on the compose server, not `keviq_test`, not `keviq`. Create and migrate:
-   `TEST_DATABASE_URL=postgresql://keviq:<password from .env>@127.0.0.1:55433/keviq_paid_test uv run python -m app.migrate --test`
-   (the wrapper runs it again; the second time prints `migrations applied: none (up to date)`). The trial app and the
+   `TEST_DATABASE_URL="$DATABASE_URL" uv run python -m app.migrate --test` with `DATABASE_URL` = the `.env` URL
+   with its database name replaced by `keviq_paid_test` — done on 29 October (last section); the wrapper runs it
+   again and prints `migrations applied: none (up to date)`, as the dry run did. The trial app and the
    runner read `DATABASE_URL` = that URL (exported once in the wrapper; the first wrapper line prints the name
    `keviq_paid_test`). Pre-run check, done by the wrapper and fatal when it fails:
    `curl -s http://127.0.0.1:8040/api/cost?session=<run>` must contain `"session_usd": 0.0`, `"session_cap_usd": 8.0`,
@@ -269,17 +338,94 @@ drafts (the media-time path working as specified); `422` on `/orders/<id>/decisi
    `skipped`, `stale`, `failed`) and the same counts in the run file; the NOTE reports `done / 351` and the three
    non-read counts beside the two expiry numbers.
 7. **Name, time, duration.** Run id `rescore-paid-1030-HHMM`, `HHMM` = the start minute in VN time, as named in the
-   go line. Start: at the go line's time, on 30 October, by the operator who holds the key. Expected duration:
+   go line. Start: at the go line's time, on 30 October, by the branch owner from this worktree ((f)). Two
+   stages ((e)): stage 1 `--seconds 120` ≈ 3 min wall, stage 2 `--seconds 350` only on its condition. Stage 2:
    create/migrate and app start ≈ 20 s, runner pre-flight ≈ 5 s, one loop 350 s of frames at speed 1 plus the
    runner's tail (`TAIL_MS`) and the loop-end barrier ≈ 6.5 min, teardown ≈ 10 s: about 7.5 minutes wall; the
    image guard decides at ≈ 5 min, the early-stop rule (d) at ≈ 2 min.
 
 ## What is still not decided here
 
-- The go itself (Founder), and who types the command: the branch owner never sets `MODEL_API_KEY` and did not
-  run any part of this plan.
-- Whether `keviq_paid_test` is dropped after the export (`DROP DATABASE keviq_paid_test` by the operator) or
-  kept for a second loop; the plan keeps it until the NOTE is accepted.
-- The `--seconds 350` bound: one loop of the 350 s frame set, as in 2218. A shorter first loop (`--seconds 120`,
-  the first 10 order comments only, ≈ 0.2 USD) is the cheaper way to apply rule (d) before committing to the
-  full loop; it needs a second run id for the full loop since the runner requires an empty session.
+- The go itself: the line that names stage 1's run id and stage 2's condition; nothing paid runs before it.
+- The billing page screenshot after the run (Founder), against which the ledger's USD sum is set.
+
+## Done on 29 October, 0 USD (this worktree)
+
+Ledger database, created and migrated (`TEST_DATABASE_URL` = the `.env` URL with the name `keviq_paid_test`;
+the script prints the name only):
+
+```
+TEST_DATABASE_URL name: /keviq_paid_test
+migrate rc=0
+created the test database
+migrations applied: 001_events.sql, 002_attachments.sql, 003_attachment_inputs.sql
+```
+
+Databases on the compose server afterwards: `keviq`, `keviq_paid_test`, `keviq_test`; 11 tables in the new one
+(`attachment_binding_history`, `attachment_bindings`, `attachment_consumed_inputs`, `attachment_order_intents`,
+`attachment_source_receipts`, `attachments`, `cards`, `comments`, `events`, `orders`, `schema_migrations`);
+`model_call` rows 0.
+
+`dry-logconfig-2317`: `uvicorn measure.c5_bind:app` on 8040 with `--log-config` and `MODEL_API_KEY=""`,
+healthz only, then stopped:
+
+```
+MODEL_API_KEY set: no
+binding: session dry-logconfig-2317 epoch epoch-1793290626 (two tokens generated, not shown)
+healthz: {"ok":true,"store":"pg","head_seq":0}
+cost: {"today_usd":0.0,"total_usd":0.0,"daily_cap_usd":30.0,"daily_warn_usd":20.0,"total_cap_usd":300.0,"test_sessions":{"prefixes":["pytest","smoke-"],"today_usd":0.0,"total_usd":0.0},"session_usd":0.0,"session_cap_usd":8.0,"session_warn_usd":6.0}
+state attachment_enabled: True
+2026-10-29 23:17:07,365 uvicorn.error INFO Started server process [44572]
+2026-10-29 23:17:07,515 uvicorn.error INFO Application startup complete.
+2026-10-29 23:17:07,647 uvicorn.access INFO 127.0.0.1:50268 - "GET /healthz HTTP/1.1" 200
+INFO lines from app-named loggers: 0
+```
+
+The log config works (uvicorn's own INFO lines carry the `%(name)s` format), but a healthz-only app has no
+`app`-side INFO line to write: the only INFO site is the readiness handler. So the same config was run under
+a 20 s unpaid bound loop, `dry-bound-2319` (the wrapper of (b) with `C5_OFFLINE=1`, a blank key and
+`--seconds 20`, otherwise identical: ledger `keviq_paid_test`, `--log-config`, binding tokens generated):
+
+```
+DATABASE_URL name: /keviq_paid_test
+MODEL_API_KEY set: no
+binding: session dry-bound-2319 epoch epoch-dry-bound-2319 (two tokens generated, not shown)
+migrations applied: none (up to date)
+healthz: {"ok":true,"store":"pg","head_seq":0}
+cost before: {"today_usd":0.0,"total_usd":0.0,"daily_cap_usd":30.0,"daily_warn_usd":20.0,"total_cap_usd":300.0,"test_sessions":{"prefixes":["pytest","smoke-"],"today_usd":0.0,"total_usd":0.0},"session_usd":0.0,"session_cap_usd":8.0,"session_warn_usd":6.0}
+runner rc=0
+session cap 8.0 USD, warning 6.0 USD (env)
+loop 1: t0 1793290749586
+loop 1: done, SETTLED/SETTLED behind 0, retired 1, waits {}, failures 0
+run dry-bound-2319 sha bcdec6e271a9653e1cf3d19b2684cfc07f18dee6 loops 1
+SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd
+FROM events WHERE type = 'model_call' AND session_id = 'dry-bound-2319' GROUP BY session_id;
+session_id | n | usd
+(0 rows)
+cost after: {"today_usd":0.0,"total_usd":0.0,"daily_cap_usd":30.0,"daily_warn_usd":20.0,"total_cap_usd":300.0,"test_sessions":{"prefixes":["pytest","smoke-"],"today_usd":0.0,"total_usd":0.0},"session_usd":0.0,"session_cap_usd":8.0,"session_warn_usd":6.0}
+state after: {'attachment_enabled': True}
+app log: 173 lines; attachments INFO lines: 5; uvicorn.access lines: 160
+2026-10-29 23:19:14,162 attachments INFO attachment evaluation: covered=True resolved=False remaining_ms=2894
+2026-10-29 23:19:14,838 attachments INFO attachment evaluation: covered=True resolved=False remaining_ms=2218
+2026-10-29 23:19:15,820 attachments INFO attachment evaluation: covered=True resolved=False remaining_ms=1236
+2026-10-29 23:19:16,552 attachments INFO attachment evaluation: covered=True resolved=False remaining_ms=504
+2026-10-29 23:19:16,828 attachments INFO attachment evaluation: covered=True resolved=False remaining_ms=228
+```
+
+So the INFO lines of (c) exist under this config. Events of the session in the ledger: 36 (frame 20, speech 4,
+comment_labeled 4, card 3, comment 3, comment_attachment 1, product_seen 1). The one `comment_attachment`
+(`c5-1-001`, the only order comment whose deadline fell inside 20 s): `outcome` `expired`, `reason`
+`original attachment deadline expired`, `candidates` `[]`, `selected_card_id` null, deadline 4000 ms after
+`comment_ingested_ms`, five evaluations before it all `covered=True resolved=False` — class `unresolved` of
+(c) (evidence accepted, nothing to resolve to: no vision read without a key), not `missing read`.
+
+Two more rows are in `keviq_paid_test`, sessions `pytest-ver-4472206928` (card) and `pytest-pg` (comment),
+seq 37 and 40, after the session's 36: the runner's code checks (`measure/c5.py` `code_checks()`, one pytest
+per situation file, key blanked and `DATABASE_URL` removed, so `tests/conftest.py` took `TEST_DATABASE_URL`,
+the ledger) wrote them; 16 situations checked, all rc 0 in the run file. They cost nothing and are
+excluded from the paid session by id; they are left in place. The paid run will add the same kind of rows
+after its loop.
+
+Wrapper file: `rescore-paid-run.sh`, 4043 bytes, sha256 `31f7dee5d31ef812d2cf0c117238fb307317ed6f13fc27d204a37ff2ee03c053`, `bash -n` ok, not
+run; its text is the block in (b). It contains no key, token, password or URL with credentials (the two
+`secrets.token_urlsafe(32)` lines generate the binding tokens at run time).
