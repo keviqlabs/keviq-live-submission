@@ -280,14 +280,26 @@ async def post_comments(http, sid: str, items: list[tuple[int, dict]]) -> int:
 
 
 def replay_seen(
-    sid: str, k: int, t0: int, loop_ms: int, etype: str = "product_seen"
+    sid: str, k: int, t0: int, loop_ms: int, etype: str = "product_seen", observations: Path | None = None
 ) -> list[tuple[int, dict]]:
     """(post at, event) for the 6b new rows (or, etype "speech", the test1 lines) that start in the loop, on its
-    clock t0."""
-    from measure import c5_dry
+    clock t0; with observations, the rows a stored run observed instead (measure.c5_frozen)."""
+    from measure import c5_dry, c5_frozen
 
-    return [(due, ev) for due, ev in c5_dry.media_items(sid, k, t0)
-            if ev["type"] == etype and ev["ts_ms"] - t0 < loop_ms]  # fmt: skip
+    source = c5_frozen.items(observations, sid, k, t0) if observations else c5_dry.media_items(sid, k, t0)
+    return [(due, ev) for due, ev in source if ev["type"] == etype and ev["ts_ms"] - t0 < loop_ms]
+
+
+def frozen_note(etype: str, observations: Path) -> str:
+    return f"stored {etype} events of {observations.name} (measure.c5_frozen), replayed on the loop clock" + (
+        ", caused by this run's frames" if etype == "product_seen" else "; media --no-voice"
+    )
+
+
+def frozen_sha(observations: Path) -> str:
+    from measure import c5_frozen
+
+    return c5_frozen.sha256(observations)
 
 
 def caused(ev: dict, frames: list[dict]) -> dict | None:
@@ -326,7 +338,7 @@ async def post_seen(http, sid: str, items: list[tuple[int, dict]], frames: list[
 
 
 async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, check_code: bool,
-               seconds: float | None = None, paid: bool = False) -> int:  # fmt: skip
+               seconds: float | None = None, paid: bool = False, observations: Path | None = None) -> int:  # fmt: skip
     import httpx
 
     from app import settings
@@ -399,9 +411,10 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                 customers.start([m for m in msgs if m["not_before_ms"] < loop_ms], t0, end + c5.TAIL_MS, k)
                 due = [r for r in rows if r.get("arrives_ms", r["ts_ms"]) < loop_ms]
                 posting = asyncio.create_task(post_comments(http, run, c5.comment_schedule(due, run, t0)))
-                seen = None if paid else asyncio.create_task(post_seen(http, run, replay_seen(run, k, t0, loop_ms),
-                                                                       watch.frames, n_frames))  # fmt: skip
-                speech = [] if paid else replay_seen(run, k, t0, loop_ms, "speech")
+                seen_items = [] if paid else replay_seen(run, k, t0, loop_ms, observations=observations)
+                seen = None if paid else asyncio.create_task(
+                    post_seen(http, run, seen_items, watch.frames, n_frames))  # fmt: skip
+                speech = [] if paid else replay_seen(run, k, t0, loop_ms, "speech", observations)
                 speaking = None if paid else asyncio.create_task(post_comments(http, run, speech))
                 try:  # the loop end, or a session_cap refusal
                     await asyncio.wait_for(watch.cap.wait(), max(end + c5.TAIL_MS - now_ms(), 0) / 1000)
@@ -455,15 +468,19 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
         "config": {"mode": "live", "base_url_port": urlsplit(base_url).port, "healthz": health,
                    "catalog_path": c5.repo_path(catalog), "catalog_sha256": want["catalog_sha256"],
                    "vision": "worker vision brain (spark), effort minimal", "effort": "minimal", "fps": 1,
-                   "product_seen": "worker vision" if paid else "stored output of session test1 (6b rows, "
+                   "product_seen": "worker vision" if paid else frozen_note("product_seen", observations)
+                   if observations else "stored output of session test1 (6b rows, "
                    "c5_dry.media_items), replayed by the runner, caused by this run's frames",
                    "cutout": "on a card gone live (model call)" if paid else "stored output of session test1 "
                    "(probe/sam cut-out of the same source frame and noun, not chosen by the gold), replayed; none: no "
                    "image (NOT_RUN)", "model_client": "model client" if paid else "none (measure/c5_offline.NoModel)",
                    "card_line": False, "labels": "labels brain with the model" if paid else "gold labels through "
                    "the labels brain (GoldClient), stored gold of test1, replayed",
-                   "speech": "media voice (Voice Transcribe)" if paid else "stored output of session test1 "
+                   "speech": "media voice (Voice Transcribe)" if paid else frozen_note("speech", observations)
+                   if observations else "stored output of session test1 "
                    "(probe/voice.json), replayed on the loop clock; rule price reader (no key); media --no-voice",
+                   "observations": None if paid or not observations else
+                   {"path": str(observations), "sha256": frozen_sha(observations)},
                    "cap_usd": cap, "warn_usd": warn, "cap_from": cap_from, "paid": paid, "seconds": seconds,
                    "restart": "worker and media processes per loop", "shop_delay_s": SHOP_DELAY_S,
                    "tail_ms": c5.TAIL_MS, "loop_ms": loop_ms},
