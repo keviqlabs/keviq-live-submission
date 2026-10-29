@@ -10,6 +10,8 @@ import hashlib
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from app.attachment_auth import require_console
+from app.attachments_api import request_body
 from app.contracts import ContractError, make_event, now_ms
 from connectors.sim.messenger import SimMessenger, parse_webhook
 from orders import flow
@@ -22,6 +24,7 @@ LOCK = asyncio.Lock()  # one decision at a time, so two taps cannot both leave N
 class Decision(BaseModel):
     decision: str
     unit_price: int | None = None
+    card_id: str | None = None
 
 
 async def session_events(store, session_id: str) -> list[dict]:
@@ -51,6 +54,18 @@ async def append(store, session_id: str, source: str, partials: list[dict], rece
 async def decide(session_id: str, order_id: str, body: Decision, request: Request):
     """Seller approves (at the card price, or at `unit_price`) or rejects an order waiting in NEEDS_SELLER."""
     store, received = request.app.state.store, now_ms()
+    require_console(request.headers.get("authorization"))
+    if body.unit_price is not None and body.unit_price < 0:
+        raise HTTPException(409, "a negative price cannot be approved")
+    intent = await request_body(request, "order-decision")
+    if await store.attachment_binding(session_id) is not None:
+        from app.attachment_orders import decide as attachment_order_decide
+
+        async with store.session_transaction(session_id):
+            events = await attachment_order_decide(store, session_id, order_id, intent, now_ms())
+        return {"events": events}
+    if "card_id" in intent:
+        raise HTTPException(422, "card choice is not applicable to a legacy order")
     async with LOCK:
         view = flow.View.of(await session_events(store, session_id))
         order = view.order(order_id)
@@ -76,6 +91,7 @@ async def order_log(session_id: str, order_id: str, request: Request):
 @router.post("/api/sessions/{session_id}/sim/messenger")
 async def sim_messenger(session_id: str, request: Request):
     """Simulated customer messages as a Page webhook body -> message_in (source sim). Refused in a live session."""
+    require_console(request.headers.get("authorization"))
     store = request.app.state.store
     events = await session_events(store, session_id)
     if any(e["source"] == "facebook" for e in events):

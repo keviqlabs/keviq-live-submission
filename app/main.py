@@ -7,6 +7,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 
+from app.attachments import Attachments
+from app.attachments_api import router as attachments_router
 from app.cards_api import card_lock, refuse_price_change
 from app.cards_api import router as cards_router
 from app.contracts import ContractError, now_ms, validate_event
@@ -34,12 +36,16 @@ def create_app(store=None) -> FastAPI:
         await app.state.store.open()
         if app.state.store.kind == "memory":
             log.warning("DATABASE_URL not set: using the in-memory store, nothing is persisted")
+        await app.state.attachments.start()
         yield
+        await app.state.attachments.close()
         await app.state.store.close()
 
     app = FastAPI(title="keviq-live-event", lifespan=lifespan)
     app.include_router(orders_router)
     app.include_router(cards_router)
+    app.include_router(attachments_router)
+    app.state.attachments = Attachments(lambda: app.state.store, lambda: now_ms())
 
     def st(request: Request):
         return request.app.state.store
@@ -56,6 +62,8 @@ def create_app(store=None) -> FastAPI:
         events = payload if isinstance(payload, list) else [payload]
         out = []
         for event in events:
+            if isinstance(event, dict) and event.get("type") == "comment_attachment":
+                raise HTTPException(403, "attachment events have a server-only writer")
             try:
                 validate_event(event)
             except ContractError as exc:
@@ -66,11 +74,24 @@ def create_app(store=None) -> FastAPI:
                 )
             try:
                 if event["type"] == "card":
-                    async with card_lock(request.app):
-                        await refuse_price_change(st(request), event)
-                        seq, inserted = await st(request).append(event)
+                    async with card_lock(request.app), st(request).session_transaction(session_id):
+
+                        async def price_guard(candidate=event):
+                            await refuse_price_change(st(request), candidate)
+
+                        result = await request.app.state.attachments.ingest(
+                            event, request.headers.get("authorization"), before_append=price_guard
+                        )
+                        if result is None:
+                            await price_guard()
+                            result = await st(request).append(event)
+                        seq, inserted = result
                 else:
-                    seq, inserted = await st(request).append(event)
+                    async with st(request).session_transaction(session_id):
+                        result = await request.app.state.attachments.ingest(
+                            event, request.headers.get("authorization")
+                        )
+                        seq, inserted = result if result is not None else await st(request).append(event)
             except VersionTaken as exc:
                 raise HTTPException(409, f"card {exc} already exists under another event_id") from exc
             out.append({"event_id": event["event_id"], "seq": seq, "duplicate": not inserted})

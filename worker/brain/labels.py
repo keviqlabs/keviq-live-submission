@@ -24,6 +24,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from app.contracts import new_id, now_ms
+from app.current import appearances, current_at
 from app.settings import catalog_path
 from app.store import live_cards_from
 from connectors.facebook.interface import CommentModerator
@@ -112,37 +113,50 @@ def is_fixture(event: dict) -> bool:
 
 
 def go_live_order(versions: list[dict]) -> list[dict]:
-    """First version of each card, in the order the cards appeared."""
+    """Appearances in frame-time order, including a returning item."""
+    return appearances(versions)
+
+
+def _first_versions(versions: list[dict]) -> list[dict]:
+    """First version of each card, in the order the cards appeared (the base go-live order)."""
     first: dict[str, dict] = {}
     for card in sorted(versions, key=lambda c: (c["ts_ms"], c["version"])):
         first.setdefault(card["card_id"], card)
     return sorted(first.values(), key=lambda c: c["ts_ms"])
 
 
-def cards_at(versions: list[dict], ts_ms: int) -> tuple[dict | None, dict | None]:
-    """(current, previous) at ts_ms: current = newest live card; previous = the latest other card shown."""
+def live_cards_at(versions: list[dict], ts_ms: int) -> tuple[dict | None, dict | None]:
+    """(current, previous) from live/edited versions only, as before media-time binding: current = newest
+    live card at ts_ms; previous = the latest other card shown. Sessions without an attachment binding
+    order from this snapshot, so an unpriced draft never becomes an order line."""
     live = live_cards_from(versions, ts_ms)
     current = live[0] if live else None
     others = [
         c
-        for c in go_live_order(versions)
+        for c in _first_versions(versions)
         if c["ts_ms"] <= ts_ms and c["card_id"] != (current or {}).get("card_id")
     ]
     return current, others[-1] if others else None
 
 
-def resolve(item: dict, versions: list[dict], ts_ms: int, skus: set[str]) -> dict:
+def cards_at(versions: list[dict], ts_ms: int, *, live_only: bool = False) -> tuple[dict | None, dict | None]:
+    """Known current/previous identity at media time, including an unpriced draft; with live_only the
+    live/edited snapshot of live_cards_at."""
+    return live_cards_at(versions, ts_ms) if live_only else current_at(versions, ts_ms)
+
+
+def resolve(item: dict, versions: list[dict], ts_ms: int, skus: set[str], *, live_only: bool = False) -> dict:
     """order_draft from a model item; referenced_card_id comes from the timeline, never from the model."""
     kind, sku = item["reference_kind"], item["sku"]
-    current, previous = cards_at(versions, ts_ms)
+    current, previous = cards_at(versions, ts_ms, live_only=live_only)
     card = None
     if kind == "current_card":
         card = current
     elif kind == "previous_card":
         card = previous
     elif kind == "explicit_sku" and sku in skus:
-        shown = [c for c in go_live_order(versions) if c["sku"] == sku and c["ts_ms"] <= ts_ms]
-        card = shown[-1] if shown else None
+        shown = [c for c in (current, previous) if c is not None and c["sku"] == sku]
+        card = shown[0] if len(shown) == 1 else None
     if kind not in ("current_card", "previous_card", "explicit_sku") or (
         card is None and not (kind == "explicit_sku" and sku in skus)
     ):
@@ -203,6 +217,9 @@ class Labeler:
         known = {(c["card_id"], c["version"]) for c in self.cards[sid]}
         if (event["card_id"], event["version"]) not in known:
             self.cards[sid].append(event)
+        if sid in getattr(getattr(ctx, "runner", None), "attachment_auth", {}) and sid not in self.history:
+            # Load the actual prefix while no comment is waiting; a later batch awaits this same task.
+            self.history[sid] = self._spawn(self._load_history(sid, ctx.runner))
         return []
 
     async def on_comment(self, event: dict, ctx: Ctx) -> list[dict]:
@@ -357,11 +374,25 @@ class Labeler:
 
     async def _consequences(self, p: Pending, item: dict | None, versions: list[dict], infer) -> list[dict]:
         event, ctx = p.event, p.ctx
+        attached_flow = hasattr(ctx.runner, "attachment_enabled") and await ctx.runner.attachment_enabled(
+            event["session_id"]
+        )
         if item is None:
             label, draft, model_signals = "other", None, []
         else:
             label, model_signals = item["label"], [item["contact"]]
-            draft = resolve(item, versions, event["ts_ms"], self.skus) if label == "order" else None
+            draft = (
+                resolve(item, versions, event["ts_ms"], self.skus, live_only=not attached_flow)
+                if label == "order"
+                else None
+            )
+            if draft and attached_flow:
+                # Preserve classification intent while a frame is pending; only the server's proof binds it.
+                draft["reference_kind"] = (
+                    item["reference_kind"] if item["reference_kind"] in KINDS else "unresolved"
+                )
+                draft["sku"] = item["sku"] if draft["reference_kind"] == "explicit_sku" else None
+                draft["referenced_card_id"] = None
         signals = [s for s in SIGNALS if s in set(p.signals) | set(model_signals)]
         action = p.action
         if action == "none" and signals:
@@ -376,7 +407,7 @@ class Labeler:
                 ctx.received_ms,
             )
         ]
-        if draft and draft["reference_kind"] == "unresolved":
+        if draft and draft["reference_kind"] == "unresolved" and not attached_flow:
             ask = self._ask_again(event, ctx, versions, label_id)
             if ask:
                 out.append(build(event, ask, ctx.received_ms))
@@ -387,7 +418,7 @@ class Labeler:
         if not decision.allowed:
             log.info("ask_which_item for %s not sent: %s", event["comment_id"], decision.reason)
             return None
-        current, previous = cards_at(versions, event["ts_ms"])
+        current, previous = cards_at(versions, event["ts_ms"], live_only=True)
         return {
             "type": "message_out",
             "thread_ref": f"th-{event['user_ref']}",

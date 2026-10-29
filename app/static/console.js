@@ -13,6 +13,8 @@ const itemCodes = new Map(); // card_id -> catalog code typed by the seller
 const itemNotes = new Map(); // card_id -> item selection result
 const comments = new Map();  // comment_id -> {comment, labeled}
 const orders = new Map();    // order_id -> latest order event
+const orderComments = new Map(); // order_id -> real source comment identity
+const attachments = new Map(); // attachment_id -> latest immutable decision version
 const vnd = (n) => (n == null ? "giá chưa có" : n.toLocaleString("vi-VN") + " ₫");
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const time = (ms) => new Date(ms).toLocaleTimeString("vi-VN");
@@ -43,7 +45,11 @@ function priceHtml(c) {
 function renderCards() {
   const focused = document.activeElement?.dataset?.cardPrice;
   const focusedItem = document.activeElement?.dataset?.cardSku;
-  const list = [...cards.values()].sort((a, b) => b.ts_ms - a.ts_ms);
+  const rank = (c) => (versions.get(c.card_id) || [c]).reduce((best, v) => {
+    const frame = v.provenance.frame_ts_ms;
+    return frame != null && (frame > best[0] || (frame === best[0] && v.version > best[1])) ? [frame, v.version] : best;
+  }, [-1, 0]);
+  const list = [...cards.values()].sort((a, b) => rank(b)[0] - rank(a)[0] || rank(b)[1] - rank(a)[1]);
   $("cards").innerHTML = list.map((c) => `
     <div class="item">
       ${c.image_url ? `<img class="thumb" src="${esc(c.image_url)}" alt="">` : ""}
@@ -131,7 +137,29 @@ function renderComments() {
       <div class="row"><span>${esc(c.user_ref)} · ${time(c.ts_ms)}</span>${l ? `<span class="tag ${esc(l.label)}">${esc(l.label)}${l.action !== "none" ? " · " + esc(l.action) : ""}</span>` : `<span class="tag">unlabeled</span>`}</div>
       <div>${esc(c.text)}</div>
       ${l && l.order_draft ? `<div class="prov">draft: ${esc(l.order_draft.sku ?? "?")} ×${l.order_draft.qty ?? "?"} · ref ${esc(l.order_draft.reference_kind)} → ${esc(l.order_draft.referenced_card_id ?? "–")}</div>` : ""}
+      ${attachmentHtml(c.comment_id)}
     </div>`).join("");
+}
+
+function attachmentHtml(commentId) {
+  const a = [...attachments.values()].find((value) => value.comment_id === commentId);
+  if (!a) return "";
+  const hasOrder = [...orderComments.values()].some((cid) => cid === commentId);
+  const selected = cards.get(a.selected_card_id);
+  const name = selected?.name || a.selected_card_id;
+  let note = a.action === "reject" ? "Shop đã đóng yêu cầu; chưa nhắn khách." : a.selected_card_id
+    ? `Đã giữ đúng món ${name}. ${hasOrder ? "Theo dõi trong đơn." : "Chờ mã món và giá được duyệt trên chính thẻ này."}`
+    : "Cần shop chọn món từ ảnh chụp lúc hết hạn.";
+  if (!a.candidates.length) note = "Không có thẻ trong ảnh chụp; chỉ có thể giữ chưa rõ hoặc từ chối.";
+  const controls = hasOrder || a.action === "reject" ? "" : `<div class="actions">
+    ${a.outcome === "expired" && !a.selected_card_id ? a.candidates.map((c) => {
+      const card = cards.get(c.card_id);
+      return `<button data-act="attachment-select" data-aid="${esc(a.attachment_id)}" data-choice="${esc(c.card_id)}">Chọn ${esc(card?.name || c.card_id)}</button>`;
+    }).join("") : ""}
+    <button data-act="attachment-keep" data-aid="${esc(a.attachment_id)}">Giữ chưa rõ</button>
+    <button data-act="attachment-reject" data-aid="${esc(a.attachment_id)}" class="bad">Từ chối yêu cầu</button>
+    </div>`;
+  return `<div class="prov">${esc(note)} · v${a.version} · hạn ${time(a.deadline_ms)}</div>${controls}`;
 }
 
 const logs = new Map();    // order_id -> source log (C6) from /orders/{id}/log
@@ -158,6 +186,11 @@ function actionsHtml(o) {
   if (o.state === "NEEDS_SELLER") {
     const ask = logs.get(o.order_id)?.discount_request;
     const value = prices.get(o.order_id) ?? (ask?.kind === "target" ? ask.value : "");
+    const candidates = o.lines.find((line) => line.candidates)?.candidates;
+    if (candidates) return `<div class="actions">
+      <input type="number" min="1" step="1000" data-price="${id}" value="${esc(value)}" placeholder="giá shop duyệt (tuỳ chọn)" aria-label="đơn giá cho ${id}">
+      ${candidates.map((cid) => `<button data-act="choose-order" data-oid="${id}" data-choice="${esc(cid)}">Chọn ${esc(cards.get(cid)?.name || cid)}</button>`).join("")}
+      <button data-act="reject" data-oid="${id}" class="bad">Từ chối</button></div>`;
     return `<div class="actions">
       <input type="number" min="1" step="1000" data-price="${id}" value="${esc(value)}" placeholder="đơn giá" aria-label="unit price for ${id}">
       <button data-act="price" data-oid="${id}">Duyệt đơn giá này</button>
@@ -179,6 +212,7 @@ function orderHtml(o) {
   return `<div class="item">
     <div class="row"><b>${esc(o.order_id)}</b><span><span class="tag">${esc(o.state)}</span> <button data-act="log" data-oid="${esc(o.order_id)}">Nguồn</button></span></div>
     <div>${lines}</div><div>total ${vnd(o.amount)} · ${esc(o.customer_ref)}</div>
+    ${o.state === "NEEDS_SELLER" && o.lines.some((l) => l.candidates) ? `<div class="prov">Chưa chọn món. Shop chọn một thẻ bên dưới trước khi xác nhận.</div>` : ""}
     <div class="prov">${esc(o.reason)} · by ${esc(o.actor)} at ${time(o.ts_ms)} · from ${esc((o.caused_by || []).join(", ") || "–")}</div>
     ${actionsHtml(o)}
     ${shown.has(o.order_id) ? logHtml(logs.get(o.order_id)) : ""}
@@ -232,6 +266,17 @@ document.addEventListener("click", async (ev) => {
   const b = ev.target.closest("button[data-act]");
   if (!b) return;
   const oid = b.dataset.oid, act = b.dataset.act;
+  if (act.startsWith("attachment-")) {
+    const attachment = attachments.get(b.dataset.aid);
+    if (!attachment) return;
+    b.disabled = true;
+    const decision = { "attachment-select": "select", "attachment-keep": "keep_unresolved", "attachment-reject": "reject" }[act];
+    const body = { attachment_version: attachment.version, decision };
+    if (decision === "select") body.card_id = b.dataset.choice;
+    await post(api(`/attachments/${encodeURIComponent(attachment.attachment_id)}/decision`), body);
+    b.disabled = false;
+    return;
+  }
   if (act === "assign-item" || act === "keep-item") {
     b.disabled = true;
     await itemAction(act, b.dataset.cid);
@@ -248,7 +293,16 @@ document.addEventListener("click", async (ev) => {
     if (shown.delete(oid)) renderOrders(); else { shown.add(oid); renderOrders(); loadLog(oid); }
     return;
   }
-  if (act === "price") {
+  if (act === "choose-order") {
+    const body = { decision: "approve", card_id: b.dataset.choice };
+    const raw = String(prices.get(oid) ?? "").trim();
+    if (raw) {
+      if (!/^\d+$/.test(raw) || Number(raw) <= 0) { banner("Nhập đơn giá là số nguyên VND lớn hơn 0.", "warn"); return; }
+      body.unit_price = Number(raw);
+    }
+    b.disabled = true;
+    await post(orderApi(oid, "/decision"), body);
+  } else if (act === "price") {
     const raw = String(prices.get(oid) ?? document.querySelector(`[data-price="${CSS.escape(oid)}"]`)?.value ?? "").trim();
     if (!/^\d+$/.test(raw) || Number(raw) <= 0) { banner("Nhập đơn giá là số nguyên VND lớn hơn 0.", "warn"); return; }
     b.disabled = true;
@@ -270,19 +324,28 @@ function banner(text, level) {
 }
 
 const handlers = {
+  comment_attachment: (e) => {
+    const current = attachments.get(e.attachment_id);
+    if (!current || current.version <= e.version) attachments.set(e.attachment_id, e);
+    renderComments();
+  },
   card: (e) => {
     const cur = cards.get(e.card_id);
     if (!cur || cur.version <= e.version) cards.set(e.card_id, e);
     versions.set(e.card_id, [...(versions.get(e.card_id) || []), e]);
     renderCards();
+    renderComments();
   },
   price_proposal: (e) => { proposals.set(e.card_id, [...(proposals.get(e.card_id) || []), e]); renderCards(); },
   comment: (e) => { comments.set(e.comment_id, { ...(comments.get(e.comment_id) || {}), comment: e }); renderComments(); },
   comment_labeled: (e) => { comments.set(e.comment_id, { ...(comments.get(e.comment_id) || {}), labeled: e }); renderComments(); },
   order: (e) => {
+    const source = [...comments.values()].find((row) => row.comment && (e.caused_by || []).includes(row.comment.event_id));
+    if (source) orderComments.set(e.order_id, source.comment.comment_id);
     orders.set(e.order_id, e);
     if (e.state === "NEEDS_SELLER" || shown.has(e.order_id)) refreshLogs([e.order_id]);
     renderOrders();
+    renderComments();
   },
   message_out: () => { if (shown.size) refreshLogs(shown); },
   message_in: () => { if (shown.size) refreshLogs(shown); },
