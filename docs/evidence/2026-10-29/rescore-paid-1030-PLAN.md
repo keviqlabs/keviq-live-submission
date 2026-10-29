@@ -75,6 +75,7 @@ echo "DATABASE_URL name: ${DATABASE_URL##*/}"                       # prints: ke
 echo "MODEL_API_KEY set: $([ -n "${MODEL_API_KEY:-}" ] && echo yes || echo 'no (the runner reads .env)')"
 export MODEL_SESSION_CAP_USD=8 MODEL_SESSION_WARN_USD=6
 export CATALOG_PATH=data/comments/c5/catalog.json
+unset C5_OFFLINE                                                     # the runner sets it only for unpaid loops; never inherited here
 export C5_BIND_SESSION="$RUN" C5_BIND_EPOCH="epoch-$RUN"
 C5_BIND_SOURCE_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')
 C5_BIND_SYSTEM_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')
@@ -88,10 +89,14 @@ APP=$!
 for i in $(seq 1 60); do curl -s --max-time 1 "$BASE/healthz" >/dev/null 2>&1 && break; sleep 0.5; done
 echo "healthz: $(curl -s --max-time 2 "$BASE/healthz")"
 echo "cost before: $(curl -s --max-time 2 "$BASE/api/cost?session=$RUN")"
+curl -s --max-time 2 "$BASE/api/cost?session=$RUN" | python3 -c 'import json,sys; c=json.load(sys.stdin); ok=(c["session_usd"],c["session_cap_usd"],c["session_warn_usd"])==(0.0,8.0,6.0); print("cost pre-flight", "ok" if ok else "WRONG", c); sys.exit(0 if ok else 1)' || { kill $APP; exit 1; }
 uv run python -m measure.c5 --base-url "$BASE" --loops 1 --seconds 350 --paid \
   --run "$RUN" --out "$OUT" > "$OUT/$RUN-runner.log" 2>&1 &
 RUNNER=$!
+uv run python docs/evidence/2026-10-28/scripts/paid-image-5min.py --base-url "$BASE" --run "$RUN" > "$OUT/$RUN-image-5min.log" 2>&1 &
+GUARD=$!
 wait $RUNNER; rc=$?
+wait $GUARD; grc=$?; echo "image guard rc=$grc"; tail -3 "$OUT/$RUN-image-5min.log"
 echo "runner rc=$rc"; tail -40 "$OUT/$RUN-runner.log"
 echo "cost after: $(curl -s --max-time 2 "$BASE/api/cost?session=$RUN")"
 echo "state after: $(curl -s --max-time 2 "$BASE/api/sessions/$RUN/state" | python3 -c 'import json,sys; s=json.load(sys.stdin); print({k: s.get(k) for k in ("attachment_enabled", "head_seq")})')"
@@ -224,6 +229,50 @@ none); the worker progress lines showing vision `failed` above half of `received
 Do not stop for: situations 3 and 4 failing (expected, unchanged by this branch); NEEDS_SELLER two-candidate
 drafts (the media-time path working as specified); `422` on `/orders/<id>/decision` from the scripted shop
 (the 2218 run had 7, the shop's scripted decision does not fit a two-candidate draft; counted, not a stop).
+
+## Go checklist (one command or one checkable sentence per item)
+
+1. **Ledger database.** `keviq_paid_test` on the compose server, not `keviq_test`, not `keviq`. Create and migrate:
+   `TEST_DATABASE_URL=postgresql://keviq:<password from .env>@127.0.0.1:55433/keviq_paid_test uv run python -m app.migrate --test`
+   (the wrapper runs it again; the second time prints `migrations applied: none (up to date)`). The trial app and the
+   runner read `DATABASE_URL` = that URL (exported once in the wrapper; the first wrapper line prints the name
+   `keviq_paid_test`). Pre-run check, done by the wrapper and fatal when it fails:
+   `curl -s http://127.0.0.1:8040/api/cost?session=<run>` must contain `"session_usd": 0.0`, `"session_cap_usd": 8.0`,
+   `"session_warn_usd": 6.0` (line `cost pre-flight ok`), and `psql "$DATABASE_URL" -At -c "SELECT count(*) FROM events WHERE session_id='<run>'"` prints `0`.
+2. **No `tests.db_lock`.** The runner is started directly by the wrapper (`uv run python -m measure.c5 …`); the 2218
+   wrapper line `uv run python -m tests.db_lock -- bash …` is not used, since the lock wrapper blanks
+   `MODEL_API_KEY` and points `DATABASE_URL` at `keviq_test`. The runner carries `MODEL_SESSION_CAP_USD=8
+   MODEL_SESSION_WARN_USD=6` in its own environment (exported before both the app and the runner), and refuses to
+   start when the app reports other values. No part of the run needs the `keviq_test` lock: the trial app, the
+   worker, the media process and the runner's final SQL all use `keviq_paid_test`, and `.scratch/keviq_test.lock`
+   is neither taken nor touched. Checkable: `grep -c db_lock rescore-paid-run.sh` prints `0`.
+3. **Port.** Trial app on `127.0.0.1:8040` only; the wrapper refuses when 8040 already answers `/healthz`; nothing
+   on `:8000` or `:8001` is started, stopped or called (the image guard refuses a `:8001` base URL by itself).
+   Checkable: `lsof -nP -iTCP:8040 -sTCP:LISTEN` shows the trial uvicorn, and `:8000`/`:8001` appear in no command of the wrapper.
+4. **Caps and stops.** Cap 8.00 / warn 6.00 USD (item 1). Early stop (d): the first 10 `comment_attachment` events
+   all `expired` and no `covered=True` line → `kill $RUNNER` (SIGTERM). Image rule, 5 minutes: the existing guard
+   `docs/evidence/2026-10-28/scripts/paid-image-5min.py` runs beside the runner (wrapper above); within 300 s of the
+   session's first frame it needs one `model_call` with purpose `card_cutout` and `ok` true and one card version
+   whose `image_url` is a `data:image/` URL. It prints `IMAGE_OK` (card id, version, image sha256) and exits 0, or
+   prints `IMAGE_MISSING`, SIGTERMs the runner and its children, prints `/api/cost?session=<run>` and exits 1; the
+   NOTE then records the stop and that cost. The guard's log is `<run>-image-5min.log`, kept beside the NOTE.
+5. **Binding and key.** The wrapper generates the two tokens (`secrets.token_urlsafe(32)`) and exports all four
+   `C5_BIND_*` variables; its log shows only `binding: session <run> epoch epoch-<run> (two tokens generated, not
+   shown)`. Runner flags: `--paid`, no `--observations` (the runner rejects the pair). `C5_OFFLINE` is unset by the
+   wrapper and never set for a paid loop (`measure/c5_live.py:397`); the worker child would refuse it with a key
+   (`measure/c5_proc.py:124`). `MODEL_API_KEY` is only tested for presence: the wrapper prints `set: yes|no`, the
+   worker proof line prints `model_key_set: true`; no command prints the value. Checkable after the run:
+   `grep -c 'model_key_set": true' <run>-runner.log` ≥ 1 and `grep -c offline <run>-loop1-worker.log` = 0.
+6. **Log split.** Section (c): per expired comment, `missing read` vs `timing` (plus `unresolved`, `evidence rejected`,
+   `ready`, `ambiguous`), needing the `--log-config` so the app's `attachment evaluation` lines exist. Frames the
+   worker read: the last `C5PROC … "progress"` line of `<run>-runner.log` (`stats.vision`: `received`, `done`,
+   `skipped`, `stale`, `failed`) and the same counts in the run file; the NOTE reports `done / 351` and the three
+   non-read counts beside the two expiry numbers.
+7. **Name, time, duration.** Run id `rescore-paid-1030-HHMM`, `HHMM` = the start minute in VN time, as named in the
+   go line. Start: at the go line's time, on 30 October, by the operator who holds the key. Expected duration:
+   create/migrate and app start ≈ 20 s, runner pre-flight ≈ 5 s, one loop 350 s of frames at speed 1 plus the
+   runner's tail (`TAIL_MS`) and the loop-end barrier ≈ 6.5 min, teardown ≈ 10 s: about 7.5 minutes wall; the
+   image guard decides at ≈ 5 min, the early-stop rule (d) at ≈ 2 min.
 
 ## What is still not decided here
 
