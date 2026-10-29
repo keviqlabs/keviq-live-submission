@@ -1,4 +1,4 @@
-"""Per-loop live-path counts of one paid C5 run (HQ 10:20): frames processed / lost, timeouts, model calls by
+"""Per-loop live-path counts of one paid C5 run (coordinator request 10:20): frames processed / lost, timeouts, model calls by
 purpose, and each receipt's image checked against the card version it cites. Ids, sha256 and numbers only.
 
 Reads the app API (GET events, follow=false) and the run's own files (RUN.json, loopK-worker/media.log).
