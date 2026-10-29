@@ -1,49 +1,30 @@
 <!doctype html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Live card overlay</title>
-<style>
-  html, body { margin:0; background:transparent; font:600 28px/1.25 system-ui, sans-serif; color:#fff; }
-  #card { position:fixed; left:32px; bottom:32px; display:none; gap:16px; align-items:center; padding:16px 20px; border-radius:12px; background:rgba(0,0,0,.62); max-width:640px; }
-  #card img { max-height:120px; max-width:160px; border-radius:8px; }
-  #price { font-size:36px; }
-  #meta { font-size:18px; font-weight:500; opacity:.85; }
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-i18n="overlay.title">Live card overlay</title>
+<link rel="stylesheet" href="/static/shared.css">
 </head>
-<body>
-<!-- Transparent page for an OBS browser source: shows the newest live card. -->
-<div id="card"><img id="img" alt="" onerror="this.style.display='none'"><div><div id="name"></div><div id="price"></div><div id="meta"></div></div></div>
-<script>
-  const sid = decodeURIComponent(location.pathname.split("/").filter(Boolean).pop());
-  const cards = new Map();
-  const appearances = new Map();
-  const show = () => {
-    const live = [...cards.values()].filter((c) => c.status === "live" || c.status === "edited" || c.status === "draft").sort((a, b) => {
-      const x = appearances.get(a.card_id) || [-1, 0], y = appearances.get(b.card_id) || [-1, 0];
-      return y[0] - x[0] || y[1] - x[1];
-    })[0];
-    const el = document.getElementById("card");
-    if (!live) { el.style.display = "none"; return; }
-    el.style.display = "flex";
-    // SAM crops arrive as data: URLs; fixture placeholders (sim://) and broken images stay hidden.
-    const img = document.getElementById("img");
-    const url = /^(data:image\/|https?:|\/)/.test(live.image_url || "") ? live.image_url : "";
-    img.style.display = url ? "" : "none";
-    if (url && img.getAttribute("src") !== url) img.src = url;
-    document.getElementById("name").textContent = live.name;
-    document.getElementById("price").textContent = live.price == null ? "" : live.price.toLocaleString("vi-VN") + " ₫";
-    const sizes = [...new Set(live.variants.filter((v) => v.stock > 0).map((v) => v.size).filter(Boolean))];
-    document.getElementById("meta").textContent = (live.status === "draft" ? "đang cập nhật · " : "") + (sizes.length ? "size " + sizes.join(" · ") : "");
-  };
-  const es = new EventSource(`/api/sessions/${encodeURIComponent(sid)}/events?cursor=0`);
-  es.addEventListener("card", (m) => {
-    const c = JSON.parse(m.data), cur = cards.get(c.card_id), frame = c.provenance.frame_ts_ms;
-    if (!cur || cur.version <= c.version) cards.set(c.card_id, c);
-    const position = appearances.get(c.card_id) || [-1, 0];
-    if (frame != null && (frame > position[0] || (frame === position[0] && c.version > position[1]))) appearances.set(c.card_id, [frame, c.version]);
-    show();
-  });
-</script>
+<body class="overlay-body">
+<!-- Transparent page for a vertical (9:16) broadcast source: the newest live card, right side,
+     upper-middle third. Width from ?size=30|36|43 (default 36). No comments, hearts or input box
+     are drawn here. Language from ?lang= (set by the console link), else the stored choice, else English. -->
+<div class="stage" id="stage" data-card-size="36">
+  <div class="overlay-stack">
+    <div class="overlay-product" id="card" hidden>
+      <div class="mini-top"><span class="mini-version mono" id="version"></span><span class="mini-state" id="state"></span></div>
+      <img id="img" alt="" hidden>
+      <h2 id="name"></h2>
+      <div class="old-price" id="old-price" hidden></div>
+      <div class="new-price" id="price"></div>
+      <div class="mini-stock" id="meta"></div>
+    </div>
+    <div class="overlay-toast" id="toast" hidden></div>
+  </div>
+  <button type="button" class="overlay-hide" id="hide" hidden></button>
+</div>
+<script src="/static/i18n.js"></script>
+<script src="/static/overlay.js"></script>
 </body>
 </html>
