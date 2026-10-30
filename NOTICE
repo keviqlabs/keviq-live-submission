@@ -29,3 +29,11 @@ Development dependencies
   ruff 0.17.3                MIT
 
 Transitive dependencies are pinned in uv.lock and keep their own licenses.
+
+Scope of the SAM License
+
+  The SAM License covers only the meta-sam-parser package as installed
+  from PyPI into the Python environment (site-packages). No file in this
+  repository is a copy of that package. The code that calls it,
+  worker/vision/sam.py, and every other file in this repository are
+  licensed under the Apache License, Version 2.0 (see LICENSE).
