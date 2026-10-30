@@ -10,7 +10,7 @@
 8. **Claims of "it ran"** in a PR come with the command and its output. Reviewer ≠ author.
 9. **Contracts** (`contracts/`) change only via the contracts owner + Founder, with a `docs/DECISIONS.md` entry and a schema `v` bump when breaking.
 
-10. **History hygiene.** `make hygiene` (also run by the workflow and by the `commit-msg` hook that `make hooks` installs) rejects tool names, internal role labels, decision codes and personal e-mail addresses in commit messages and tracked files. Merge a pull request with its written title as the merge-commit subject, never the default text that names the branch. Commit with the GitHub private address (`git config user.email`).
+10. **History hygiene.** `make hygiene` (also run by the workflow and by the `commit-msg` hook that `make hooks` installs) rejects tool names, internal role labels, decision codes and personal e-mail addresses in commit messages, commit identities, tracked text files and file names (binary contents are not scanned). It compares against `origin/main` and fails with exit 2 when no base is available, so fetch `main` first. Merge a pull request with its written title as the merge-commit subject, never the default text that names the branch. Commit with the GitHub private address (`git config user.email`).
 
 ## Commands
 
