@@ -48,7 +48,7 @@ The components (connectors, event store, workers, console) and the events betwee
 
 ## AI disclosure
 
-The project uses a hosted language model, through the Meta Model API, to label incoming comments, to read the product shown on camera and to read the price the seller says. Every call is logged as a `model_call` event with its model, tokens, cost and latency. Order permissions stay in code (`orders/rules.py`); no model output can confirm an order, change a price or give a discount.
+The project uses hosted models through the Meta Model API: a language model to label incoming comments, to read the product shown on camera and to read the price the seller says, and an image-segmentation model (SAM) to cut the product out of the frame for the card image. Every call is logged as a `model_call` event with its model, tokens, cost and latency. Order permissions stay in code (`orders/rules.py`); no model output can confirm an order, change a price or give a discount.
 
 The comments used in demos and measurements are synthetic: they are simulated, not messages from real customers, and are labelled as such in `data/README.md`. Nothing in this repository sends messages to real people.
 
