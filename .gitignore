@@ -20,4 +20,5 @@ data/local/
 *.wav
 *.m4a
 .scratch/
+.*-review/
 .DS_Store

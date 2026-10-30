@@ -1,4 +1,4 @@
-"""CATALOG_PATH (HQ417, D-026): the items on sale come from it; the vision and speech prompts and the
+"""CATALOG_PATH (ruling 417, D-026): the items on sale come from it; the vision and speech prompts and the
 transcriber's keywords keep the words of data/catalog.json. An item with `categories` matches by membership.
 
 0 USD: no model call; the label prompt goes to a FakeTransport.

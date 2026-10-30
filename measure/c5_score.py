@@ -178,7 +178,7 @@ def references(run: Run, rows: list[dict]) -> dict:
 
 
 def order_ids(run: Run, rows: list[dict]) -> dict:
-    """HQ 02:46: each posted gold order comment by id -> what the system made of it (order, ask_variant, unresolved,
+    """Ruling 02:46: each posted gold order comment by id -> what the system made of it (order, ask_variant, unresolved,
     other), the card its label drafted and the card its order or question carries, right or wrong against the gold
     item, whether it is in the references n, and why a wrong one is wrong. No id is left out."""
     out = []
@@ -215,7 +215,7 @@ def proposals(run: Run) -> dict:
     price other than its current_price (worker versions copy edited_by, so that field does not tell; the proposal's
     ts_ms is the time of its speech, so it does not order the proposal among the card's versions).
 
-    HQ 04:18: a proposal whose closing version was ingested before it is stale on arrival; the shop had no time to
+    Ruling 04:18: a proposal whose closing version was ingested before it is stale on arrival; the shop had no time to
     act on it. Its raw handling time stays in its row and in `handling_ms_all`, and `handling_ms` is the median of
     the others. A wrong proposal is counted under `card` when its card is not the held item, else under `price`."""
     props = [e for e in run.events if e["type"] == "price_proposal"]
@@ -271,7 +271,7 @@ def proposals(run: Run) -> dict:
 
 
 def needs_seller(run: Run, catalog: list[dict]) -> dict:
-    """Entries into NEEDS_SELLER by cause, and HQ423 (4): would-be price candidates, offline, per loop."""
+    """Entries into NEEDS_SELLER by cause, and ruling 423 (4): would-be price candidates, offline, per loop."""
     prices = Counter(i["price"] for i in catalog)
     loops = defaultdict(
         lambda: {"entries": 0, "causes": Counter(), "orders": 0, "would_be": 0, "sku_none": 0}
@@ -337,12 +337,12 @@ def intervention_row(run: Run, e: dict, kind: str, why: list[str], proposals: li
 
 
 def interventions(run: Run, c5: dict) -> dict:
-    """The C5 interventions (HQ 03:48): a seller price version (seller_price) or a seller order decision, with the
+    """The C5 interventions (ruling 03:48): a seller price version (seller_price) or a seller order decision, with the
     breakdown by cause summing to the total. core.c5 counts the same (a seller version that changes the price, not
     its copies); its number stays beside this one as `core_c5`. The 10 / h threshold is unchanged. System
     questions to the customer are listed beside the total, not in it.
 
-    HQ 06:58 (e): `rows` holds one row per intervention (as many as `total`): event id, loop, kind (card / order),
+    Ruling 06:58 (e): `rows` holds one row per intervention (as many as `total`): event id, loop, kind (card / order),
     took_ms and cause. took_ms is the raw core.when(e) - core.when(p), p the last price proposal of the same card
     (an order's: its line's card) with core.when(p) <= core.when(e); None when there is none. cause is a list:
 
@@ -462,7 +462,7 @@ def image_source(run: Run, receipt: dict) -> dict:
 
 
 def waits(loops: list[dict]) -> dict:
-    """HQ419: one wait per (loop, reason, line event id) from the loop's log lines, checked against the loop-end
+    """Ruling 419: one wait per (loop, reason, line event id) from the loop's log lines, checked against the loop-end
     snapshot and the last line's suffix; the total is the sum of the loops, never the session's last line."""
     per, total = {}, Counter()
     for lp in loops:
