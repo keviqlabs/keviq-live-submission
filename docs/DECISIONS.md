@@ -291,3 +291,5 @@ Tests: `tests/test_meta_shapes.py` replays these shapes offline (fail on the pre
 **D-002 Envelope additions.** Beyond `event_id, session_id, ts_ms, source, v, type`: optional `caused_by[]` (provenance, C1/C6) and `timing{received_ms, infer_start_ms, infer_end_ms, emitted_ms}` (C8). The server adds `seq` and `ingested_ms` on read; they are table columns, not fields of the event body. Schemas inline the envelope and set `additionalProperties: false`.
 
 **D-001 Per-session keys.** `card_id`, `comment_id` and `order_id` are unique within a session; only `event_id` is globally unique.
+
+Text edited 2026-10-29: wording only; sha256 before 148b796f741039cb44b079be15271d4585fb5cc684fbbcf613ee362e7097ea89 after c675e9479f23c5914094440173e84b11b318b0d431c25103803756fc6e48a635
