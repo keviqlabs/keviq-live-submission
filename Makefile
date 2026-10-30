@@ -8,7 +8,7 @@ SESSION ?= demo1
 SPEED ?= 1
 COMPOSE = docker compose -f deploy/compose.yml
 
-.PHONY: infra-up infra-down app worker replay lint fmt test measure-quick check smoke integration secrets hygiene hooks
+.PHONY: infra-up infra-down app worker replay live-ingest lint fmt test measure-quick check smoke integration secrets hygiene hooks
 
 infra-up:
 	$(COMPOSE) up -d --wait postgres
@@ -25,6 +25,9 @@ worker:
 
 replay:
 	uv run python -m connectors.sim.replay --session $(SESSION) --speed $(SPEED) --base-url $(BASE_URL)
+
+live-ingest:
+	uv run python -m connectors.facebook.ingest --session $(SESSION) --base-url $(BASE_URL)
 
 lint:
 	uv run ruff check .
