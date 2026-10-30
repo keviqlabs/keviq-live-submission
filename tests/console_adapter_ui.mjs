@@ -89,3 +89,25 @@ test("model status shows only measured calls: dot from the last result, p50 with
   assert.equal(ui.nodes.get("banner").hidden, false);
   assert.match(ui.nodes.get("banner").textContent, /budget/);
 });
+
+test("the paint timestamp survives a later render of the card list", () => {
+  const ui = setup();
+  const card = (id, version, frame) => ({ ...ui.base, type: "card", event_id: `${id}-v${version}`, card_id: id, version, sku: id.toUpperCase(),
+    status: "live", name: `Item ${id}`, price: 99000, currency: "VND", stock: 1, variants: [], image_url: null, ts_ms: frame,
+    provenance: { frame_ts_ms: frame, speech_event_ids: [] } });
+  const timed = (html, id) => new RegExp(`data-card-id="${id}"[^>]*data-received-ms="\\d+"[^>]*data-painted-ms="\\d+"`).test(html);
+  // The first render precedes the paint (no requestAnimationFrame here, so the paint follows at once).
+  ui.stream.emit("card", 1, card("a", 1, 10));
+  assert.match(ui.html("cards"), /data-card-id="a"[^>]*data-received-ms="\d+"/);
+  assert.equal(ui.run("renderTimings.length"), 1);
+  // A second card rebuilds the whole list: card a must still carry its paint timestamp.
+  ui.stream.emit("card", 2, card("b", 1, 20));
+  assert.ok(timed(ui.html("cards"), "a"), "card a lost data-painted-ms on re-render");
+  // A plain re-render (language switch, focus restore) keeps both cards' timestamps.
+  ui.run("renderCards()");
+  assert.ok(timed(ui.html("cards"), "a"));
+  assert.ok(timed(ui.html("cards"), "b"));
+  // A newer version of a card drops the stale paint timestamp until that version is painted.
+  ui.run('paintedAt.set("a", { version: 1, ms: 1 }); cards.get("a").version = 2; renderCards()');
+  assert.doesNotMatch(ui.html("cards"), /data-card-id="a"[^>]*data-painted-ms=/);
+});
