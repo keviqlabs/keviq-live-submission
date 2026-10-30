@@ -4,7 +4,7 @@
 flowchart LR
   subgraph sources[Inputs]
     R[connectors/sim/replay<br/>session file on the clock]
-    FB[connectors/facebook<br/>interface only in P0]
+    FB[connectors/facebook<br/>read-only live comments, GET only]
     M[connectors/sim/messenger<br/>simulated threads]
   end
 
@@ -25,7 +25,7 @@ flowchart LR
   ME[measure/<br/>C1 C3 C5 C8 cost]
 
   R --> I
-  FB -.-> I
+  FB --> I
   M --> I
   I --> DB --> S
   DB --> Q --> C

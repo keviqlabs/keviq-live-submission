@@ -46,6 +46,19 @@ How the pieces fit: `docs/architecture.md`. Why: `docs/DECISIONS.md`.
 
 The components (connectors, event store, workers, console) and the events between them are described in `docs/architecture.md`. The reasons behind the design are recorded in `docs/DECISIONS.md`.
 
+## Level 2 (real Page, read-only)
+
+`connectors/facebook` reads the comments of one live video on a Page through the Graph API and appends them to an app session as `comment` events with `source: facebook`, through the same `POST /api/sessions/{id}/events` the simulator uses; the app stays the only writer. The connector only issues GET requests (a transport guard refuses any other method before it reaches the network), sends no message, hides no comment, and keeps the Page token in the Authorization header, out of URLs, logs and error messages. Commenter ids are hashed into `user_ref`; display names are never requested.
+
+Set in `.env` (fake values in `deploy/.env.example`): `FACEBOOK_PAGE_TOKEN`, `FACEBOOK_LIVE_VIDEO_ID`, and optionally `FACEBOOK_GRAPH_VERSION` (default `v26.0`) and `FACEBOOK_POLL_SECONDS` (default `2`). Then, with `make app` running:
+
+```bash
+make live-ingest SESSION=<session id>                                  # polls until stopped
+uv run python -m connectors.facebook.ingest --session <session id> --once   # one poll, checks token and video id
+```
+
+A session that holds a Facebook event refuses the simulated Messenger webhook (403), so simulated and real traffic never mix. The Page token needs `pages_show_list`, `pages_read_engagement` and `pages_read_user_content` ([permissions reference](https://developers.facebook.com/docs/permissions/)); docs used: [live video comments](https://developers.facebook.com/docs/graph-api/reference/live-video/comments/), [long-lived tokens](https://developers.facebook.com/docs/facebook-login/guides/access-tokens/get-long-lived/), [rate limits](https://developers.facebook.com/docs/graph-api/overview/rate-limiting/), [error codes](https://developers.facebook.com/docs/graph-api/guides/error-handling/). Tests run against a fake Graph API (`tests/test_facebook_comments.py`); the connector has not been run against a real Page yet.
+
 ## AI disclosure
 
 The project uses hosted models through the Meta Model API: a language model to label incoming comments, to read the product shown on camera and to read the price the seller says, and an image-segmentation model (SAM) to cut the product out of the frame for the card image. Every call is logged as a `model_call` event with its model, tokens, cost and latency. Order permissions stay in code (`orders/rules.py`); no model output can confirm an order, change a price or give a discount.
@@ -100,7 +113,7 @@ The Founder confirmed the review sample c001–c030 on 27 October (all 30, none 
 - C8 label latency misses the 1 s target (table above). The last stage is event delivery, worker emitted → app ingested; console render time is not measured.
 - The 200-comment labeled set is in `data/comments/` (how the gold is set: `data/README.md`); the Founder confirmed its review sample, c001–c030, on 27 October. It has one cancel row and one "don't cancel" row; the model labels both `complaint`. The 500-comment set is not built yet.
 - Product read from the camera: the 6b prompt was tuned on 20 frames of test1, and the 351-frame gate (electronics ≥ 72/100, shoes ≥ 105/129, tops ≥ 75/93, all met) was measured on the same video, in one run (`probe-test1-6b-1950`). No second video has been measured, so 85.2 % says nothing yet about other streams. Evidence: `docs/evidence/2026-10-27/vision-test1-6b-score-1027-1950.json` (351 frames) and `vision-test1-6b20-score-1027-1947.json` (20 frames, both efforts).
-- Facebook is an interface only and Messenger is simulated: nothing is sent to real people and no real comment is hidden.
+- The Facebook connector reads comments only and has not been run against a real Page yet (fake Graph API in tests). Messenger is simulated: nothing is sent to real people and no real comment is hidden.
 - The request and response shapes for the Model API (structured output, SAM, voice stream) come from the docs and are not yet checked against live calls.
 - A Voice Transcribe realtime session lasts at most 60 minutes. Meta suggested starting a follow-on session on audio that overlaps the end of the previous one (Discord answer, 27 October). This build opens one voice session per play of a recording and has no session stitching. The planned C5 run plays the 5 min 51 s test1 recording five times in one app session (about 30 minutes), so each voice session stays far under the limit. A live stream longer than 60 minutes is not handled yet.
 
