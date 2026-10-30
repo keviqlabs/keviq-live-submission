@@ -1,6 +1,7 @@
-"""Connector interface shared by the simulator and the real Facebook connector (after the 30/10 gate).
+"""Connector interface shared by the simulator and the real Facebook connector.
 
-The real connector is not implemented in P0: no real Page, no real Messenger sends, no hiding real comments.
+The real connector implements CommentSource only (connectors/facebook/comments.py, read-only Graph API):
+no real Messenger sends, no hiding real comments.
 """
 
 from abc import ABC, abstractmethod
