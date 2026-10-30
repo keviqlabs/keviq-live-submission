@@ -64,8 +64,8 @@ NOT_RUN (`--no-code-check`); stand-in run 16 test files, every one rc 0 (`code_c
 
 | Measure | 29 October | 30 October | Changed |
 | --- | --- | --- | --- |
-| Situations 1–12, dry | 10 PASS, 2 FAIL (3: 16/28; 4: 0/4), 1 TEST_ONLY | 10 PASS, 2 FAIL (3: 16/28; 4: 0/4), 1 TEST_ONLY | no |
-| Situations 1–12, stand-in | 10 PASS, 2 FAIL (3: 16/26; 4: 0/4), 1 TEST_ONLY | 10 PASS, 2 FAIL (3: 16/26; 4: 0/4), 1 TEST_ONLY | no |
+| Situations 1–12, dry | 9 PASS, 2 FAIL (3: 16/28; 4: 0/4), 1 TEST_ONLY | 9 PASS, 2 FAIL (3: 16/28; 4: 0/4), 1 TEST_ONLY | no |
+| Situations 1–12, stand-in | 9 PASS, 2 FAIL (3: 16/26; 4: 0/4), 1 TEST_ONLY | 9 PASS, 2 FAIL (3: 16/26; 4: 0/4), 1 TEST_ONLY | no |
 | `make check` | `1359 passed, 2 xfailed in 70.19s` | `1473 passed in 414.32s` | count and time, result rc 0 both |
 | Dry events / by type | 466; same distribution | 466; same distribution | no |
 | Stand-in events / by type | 764; same distribution | 764; same distribution | no |
