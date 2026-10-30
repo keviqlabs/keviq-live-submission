@@ -1,0 +1,5 @@
+healthz: {"ok":true,"store":"pg","head_seq":497951}
+sse3 reopened with Last-Event-ID 497641: first id 497642, last id 497947 (306 ids in 3 s)
+same ids as the full stream after 497641 (no gap, no repeat): yes
+contiguous (+1 each): yes
+done rc=0
