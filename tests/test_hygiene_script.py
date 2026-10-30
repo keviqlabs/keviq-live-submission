@@ -167,6 +167,57 @@ def test_file_name_is_scanned(repo: Path) -> None:
     assert "docs/claude-notes.md" in result.stdout
 
 
+def test_label_words_in_file_content_are_caught_on_every_platform(repo: Path) -> None:
+    """N1: the label alternatives used `\\b`, which `git grep` on macOS does not know, so a desk
+    label or a decision code in a tracked file passed there while the Linux workflow caught it."""
+    base = git(repo, "rev-parse", "HEAD")
+    head = commit(
+        repo,
+        "Add a log",
+        {"docs/log.md": b"Seat: HQ2 signs off.\nSee DEC-031.\nAgent 7 ran it.\nAstra asked.\n"},
+    )
+    result = guard(repo, base, head)
+    assert result.returncode == 1, result.stdout
+    assert "forbidden word in tracked files" in result.stdout
+    for line in ("docs/log.md:1:", "docs/log.md:2:", "docs/log.md:3:", "docs/log.md:4:"):
+        assert line in result.stdout, result.stdout
+
+
+def test_label_words_inside_other_words_are_not_findings(repo: Path) -> None:
+    """The spelled-out boundary must still be a boundary: substrings of ordinary words are clean."""
+    base = git(repo, "rev-parse", "HEAD")
+    head = commit(
+        repo,
+        "Add prose",
+        {"docs/prose.md": b"The CHQ2 form, the DECK-1 and agent 7x in Astral light, Agent 7a.\n"},
+    )
+    result = guard(repo, base, head)
+    assert result.returncode == 0, result.stdout
+
+
+def test_all_mode_checks_every_commit_reachable_from_head(repo: Path) -> None:
+    """N3: with no usable base (new or rewritten main), nothing may pass unchecked; `--all` walks
+    the whole history instead of comparing with the parent of the tip."""
+    commit(repo, "Slip\n\nCo-authored-by: Tool <tool@example.com>", {"old.txt": b"x\n"})
+    head = commit(repo, "Clean tip", {"new.txt": b"y\n"})
+    # The parent-of-tip fallback would pass: the tip alone is clean.
+    assert guard(repo, f"{head}~1", head).returncode == 0
+    result = guard(repo, "--all", head)
+    assert result.returncode == 1, result.stdout
+    assert "forbidden word in commit message" in result.stdout
+    assert "checked 3 commit(s) reachable from" in result.stdout
+    # Without an explicit head it walks from HEAD; a clean history is clean.
+    clean = repo.parent / "clean"
+    clean.mkdir()
+    git(clean, "init", "-q", "-b", "main")
+    commit(clean, "Only commit", {"x.txt": b"x\n"})
+    result = guard(clean, "--all")
+    assert result.returncode == 0, result.stdout
+    assert "checked 1 commit(s) reachable from" in result.stdout
+    assert guard(repo, "--all", "no-such-head").returncode == 2
+    assert guard(repo, "--all", "a", "b").returncode == 2
+
+
 def test_binary_content_is_not_scanned(repo: Path) -> None:
     base = git(repo, "rev-parse", "HEAD")
     head = commit(repo, "Add a blob", {"blob.bin": b"\x00\x01Generated with\x00\xff"})
