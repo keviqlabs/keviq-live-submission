@@ -19,8 +19,11 @@ jobs:
         env:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
         run: |
-          base="${{ github.event.pull_request.base.sha || github.event.before }}"
           head="${{ github.event.pull_request.head.sha || github.sha }}"
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          # On push, "before" is all zeros for a new branch and unknown to this clone after a
+          # history rewrite; the guard refuses such a base (exit 2), so fall back to the parent.
+          base=$(git rev-parse -q --verify "$base^{commit}" 2>/dev/null || git rev-parse "$head~1")
           bash scripts/hygiene.sh "$base" "$head"
       - name: Secret scan
         run: |
