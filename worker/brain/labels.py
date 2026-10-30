@@ -3,11 +3,15 @@
 Shield, on receipt: a phone number or a link in the text is hidden through the connector's CommentModerator
 (the simulator only logs it) and a comment_labeled with action `hide` goes out at once (C5: visible <= 5 s).
 
-Batch: every comment joins a per-session queue, labeled by the session's one consumer a batch at a time. A Spark
-call labels up to 20 comments, cut when 20 are queued or the oldest has waited 1 s; the next batch is cut from
-what queued meanwhile once that call is done, so a flood waits in the queue instead of opening calls at once.
-runner.stats() has the comments queued and those being labeled (BACKLOGS). The model sees the catalog, the card timeline and, per comment, the current and previous
-card at that comment's ts_ms. It says how the customer pointed at the product (reference_kind); code then
+Batch: every comment joins a per-session queue, which the session's consumer cuts into batches. A Spark call
+labels up to 20 comments, cut when 20 are queued or the oldest has waited 1 s, and each batch is labeled by its
+own task: a comment waits its own window, not the call an earlier batch of the session has open (the 4 s
+attachment deadline cannot afford that), so batches of one session overlap. At most BATCH_LANES calls are open
+per session; with all lanes busy the next batch waits for one to land, so a flood still queues instead of opening
+calls without bound. A comment is in exactly one batch, so overlapping batches never label it twice and the
+latest label a comment has is the one its batch gave, whichever batch lands first. runner.stats() has the
+comments queued and those being labeled (BACKLOGS). The model sees the catalog, the card timeline and, per
+comment, the current and previous card at that comment's ts_ms. It says how the customer pointed at the product (reference_kind); code then
 resolves referenced_card_id from the timeline by the comment's own ts_ms, so a late comment pins to the card
 that was live when it was written (C3, C7). The batch label is final (measure keeps the latest label). A batch
 whose output fails the schema twice labels its comments `other` and the stream goes on (C7).
@@ -34,7 +38,7 @@ from worker.brain.shield import first_label, scan
 from worker.runner import BACKLOGS, Ctx, build, parse_sse
 
 log = logging.getLogger("worker.labels")
-BATCH_MAX, BATCH_WAIT_S = 20, 1.0
+BATCH_MAX, BATCH_WAIT_S, BATCH_LANES = 20, 1.0, 4
 # Lowest effort Muse Spark accepts ("none" is refused, dev.meta.ai/docs/reasoning); reasoning tokens are most of
 # the latency and the output bill.
 EFFORT = "minimal"
@@ -198,7 +202,8 @@ class Labeler:
         self.queues: dict[str, list[Pending]] = defaultdict(list)
         self.consumers: dict[str, asyncio.Task] = {}  # session_id -> its consumer, while it has comments
         self.full: dict[str, asyncio.Event] = {}  # session_id -> set when BATCH_MAX comments are queued
-        self.labeling: dict[str, int] = defaultdict(int)  # session_id -> comments in the batch being labeled
+        self.labeling: dict[str, int] = defaultdict(int)  # session_id -> comments in its open batches
+        self.open: dict[str, set[asyncio.Task]] = defaultdict(set)  # session_id -> its batches being labeled
         self.tasks: set[asyncio.Task] = set()
 
     def handlers(self) -> dict:
@@ -270,10 +275,15 @@ class Labeler:
         return partial
 
     async def _consume(self, sid: str) -> None:
-        """Label the session's queue a batch at a time until it is empty."""
-        queue, full = self.queues[sid], self.full[sid]
+        """Cut the session's queue into batches until it is empty, each labeled by its own task: a batch is cut
+        when twenty are queued or the oldest has waited its window, whether or not an earlier batch of the
+        session is still being labeled; with BATCH_LANES batches open, the next waits for one to land."""
+        queue, full, open_ = self.queues[sid], self.full[sid], self.open[sid]
         try:
             while queue:
+                if len(open_) >= BATCH_LANES:
+                    await asyncio.wait(open_, return_when=asyncio.FIRST_COMPLETED)
+                    continue
                 wait = queue[0].queued + BATCH_WAIT_S - time.monotonic()
                 if len(queue) < BATCH_MAX and wait > 0:
                     full.clear()
@@ -281,17 +291,20 @@ class Labeler:
                         await asyncio.wait_for(full.wait(), wait)
                     continue
                 batch = self._take(sid)
-                self.labeling[sid] = len(batch)
-                try:
-                    await self._label_batch(sid, batch)
-                except (
-                    Exception
-                ) as exc:  # e.g. the post refused: these labels are lost, the queue goes on (C7)
-                    log.exception("labels: batch of %d for %s failed: %s", len(batch), sid, exc)
-                finally:
-                    self.labeling[sid] = 0
+                self.labeling[sid] += len(batch)
+                task = self._spawn(self._run_batch(sid, batch))
+                open_.add(task)
+                task.add_done_callback(open_.discard)
         finally:
             del self.consumers[sid]
+
+    async def _run_batch(self, sid: str, batch: list[Pending]) -> None:
+        try:
+            await self._label_batch(sid, batch)
+        except Exception as exc:  # e.g. the post refused: these labels are lost, the stream goes on (C7)
+            log.exception("labels: batch of %d for %s failed: %s", len(batch), sid, exc)
+        finally:
+            self.labeling[sid] -= len(batch)
 
     def _take(self, sid: str) -> list[Pending]:
         """Cut the next batch now, so a batch holds the comments queued before it and no later ones."""
