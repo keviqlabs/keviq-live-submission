@@ -1,0 +1,1888 @@
+{
+ "run_file": {
+  "run": "e2e-main-1030-1852",
+  "session_id": "e2e-main-1030-1852",
+  "sha": "92ecf121f81becb499ba8c12de7d4e2dcdb2b9a3",
+  "loops": [
+   {
+    "k": 1,
+    "t0_ms": 1793361448994,
+    "end_ms": 1793361833110,
+    "settled": true,
+    "wait_lines": [
+     "price wait: e2e-main-1030-1852.u1-44 reason many candidates card-1-06,card-1-07,card-1-08; session e2e-main-1030-1852 waits many=1"
+    ],
+    "waits": {
+     "many": 1
+    },
+    "retired": 11,
+    "runner_failures": 0,
+    "label_batches": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     2,
+     1,
+     1,
+     1,
+     2,
+     2,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     2,
+     1,
+     1,
+     2,
+     1,
+     1,
+     1,
+     2,
+     1,
+     1,
+     1,
+     1,
+     1,
+     3,
+     1,
+     2,
+     1,
+     2,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     2,
+     1,
+     1,
+     1,
+     2,
+     1,
+     1,
+     1,
+     1,
+     2,
+     2,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     2,
+     1,
+     1,
+     1,
+     1,
+     1,
+     2,
+     1,
+     1,
+     1,
+     1,
+     3,
+     2,
+     2
+    ]
+   }
+  ],
+  "config": {
+   "mode": "dry",
+   "catalog_path": "data/comments/c5/catalog.json",
+   "catalog_sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73",
+   "vision": "stored rows vision-test1-6b-minimal-1027-1950.json (6b, minimal, 1 fps)",
+   "effort": "minimal",
+   "fps": 1,
+   "card_line": false,
+   "labels": "gold labels through the labels brain (GoldClient)",
+   "speech": "test1 lines, rule price reader (no key)",
+   "cap_usd": 8.0,
+   "warn_usd": 6.0,
+   "restart": "worker state dropped in one process",
+   "shop_delay_s": 4.0,
+   "tail_ms": 30000,
+   "loop_ms": 351500
+  },
+  "customers": [
+   {
+    "loop": 1,
+    "msg_id": "c5-1-m01",
+    "order_id": "o-c5-1-006",
+    "expect": "NEEDS_SELLER",
+    "situation": 10,
+    "due_ms": 1793361514394,
+    "sent": true,
+    "status": 200,
+    "sent_ms": 1793361514569,
+    "message_in": "mi.m-e2e-main-1030-1852-c5-1-m01"
+   },
+   {
+    "loop": 1,
+    "msg_id": "c5-1-m02",
+    "order_id": "o-c5-1-016",
+    "expect": "CONFIRMED",
+    "situation": 12,
+    "due_ms": 1793361530094,
+    "sent": true,
+    "status": 200,
+    "sent_ms": 1793361530109,
+    "message_in": "mi.m-e2e-main-1030-1852-c5-1-m02"
+   },
+   {
+    "loop": 1,
+    "msg_id": "c5-1-m03",
+    "order_id": "o-c5-1-029",
+    "expect": "CONFIRMED",
+    "situation": 12,
+    "due_ms": 1793361562594,
+    "sent": true,
+    "status": 200,
+    "sent_ms": 1793361562781,
+    "message_in": "mi.m-e2e-main-1030-1852-c5-1-m03"
+   },
+   {
+    "loop": 1,
+    "msg_id": "c5-1-m04",
+    "order_id": "o-c5-1-060",
+    "expect": "CANCELLED",
+    "situation": 8,
+    "due_ms": 1793361684844,
+    "sent": true,
+    "status": 200,
+    "sent_ms": 1793361684861,
+    "message_in": "mi.m-e2e-main-1030-1852-c5-1-m04"
+   }
+  ],
+  "shop": [
+   {
+    "kind": "proposal",
+    "event_id": "price_proposal_66a61c6b1b0c442d9dcd",
+    "card_id": "card-1-00",
+    "action": "accept",
+    "heard_price": 220000,
+    "price": 220000,
+    "seen_ms": 1793361496094,
+    "held": "SP01",
+    "card_item": "SP01",
+    "right_card": true,
+    "status": 200,
+    "response": {
+     "changed": true,
+     "version": 5
+    },
+    "done_ms": 1793361507657
+   },
+   {
+    "kind": "order",
+    "event_id": "mi.m-e2e-main-1030-1852-c5-1-m01.o-c5-1-006.reply",
+    "order_id": "o-c5-1-006",
+    "cause": "price_changed",
+    "decision": "approve",
+    "unit_price": 220000,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361514598,
+    "done_ms": 1793361518666
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_82a081b43d94417e86d8.o-c5-1-016.decide",
+    "order_id": "o-c5-1-016",
+    "cause": "variant",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361521226,
+    "done_ms": 1793361525316
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_f72fcbcd590b45e28d49.o-c5-1-018.decide",
+    "order_id": "o-c5-1-018",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361526935,
+    "done_ms": 1793361530993
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_2e823713e0954e05a2ca.o-c5-1-024.decide",
+    "order_id": "o-c5-1-024",
+    "cause": "variant",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361547959,
+    "done_ms": 1793361552033
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_2b8c6a01ecee40249b9f.o-c5-1-029.decide",
+    "order_id": "o-c5-1-029",
+    "cause": "variant",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361552985,
+    "done_ms": 1793361557055
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_2988810f5aae4277b183.o-c5-1-032.decide",
+    "order_id": "o-c5-1-032",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361559118,
+    "done_ms": 1793361563188
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_f6f5d388fb324287817c.o-c5-1-035.decide",
+    "order_id": "o-c5-1-035",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361580020,
+    "done_ms": 1793361584103
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_2db58a5bf973448f89d9.o-c5-1-041.decide",
+    "order_id": "o-c5-1-041",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361586227,
+    "done_ms": 1793361590316
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_e8654f7aca664b779674.o-c5-1-043.decide",
+    "order_id": "o-c5-1-043",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361592641,
+    "done_ms": 1793361596700
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_44d1bb0734d64e0a9a4b.o-c5-1-045.decide",
+    "order_id": "o-c5-1-045",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361596428,
+    "done_ms": 1793361600504
+   },
+   {
+    "kind": "proposal",
+    "event_id": "price_proposal_c8828170d1f84907b2e6",
+    "card_id": "card-1-03",
+    "action": "accept",
+    "heard_price": 160000,
+    "price": 160000,
+    "seen_ms": 1793361601854,
+    "held": "SP04",
+    "card_item": "SP04",
+    "right_card": true,
+    "status": 200,
+    "response": {
+     "changed": true,
+     "version": 4
+    },
+    "done_ms": 1793361612604
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_7f0de396185e47b080db.o-c5-1-055.decide",
+    "order_id": "o-c5-1-055",
+    "cause": "variant",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361630370,
+    "done_ms": 1793361634460
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_dc773d938d4c447d8bd3.o-c5-1-062.decide",
+    "order_id": "o-c5-1-062",
+    "cause": "discount",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361657649,
+    "done_ms": 1793361661729
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_e967bb40e585481d8730.o-c5-1-074.decide",
+    "order_id": "o-c5-1-074",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361690387,
+    "done_ms": 1793361694479
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_99c5eac2e6684e078613.o-c5-1-078.decide",
+    "order_id": "o-c5-1-078",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361708686,
+    "done_ms": 1793361712751
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_f5c8994833c8433e8e41.o-c5-1-082.decide",
+    "order_id": "o-c5-1-082",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361726415,
+    "done_ms": 1793361730511
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_b3caa4f6f02b40d9b4a4.o-c5-1-085.decide",
+    "order_id": "o-c5-1-085",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361736329,
+    "done_ms": 1793361740421
+   },
+   {
+    "kind": "proposal",
+    "event_id": "price_proposal_af57c46793c04322b432",
+    "card_id": "card-1-09",
+    "action": "accept",
+    "heard_price": 600000,
+    "price": 600000,
+    "seen_ms": 1793361735134,
+    "held": "SP09",
+    "card_item": "SP09",
+    "right_card": true,
+    "status": 200,
+    "response": {
+     "changed": true,
+     "version": 3
+    },
+    "done_ms": 1793361746904
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_36615a1840fe4b399e5b.o-c5-1-091.decide",
+    "order_id": "o-c5-1-091",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361770148,
+    "done_ms": 1793361774222
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_7f6f7ace868642a48509.o-c5-1-095.decide",
+    "order_id": "o-c5-1-095",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361785258,
+    "done_ms": 1793361789347
+   },
+   {
+    "kind": "order",
+    "event_id": "comment_labeled_d1811f8736a8415aa39f.o-c5-1-098.decide",
+    "order_id": "o-c5-1-098",
+    "cause": "over_stock",
+    "decision": "reject",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793361789352,
+    "done_ms": 1793361793432
+   }
+  ],
+  "ledger": {
+   "query": "SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd\nFROM events WHERE type = 'model_call' AND session_id = 'e2e-main-1030-1852' GROUP BY session_id;",
+   "rows": [],
+   "rowcount": 0
+  }
+ },
+ "score": {
+  "run": "e2e-main-1030-1852",
+  "session_id": "e2e-main-1030-1852",
+  "sha": "92ecf121f81becb499ba8c12de7d4e2dcdb2b9a3",
+  "config": {
+   "mode": "dry",
+   "catalog_path": "data/comments/c5/catalog.json",
+   "catalog_sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73",
+   "vision": "stored rows vision-test1-6b-minimal-1027-1950.json (6b, minimal, 1 fps)",
+   "effort": "minimal",
+   "fps": 1,
+   "card_line": false,
+   "labels": "gold labels through the labels brain (GoldClient)",
+   "speech": "test1 lines, rule price reader (no key)",
+   "cap_usd": 8.0,
+   "warn_usd": 6.0,
+   "restart": "worker state dropped in one process",
+   "shop_delay_s": 4.0,
+   "tail_ms": 30000,
+   "loop_ms": 351500
+  },
+  "loops_run": 1,
+  "posted": {
+   "comments": 100,
+   "messenger_sent": 4
+  },
+  "c5": {
+   "order_recall": 1.0,
+   "order_n": 30,
+   "interventions": 22,
+   "interventions_per_hour": 208.91475117514548,
+   "session_minutes": 6.32,
+   "phone_visible_max_s": 0.064,
+   "phone_n": 4,
+   "receipts": 2,
+   "receipts_ok": 0
+  },
+  "latency": {
+   "comment_labeled": {
+    "receive": {
+     "n": 110,
+     "p50": 41,
+     "p95": 62
+    },
+    "wait": {
+     "n": 110,
+     "p50": 1002,
+     "p95": 1004
+    },
+    "infer": {
+     "n": 100,
+     "p50": 0,
+     "p95": 0
+    },
+    "display": {
+     "n": 110,
+     "p50": 9,
+     "p95": 24
+    }
+   },
+   "message_out": {
+    "receive": {
+     "n": 54,
+     "p50": 12,
+     "p95": 56
+    },
+    "wait": {
+     "n": 54,
+     "p50": 19,
+     "p95": 34
+    },
+    "display": {
+     "n": 54,
+     "p50": 14,
+     "p95": 24
+    }
+   },
+   "speech": {
+    "wait": {
+     "n": 64,
+     "p50": 0,
+     "p95": 0
+    },
+    "infer": {
+     "n": 64,
+     "p50": 0,
+     "p95": 0
+    },
+    "display": {
+     "n": 64,
+     "p50": 15,
+     "p95": 20
+    }
+   },
+   "product_seen": {
+    "wait": {
+     "n": 12,
+     "p50": 0,
+     "p95": 0
+    },
+    "infer": {
+     "n": 12,
+     "p50": 1883,
+     "p95": 3128
+    },
+    "display": {
+     "n": 12,
+     "p50": 10,
+     "p95": 13
+    }
+   },
+   "card": {
+    "receive": {
+     "n": 31,
+     "p50": 39,
+     "p95": 4043
+    },
+    "wait": {
+     "n": 31,
+     "p50": 0,
+     "p95": 18
+    },
+    "infer": {
+     "n": 28,
+     "p50": 0,
+     "p95": 1
+    },
+    "display": {
+     "n": 31,
+     "p50": 11,
+     "p95": 18
+    }
+   },
+   "order": {
+    "receive": {
+     "n": 77,
+     "p50": 46,
+     "p95": 4016
+    },
+    "wait": {
+     "n": 77,
+     "p50": 19,
+     "p95": 30
+    },
+    "display": {
+     "n": 77,
+     "p50": 7,
+     "p95": 16
+    }
+   },
+   "price_proposal": {
+    "receive": {
+     "n": 3,
+     "p50": 51,
+     "p95": 54
+    },
+    "wait": {
+     "n": 3,
+     "p50": 0,
+     "p95": 1
+    },
+    "infer": {
+     "n": 3,
+     "p50": 0,
+     "p95": 0
+    },
+    "display": {
+     "n": 3,
+     "p50": 9,
+     "p95": 9
+    }
+   },
+   "message_in": {
+    "wait": {
+     "n": 4,
+     "p50": 0,
+     "p95": 0
+    },
+    "display": {
+     "n": 4,
+     "p50": 2,
+     "p95": 3
+    }
+   }
+  },
+  "cards": {
+   "SP01": 2,
+   "SP02": 1,
+   "SP03": 1,
+   "SP04": 1,
+   "SP05": 1,
+   "SP06": 1,
+   "SP07": 1,
+   "SP08": 2,
+   "SP09": 1,
+   "SP10": 1
+  },
+  "card_sku": {
+   "card-1-00": "SP01",
+   "card-1-01": "SP02",
+   "card-1-02": null,
+   "card-1-03": "SP04",
+   "card-1-04": "SP05",
+   "card-1-05": "SP06",
+   "card-1-06": null,
+   "card-1-07": null,
+   "card-1-08": null,
+   "card-1-09": null,
+   "card-1-10": null,
+   "card-1-11": null
+  },
+  "references": {
+   "n": 28,
+   "right": 16,
+   "no_card": 0,
+   "by_kind": {
+    "current_card": {
+     "n": 24,
+     "right": 12
+    },
+    "previous_card": {
+     "n": 4,
+     "right": 4
+    }
+   },
+   "by_source": {
+    "order": 27,
+    "ask_variant": 1
+   },
+   "disagree": [],
+   "wrong": [
+    {
+     "comment_id": "c5-1-016",
+     "card_id": "card-1-00",
+     "card_item": "SP01",
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-029",
+     "card_id": "card-1-01",
+     "card_item": "SP02",
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-041",
+     "card_id": "card-1-02",
+     "card_item": "SP03",
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-043",
+     "card_id": "card-1-02",
+     "card_item": "SP03",
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-054",
+     "card_id": "card-1-03",
+     "card_item": "SP04",
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-060",
+     "card_id": "card-1-04",
+     "card_item": "SP05",
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-071",
+     "card_id": "card-1-05",
+     "card_item": "SP06",
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-078",
+     "card_id": "card-1-06",
+     "card_item": "SP07",
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-082",
+     "card_id": "card-1-08",
+     "card_item": "SP08",
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-091",
+     "card_id": "card-1-09",
+     "card_item": "SP09",
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-095",
+     "card_id": "card-1-10",
+     "card_item": "SP10",
+     "why": "item_card_live_before_comment"
+    },
+    {
+     "comment_id": "c5-1-098",
+     "card_id": "card-1-10",
+     "card_item": "SP10",
+     "why": "item_card_live_before_comment"
+    }
+   ],
+   "accuracy": 0.5714285714285714,
+   "gate": false
+  },
+  "order_ids": {
+   "n": 30,
+   "outcomes": {
+    "unresolved": 2,
+    "order": 27,
+    "ask_variant": 1
+   },
+   "in_n": 28,
+   "right": 16,
+   "why": {
+    "item_card_live_after_comment": 10,
+    "item_card_live_before_comment": 2
+   },
+   "rows": [
+    {
+     "comment_id": "c5-1-001",
+     "outcome": "unresolved",
+     "label": "order",
+     "gold_item": null,
+     "gold_kind": "unresolved",
+     "expected_action": "ask_customer",
+     "draft_kind": "unresolved",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": false,
+     "right": false,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-006",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP01",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-00",
+     "card": "card-1-00",
+     "card_source": "order",
+     "card_item": "SP01",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-010",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP01",
+     "gold_kind": "current_card",
+     "expected_action": "ask_customer",
+     "draft_kind": "current_card",
+     "label_card": "card-1-00",
+     "card": "card-1-00",
+     "card_source": "order",
+     "card_item": "SP01",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-016",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP02",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-00",
+     "card": "card-1-00",
+     "card_source": "order",
+     "card_item": "SP01",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-018",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP01",
+     "gold_kind": "previous_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "previous_card",
+     "label_card": "card-1-00",
+     "card": "card-1-00",
+     "card_source": "order",
+     "card_item": "SP01",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-021",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP02",
+     "gold_kind": "current_card",
+     "expected_action": "ask_customer",
+     "draft_kind": "current_card",
+     "label_card": "card-1-01",
+     "card": "card-1-01",
+     "card_source": "order",
+     "card_item": "SP02",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-024",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP02",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-01",
+     "card": "card-1-01",
+     "card_source": "order",
+     "card_item": "SP02",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-029",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP03",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-01",
+     "card": "card-1-01",
+     "card_source": "order",
+     "card_item": "SP02",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-031",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP02",
+     "gold_kind": "previous_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "previous_card",
+     "label_card": "card-1-01",
+     "card": "card-1-01",
+     "card_source": "order",
+     "card_item": "SP02",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-032",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP03",
+     "gold_kind": "current_card",
+     "expected_action": "ask_customer",
+     "draft_kind": "current_card",
+     "label_card": "card-1-02",
+     "card": "card-1-02",
+     "card_source": "order",
+     "card_item": "SP03",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-035",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP03",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-02",
+     "card": "card-1-02",
+     "card_source": "order",
+     "card_item": "SP03",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-036",
+     "outcome": "unresolved",
+     "label": "order",
+     "gold_item": null,
+     "gold_kind": "unresolved",
+     "expected_action": "ask_customer",
+     "draft_kind": "unresolved",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": false,
+     "right": false,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-041",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP04",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-02",
+     "card": "card-1-02",
+     "card_source": "order",
+     "card_item": "SP03",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-043",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP04",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-02",
+     "card": "card-1-02",
+     "card_source": "order",
+     "card_item": "SP03",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-045",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP03",
+     "gold_kind": "previous_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "previous_card",
+     "label_card": "card-1-02",
+     "card": "card-1-02",
+     "card_source": "order",
+     "card_item": "SP03",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-047",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP04",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-03",
+     "card": "card-1-03",
+     "card_source": "order",
+     "card_item": "SP04",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-048",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP04",
+     "gold_kind": "current_card",
+     "expected_action": "ask_customer",
+     "draft_kind": "current_card",
+     "label_card": "card-1-03",
+     "card": "card-1-03",
+     "card_source": "order",
+     "card_item": "SP04",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-054",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP05",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-03",
+     "card": "card-1-03",
+     "card_source": "order",
+     "card_item": "SP04",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-055",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP04",
+     "gold_kind": "previous_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "previous_card",
+     "label_card": "card-1-03",
+     "card": "card-1-03",
+     "card_source": "order",
+     "card_item": "SP04",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-056",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP05",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-04",
+     "card": "card-1-04",
+     "card_source": "order",
+     "card_item": "SP05",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-060",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP06",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-04",
+     "card": "card-1-04",
+     "card_source": "order",
+     "card_item": "SP05",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-062",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP06",
+     "gold_kind": "current_card",
+     "expected_action": "needs_seller",
+     "draft_kind": "current_card",
+     "label_card": "card-1-05",
+     "card": "card-1-05",
+     "card_source": "order",
+     "card_item": "SP06",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-071",
+     "outcome": "ask_variant",
+     "label": "order",
+     "gold_item": "SP07",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-05",
+     "card": "card-1-05",
+     "card_source": "ask_variant",
+     "card_item": "SP06",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-074",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP07",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-06",
+     "card": "card-1-06",
+     "card_source": "order",
+     "card_item": "SP07",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-078",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP08",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-06",
+     "card": "card-1-06",
+     "card_source": "order",
+     "card_item": "SP07",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-082",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP09",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-08",
+     "card": "card-1-08",
+     "card_source": "order",
+     "card_item": "SP08",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-085",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP09",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-09",
+     "card": "card-1-09",
+     "card_source": "order",
+     "card_item": "SP09",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-091",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP10",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-09",
+     "card": "card-1-09",
+     "card_source": "order",
+     "card_item": "SP09",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_after_comment"
+    },
+    {
+     "comment_id": "c5-1-095",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP01",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-1-10",
+     "card": "card-1-10",
+     "card_source": "order",
+     "card_item": "SP10",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_before_comment"
+    },
+    {
+     "comment_id": "c5-1-098",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP01",
+     "gold_kind": "current_card",
+     "expected_action": "needs_seller",
+     "draft_kind": "current_card",
+     "label_card": "card-1-10",
+     "card": "card-1-10",
+     "card_source": "order",
+     "card_item": "SP10",
+     "in_n": true,
+     "right": false,
+     "why": "item_card_live_before_comment"
+    }
+   ]
+  },
+  "proposals": {
+   "n": 3,
+   "outcomes": {
+    "used": 3
+   },
+   "right_card": 3,
+   "right_price": 3,
+   "both": 3,
+   "wrong_card": 0,
+   "wrong": {
+    "n": 0,
+    "outcomes": {},
+    "card": 0,
+    "price": 0
+   },
+   "stale": {
+    "n": 0,
+    "ids": [],
+    "reason": "closed by a version ingested before the proposal"
+   },
+   "handling_ms": {
+    "median": 4075,
+    "n": 3
+   },
+   "handling_ms_all": {
+    "median": 4075,
+    "n": 3
+   },
+   "rows": [
+    {
+     "event_id": "price_proposal_66a61c6b1b0c442d9dcd",
+     "loop": 1,
+     "card_id": "card-1-00",
+     "had_price": true,
+     "outcome": "used",
+     "closed_by": "card_96b672f6ac7243afaa40",
+     "right_card": true,
+     "right_price": true,
+     "wrong": false,
+     "stale": false,
+     "handling_ms": 4042
+    },
+    {
+     "event_id": "price_proposal_c8828170d1f84907b2e6",
+     "loop": 1,
+     "card_id": "card-1-03",
+     "had_price": true,
+     "outcome": "used",
+     "closed_by": "card_106c9b50dafa4cd6a795",
+     "right_card": true,
+     "right_price": true,
+     "wrong": false,
+     "stale": false,
+     "handling_ms": 4088
+    },
+    {
+     "event_id": "price_proposal_af57c46793c04322b432",
+     "loop": 1,
+     "card_id": "card-1-09",
+     "had_price": true,
+     "outcome": "used",
+     "closed_by": "card_fb44ec2ef96f437fb309",
+     "right_card": true,
+     "right_price": true,
+     "wrong": false,
+     "stale": false,
+     "handling_ms": 4075
+    }
+   ]
+  },
+  "needs_seller": {
+   "per_loop": {
+    "1": {
+     "entries": 19,
+     "causes": {
+      "price_changed": 1,
+      "variant": 4,
+      "over_stock": 13,
+      "discount": 1
+     },
+     "orders": 19,
+     "would_be": 15,
+     "sku_none": 12
+    }
+   },
+   "total": {
+    "entries": 19,
+    "causes": {
+     "price_changed": 1,
+     "variant": 4,
+     "over_stock": 13,
+     "discount": 1
+    },
+    "orders": 19,
+    "would_be": 15,
+    "sku_none": 12
+   },
+   "reasons": {
+    "card card-#-# changed before the customer's ok: v# #đ -> v# #đ; the customer confirms again": 1,
+    "variant size # not on card-#-# v#": 3,
+    "qty # > stock #": 13,
+    "variant size M not on card-#-# v#": 1,
+    "customer asked for a discount: waiting for the shop (\"bớt\")": 1
+   }
+  },
+  "missed": {
+   "n": 28,
+   "missed": [],
+   "no_product": 2,
+   "missed_n": 0
+  },
+  "receipts": {
+   "n": 2,
+   "version_ok": 2,
+   "rate": 1.0,
+   "with_image": 0,
+   "image_path_run": 0,
+   "rows": [
+    {
+     "event_id": "mi.m-e2e-main-1030-1852-c5-1-m02.o-c5-1-016.reply",
+     "order_id": "o-c5-1-016",
+     "version_ok": true,
+     "image": false,
+     "image_source": {
+      "card_id": "card-1-00",
+      "card_version": 5,
+      "product_seen": "e2e-main-1030-1852.ps-1-00",
+      "frame_ts_ms": 1793361465994,
+      "frame_event": null,
+      "source_frame": null,
+      "image_sha256": null,
+      "source_session": null,
+      "source_t": null,
+      "image_path": "NOT_RUN",
+      "missing": [
+       "frame_event",
+       "source_frame",
+       "image_sha256",
+       "source_session",
+       "source_t"
+      ]
+     }
+    },
+    {
+     "event_id": "mi.m-e2e-main-1030-1852-c5-1-m03.o-c5-1-029.reply",
+     "order_id": "o-c5-1-029",
+     "version_ok": true,
+     "image": false,
+     "image_source": {
+      "card_id": "card-1-01",
+      "card_version": 3,
+      "product_seen": "e2e-main-1030-1852.ps-1-01",
+      "frame_ts_ms": 1793361506994,
+      "frame_event": null,
+      "source_frame": null,
+      "image_sha256": null,
+      "source_session": null,
+      "source_t": null,
+      "image_path": "NOT_RUN",
+      "missing": [
+       "frame_event",
+       "source_frame",
+       "image_sha256",
+       "source_session",
+       "source_t"
+      ]
+     }
+    }
+   ]
+  },
+  "waits": {
+   "per_loop": {
+    "1": {
+     "lines": {
+      "many": 1
+     },
+     "snapshot": {
+      "many": 1
+     },
+     "suffix": {
+      "many": 1
+     },
+     "agree": true
+    }
+   },
+   "total": {
+    "many": 1
+   },
+   "all_agree": true
+  },
+  "interventions": {
+   "total": 22,
+   "per_hour": 208.91475117514548,
+   "by_cause": {
+    "price_used": 3,
+    "order:price_changed->CONFIRM_SENT": 1,
+    "order:variant->CONFIRM_SENT": 4,
+    "order:over_stock->CANCELLED": 13,
+    "order:discount->CONFIRM_SENT": 1
+   },
+   "core_c5": 22,
+   "ask_customer_messages": 1,
+   "rows": [
+    {
+     "event_id": "card_96b672f6ac7243afaa40",
+     "loop": 1,
+     "kind": "card",
+     "took_ms": 4042,
+     "cause": [
+      "price"
+     ]
+    },
+    {
+     "event_id": "mi.m-e2e-main-1030-1852-c5-1-m01.o-c5-1-006.reply.o-c5-1-006.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": 15037,
+     "cause": [
+      "price"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_82a081b43d94417e86d8.o-c5-1-016.decide.o-c5-1-016.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": 21692,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_f72fcbcd590b45e28d49.o-c5-1-018.decide.o-c5-1-018.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": 27374,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_2e823713e0954e05a2ca.o-c5-1-024.decide.o-c5-1-024.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_2b8c6a01ecee40249b9f.o-c5-1-029.decide.o-c5-1-029.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_2988810f5aae4277b183.o-c5-1-032.decide.o-c5-1-032.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_f6f5d388fb324287817c.o-c5-1-035.decide.o-c5-1-035.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_2db58a5bf973448f89d9.o-c5-1-041.decide.o-c5-1-041.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_e8654f7aca664b779674.o-c5-1-043.decide.o-c5-1-043.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_44d1bb0734d64e0a9a4b.o-c5-1-045.decide.o-c5-1-045.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "card_106c9b50dafa4cd6a795",
+     "loop": 1,
+     "kind": "card",
+     "took_ms": 4088,
+     "cause": [
+      "price"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_7f0de396185e47b080db.o-c5-1-055.decide.o-c5-1-055.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": 25936,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_dc773d938d4c447d8bd3.o-c5-1-062.decide.o-c5-1-062.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "price"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_e967bb40e585481d8730.o-c5-1-074.decide.o-c5-1-074.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_99c5eac2e6684e078613.o-c5-1-078.decide.o-c5-1-078.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_f5c8994833c8433e8e41.o-c5-1-082.decide.o-c5-1-082.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_b3caa4f6f02b40d9b4a4.o-c5-1-085.decide.o-c5-1-085.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "card_fb44ec2ef96f437fb309",
+     "loop": 1,
+     "kind": "card",
+     "took_ms": 4075,
+     "cause": [
+      "price"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_36615a1840fe4b399e5b.o-c5-1-091.decide.o-c5-1-091.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": 31387,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_7f6f7ace868642a48509.o-c5-1-095.decide.o-c5-1-095.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "comment_labeled_d1811f8736a8415aa39f.o-c5-1-098.decide.o-c5-1-098.reject",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    }
+   ]
+  },
+  "situations": {
+   "1": {
+    "status": "PASS",
+    "triggered": 10,
+    "passed": 10,
+    "event_id": "card_65235cda41784dada9e0",
+    "note": "items with a card per loop out of 10",
+    "code": {
+     "files": [
+      "tests/test_card.py",
+      "tests/test_card_handoff.py",
+      "tests/test_store_sse.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "2": {
+    "status": "PASS",
+    "triggered": 3,
+    "passed": 3,
+    "event_id": "card_96b672f6ac7243afaa40",
+    "note": "proposals on a card that already had a price",
+    "other": [],
+    "code": {
+     "files": [
+      "tests/test_price_route.py",
+      "tests/test_price_proposal.py",
+      "tests/test_orders_price_proposal.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "3": {
+    "status": "FAIL",
+    "triggered": 28,
+    "passed": 16,
+    "event_id": "e2e-main-1030-1852.c5-1-016",
+    "note": "accuracy 0.5714285714285714 on n=28 (target 0.9 on >= 50); previous_card 4/4; no card 0",
+    "code": {
+     "files": [
+      "tests/test_labels.py",
+      "tests/test_measure.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "4": {
+    "status": "FAIL",
+    "triggered": 4,
+    "passed": 0,
+    "event_id": "e2e-main-1030-1852.c5-1-010",
+    "note": "ask_variant <= 5 s; stock_question answered 0/13",
+    "code": {
+     "files": [
+      "tests/test_orders_ask_variant.py",
+      "tests/test_replay_ask_variant.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "5": {
+    "status": "PASS",
+    "triggered": 2,
+    "passed": 2,
+    "event_id": "e2e-main-1030-1852.c5-1-024",
+    "note": "late comments tied to the card shown when they were written",
+    "code": {
+     "files": [
+      "tests/test_labels.py",
+      "tests/test_store_sse.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "6": {
+    "status": "PASS",
+    "triggered": 1,
+    "passed": 1,
+    "event_id": "e2e-main-1030-1852.u1-44",
+    "note": "a price wait happened (lines per loop, deduped); existence only",
+    "code": {
+     "files": [
+      "tests/test_card_window.py",
+      "tests/test_price_proposal.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "7": {
+    "status": "PASS",
+    "triggered": 1,
+    "passed": 1,
+    "event_id": "e2e-main-1030-1852.c5-1-063",
+    "note": "a 'do not cancel' comment leaves the order open",
+    "code": {
+     "files": [
+      "tests/test_orders_cancel.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "8": {
+    "status": "PASS",
+    "triggered": 1,
+    "passed": 1,
+    "event_id": "mi.m-e2e-main-1030-1852-c5-1-m04.o-c5-1-060.reply",
+    "note": "CANCEL quick reply -> CANCELLED",
+    "code": {
+     "files": [
+      "tests/test_orders_cancel.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "9": {
+    "status": "PASS",
+    "triggered": 4,
+    "passed": 4,
+    "event_id": "e2e-main-1030-1852.c5-1-002",
+    "note": "spelled-out phone hidden within 5 s",
+    "code": {
+     "files": [
+      "tests/test_labels.py",
+      "tests/test_measure.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "10": {
+    "status": "PASS",
+    "triggered": 1,
+    "passed": 1,
+    "event_id": "mi.m-e2e-main-1030-1852-c5-1-m01.o-c5-1-006.reply.o-c5-1-006.approve",
+    "note": "'ok' after the card changed -> NEEDS_SELLER, confirm again",
+    "code": {
+     "files": [
+      "tests/test_orders_ok_after_card_change.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "11": {
+    "status": "TEST_ONLY",
+    "triggered": 0,
+    "passed": 0,
+    "event_id": null,
+    "note": "schema / 429: tests only",
+    "code": {
+     "files": [
+      "tests/test_meta.py",
+      "tests/test_worker.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   },
+   "12": {
+    "status": "PASS",
+    "triggered": 2,
+    "passed": 2,
+    "event_id": "mi.m-e2e-main-1030-1852-c5-1-m02.o-c5-1-016.reply",
+    "note": "CONFIRMED with the receipt at the confirmed version",
+    "code": {
+     "files": [
+      "tests/test_orders_flow.py",
+      "tests/test_measure.py"
+     ],
+     "status": "NOT_RUN"
+    }
+   }
+  },
+  "per_loop": [
+   {
+    "loop": 1,
+    "t0_ms": 1793361448994,
+    "end_ms": 1793361833110,
+    "comments": 100,
+    "orders": 27,
+    "confirmed": 2,
+    "cancelled": 14,
+    "needs_seller": 19,
+    "would_be": 15,
+    "interventions": 22,
+    "proposals": 3,
+    "right_card": 3,
+    "right_price": 3,
+    "both": 3,
+    "waits": 1,
+    "missed": 0,
+    "items_with_card": 10,
+    "items": 10,
+    "stopped": null
+   }
+  ],
+  "estimate": {
+   "label": "ước tính theo giả định",
+   "assumptions": {
+    "manual_s_per_order": 60,
+    "manual_s_per_question": 20,
+    "tap_s": 4,
+    "tap_s_used": 4.075,
+    "tap_s_source": "measured median"
+   },
+   "rows": [
+    {
+     "what": "shop actions",
+     "without": 43,
+     "with": 22
+    },
+    {
+     "what": "shop minutes",
+     "without": 34.3,
+     "with": 1.5
+    },
+    {
+     "what": "orders not taken up in 60 s",
+     "without": "không ước tính",
+     "with": 0
+    }
+   ]
+  }
+ }
+}

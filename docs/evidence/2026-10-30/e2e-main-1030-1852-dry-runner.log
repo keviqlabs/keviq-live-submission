@@ -1,0 +1,10 @@
+loop 1: t0 1793361448994
+loop 1: done, retired 11, waits {'many': 1}, failures 0
+run e2e-main-1030-1852 sha 92ecf121f81becb499ba8c12de7d4e2dcdb2b9a3 loops 1
+wrote <scratch>/c5/e2e-main-1030-1852.json
+wrote <scratch>/c5/e2e-main-1030-1852-scenarios.json
+wrote <scratch>/c5/e2e-main-1030-1852-comments.jsonl
+SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd
+FROM events WHERE type = 'model_call' AND session_id = 'e2e-main-1030-1852' GROUP BY session_id;
+session_id | n | usd
+(0 rows)
