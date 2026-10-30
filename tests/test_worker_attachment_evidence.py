@@ -213,29 +213,56 @@ async def test_late_external_recognition_cannot_overwrite_canonical_terminal_rec
         await evidence.close()
 
 
-async def test_queue_replacement_never_creates_a_terminal_receipt():
-    runner = worker(Endpoint())
-    first = {"type": "frame", "event_id": "lower", "session_id": "synthetic", "ts_ms": 10}
+async def settled(runner, seconds=1.0):
+    """Until the vision lanes are empty and the evidence ledger has evaluated what they left."""
+    loop = asyncio.get_running_loop()
+    until = loop.time() + seconds
+    while loop.time() < until:
+        vision, task = runner.stats()["vision"], runner.evidence.task
+        if vision["in_flight"] == vision["waiting"] == 0 and (task is None or task.done()):
+            return
+        await asyncio.sleep(0.01)
+    raise AssertionError("the lanes did not settle")
+
+
+async def test_a_replaced_frame_in_a_bound_session_blocks_readiness_until_it_is_read():
+    """Three frames arrive while the first is still being read, with an order comment between the second and the
+    third: readiness needs terminals for frames 1 and 2 and frame 3 as the frame after. A lane that replaces the
+    waiting frame 2 with frame 3 leaves frame 2 without a terminal, so the comment can never be proven ready;
+    a bound session's lane reads every frame instead."""
+    endpoint = Endpoint()
+    runner = worker(endpoint)
     started, release = asyncio.Event(), asyncio.Event()
 
-    async def blocked(event, ctx):
-        if event["ts_ms"] == 10:
+    async def read(event, ctx):
+        if event["event_id"] == "fr-1":
             started.set()
             await release.wait()
         return []
 
-    runner.handlers = {"frame": [blocked]}
-    runner.receive(first)
+    runner.handlers = {"frame": [read]}
+    frame = {"type": "frame", "session_id": "synthetic", "source": "sim"}
+    fast = {"session_id": "synthetic", "source": "sim", "comment_id": "intent"}
     try:
+        runner.receive({**frame, "event_id": "fr-1", "ts_ms": 10})
         await asyncio.wait_for(started.wait(), 1)
-        runner.receive({**first, "event_id": "replaced", "ts_ms": 20})
-        runner.receive({**first, "event_id": "newest", "ts_ms": 30})
-        assert runner.counts["vision"]["skipped"] == 1
-        assert "replaced" not in runner.evidence.terminals
+        runner.receive({**frame, "event_id": "fr-2", "ts_ms": 20})
+        runner.receive({**fast, "type": "comment", "event_id": "comment", "ts_ms": 25})
+        runner.receive({**frame, "event_id": "fr-3", "ts_ms": 30})
+        label = {**fast, "type": "comment_labeled", "event_id": "label", "ts_ms": 25, "label": "order"}
+        runner.receive(label)
+        release.set()
+        await settled(runner)
+        readiness = [r for r in endpoint.requests if "readiness_evidence" in r]
+        assert (runner.counts["vision"]["skipped"], len(readiness)) == (0, 1)
+        assert sorted(runner.evidence.terminals) == ["fr-1", "fr-2", "fr-3"]
+        evidence = readiness[0]["readiness_evidence"]
+        assert evidence["after_frame_event_id"] == "fr-3"
+        assert [f["frame_event_id"] for f in evidence["handled_frames"]] == ["fr-1", "fr-2"]
+        assert {f["result"] for f in evidence["handled_frames"]} == {"no_product_seen"}
     finally:
         release.set()
-        if task := runner.vision["synthetic"].task:
-            await task
+        await settled(runner)
         await runner.evidence.close()
 
 

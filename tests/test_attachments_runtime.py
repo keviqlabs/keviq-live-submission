@@ -336,6 +336,69 @@ async def test_production_labeler_context_and_http_guard_share_the_frame_snapsho
         await runner.evidence.close()
 
 
+async def test_frames_faster_than_the_read_still_reach_ready_before_the_deadline(world):
+    """The worker against the app: three frames arrive while the first (a product) is still being read, and an
+    order comment lands between the second and the third. Every frame up to the comment gets a terminal, the
+    worker's own readiness request names them all, and the app answers ready with the card the first frame opened.
+    A lane that drops the second frame can never prove this comment ready."""
+    from worker.runner import Runner
+
+    w = world
+
+    async def read(frame, ctx):
+        await asyncio.sleep(0.1)
+        if frame["ts_ms"] != 10:
+            return []
+        return [{"type": "product_seen", "category": "sneaker", "attributes": {}, "confidence": 1, "is_new": True,
+                 "frame_ts_ms": frame["ts_ms"]}]  # fmt: skip
+
+    async def open_card(seen, ctx):
+        return [{"type": "card", "ts_ms": w.now, "card_id": "card-worker", "version": 1, "sku": "GIAY-01",
+                 "name": "Synthetic item", "price": None, "currency": "VND", "status": "draft", "stock": 5,
+                 "variants": [{"size": "38", "color": "trắng", "stock": 5}], "image_url": None,
+                 "provenance": {"frame_ts_ms": seen["frame_ts_ms"], "speech_event_ids": [], "edited_by": None}}]  # fmt: skip
+
+    runner = Runner(
+        "http://test",
+        {"frame": [read], "product_seen": [open_card]},
+        http=w.client,
+        attachment_auth={w.sid: {"epoch": w.epoch, "source_token": w.source, "system_token": w.system}},
+    )
+    post = runner.post
+
+    async def echoed(events):  # the stream hands the worker's own posts back to it
+        await post(events)
+        for event in events:
+            runner.receive(event)
+
+    runner.post = echoed
+    try:
+        runner.receive(await w.frame(10))
+        await asyncio.sleep(0)  # the first read is under way
+        for event in [await w.frame(20), *await w.comment(ts=25), await w.frame(30)]:
+            runner.receive(event)
+        attachments = []
+        for _ in range(300):
+            attachments = [e for e in await w.events() if e["type"] == "comment_attachment"]
+            vision = runner.stats()["vision"]
+            if attachments and vision["in_flight"] == vision["waiting"] == 0:
+                break
+            await asyncio.sleep(0.01)
+        assert (runner.counts["vision"]["skipped"], [e["outcome"] for e in attachments]) == (0, ["ready"])
+        [attachment] = attachments
+        assert attachment["selected_card_id"] == "card-worker"
+        evidence = attachment["readiness_evidence"]
+        assert evidence["after_frame_event_id"] == w.frames[2]["event_id"]
+        assert [(f["frame_event_id"], f["result"]) for f in evidence["handled_frames"]] == [
+            (w.frames[0]["event_id"], "product_seen"),
+            (w.frames[1]["event_id"], "no_product_seen"),
+        ]
+        assert runner.counts["vision"]["done"] == 3
+        assert not [e for e in await w.events() if e["type"] in {"order", "message_out"}]
+    finally:
+        await runner.evidence.close()
+
+
 @pytest.mark.parametrize(
     "damage", ["missing_lower", "missing_card", "wrong_frame", "future_cursor", "old_output_epoch"]
 )
