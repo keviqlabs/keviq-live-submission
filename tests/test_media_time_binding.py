@@ -15,13 +15,19 @@ from types import SimpleNamespace
 import pytest
 
 from app.attachment_auth import SOURCE_KINDS, binding_definition
+from app.attachment_orders import order_id_for
 from app.contracts import make_event
 from orders import handlers as order_handlers
 from tests.test_slow_vision_integration import NoModel, frame, ingest, pg_app, running  # noqa: F401
 from worker import runner as runner_mod
 from worker.brain import card, labels, window
 
-SPEED = 10
+# Logical seconds per wall second. The spec's tightest gap is half a logical second between card B
+# opening at 16.0 and the attachment deadline at 16.5, and the projector must write an expiry within
+# 200 logical ms of its deadline. At 10x those are 50 ms and 20 ms of wall time for a worker post plus a
+# database transaction, which a loaded machine misses; at 5x three runs in ten still missed. Real time
+# gives the system the margins production gives it. Every assertion stays in logical time.
+SPEED = 1
 
 
 class Clock:
@@ -82,6 +88,8 @@ class Scenario:
             is_new=True, frame_ts_ms=self.clock.at(source), caused_by=[f"{self.sid}.fr-{source}"]))  # fmt: skip
 
     async def frame_done(self, number):
+        # No frame finishes before every earlier frame's planned result; the 2 s after that is harness slack.
+        await self.clock.until(max(ready for n, (_, _, ready) in self.plans.items() if n <= number))
         await asyncio.wait_for(self.finished_frames[number].wait(), timeout=2)
 
     async def events(self):
@@ -115,8 +123,33 @@ class Scenario:
         await ingest(self.client, make_event("speech", self.sid, self.clock.at(end), "sim", text=text, final=True,
             lang="vi", start_ms=self.clock.at(start), end_ms=self.clock.at(end)))  # fmt: skip
 
+    async def wait_for(self, predicate, what):
+        """Poll the event log until `predicate(events)` holds and return that read.
+
+        The bound is wall time: it only caps how long the harness waits for the system to finish a
+        chain. Promptness claims are made on the events' own timestamps, not on this wait.
+        """
+        until = time.monotonic() + 2
+        while True:
+            events = await self.events()
+            if predicate(events):
+                return events
+            states = [(e["order_id"], e["state"]) for e in events if e["type"] == "order"]
+            assert time.monotonic() < until, f"timed out waiting for {what}; order events: {states}"
+            await asyncio.sleep(0.005)
+
+    async def order(self, comment_id, state=None):
+        order_id = order_id_for(comment_id)
+        return await self.wait_for(
+            lambda events: any(
+                e["type"] == "order" and e["order_id"] == order_id and state in (None, e["state"])
+                for e in events
+            ),
+            f"order {order_id}" + (f" in {state}" if state else ""),
+        )
+
     async def settle(self):
-        await asyncio.sleep(0.06)
+        await asyncio.sleep(0.6 / SPEED)  # 0.6 logical seconds, whatever the compression
 
     async def snapshot(self):
         events = await self.events()
@@ -302,8 +335,7 @@ async def test_switch_before_result_waits_for_new_items_price(scenario):
     before_price = await s.events()
     await s.clock.until(18)
     b = await s.price("BOOT-02", 200000)
-    await s.settle()
-    events = await s.events()
+    events = await s.order("switch-order", "CONFIRM_SENT")
     assert not [e for e in before_price if e["type"] == "order"], "order was priced before B had approval"
     orders = [e for e in events if e["type"] == "order"]
     assert orders and orders[-1]["state"] == "CONFIRM_SENT"
@@ -336,9 +368,8 @@ async def test_price_before_card_pins_later_price_without_backwriting(scenario):
     await s.frame_done(11)
     await s.frame(14)
     await s.clock.until(16)
-    await s.settle()
+    events = await s.order("early-price-order", "CONFIRM_SENT")
     a = await s.latest("GIAY-01")
-    events = await s.events()
     orders = [e for e in events if e["type"] == "order"]
     assert a["price"] == 150000, "the held price did not reach the newly opened sneaker card"
     assert orders and orders[-1]["state"] == "CONFIRM_SENT", (
@@ -371,7 +402,7 @@ async def test_late_result_and_seller_edit_do_not_restore_previous_item(scenario
     await s.price("BOOT-02", 210000)
     await s.comment(34, "return-order")
     await s.frame(35)
-    await s.settle()
+    await s.order("return-order")
     live = (
         await s.client.get(f"/api/sessions/{s.sid}/cards/live", params={"ts_ms": s.clock.at(35.5)})
     ).json()["cards"]
@@ -398,8 +429,7 @@ async def test_expiry_needs_seller_with_two_candidates_instead_of_old_price(scen
     await s.seen(20, "boot", "đen", "b")  # completed recognition delivered before the lower frame's result
     b = await s.price("BOOT-02", 200000)
     await s.clock.until(24.8)
-    await s.settle()
-    events = await s.events()
+    events = await s.order("expiry-order", "NEEDS_SELLER")
     orders = [e for e in events if e["type"] == "order"]
     assert orders and orders[-1]["state"] == "NEEDS_SELLER", (
         "incomplete media evidence was silently confirmed"
@@ -422,33 +452,34 @@ async def test_expiry_deadline_while_lower_frame_result_is_blocked(scenario):
     s.blocked_frames[19] = (started, release, completed)
     try:
         await s.frame(19)
-        await asyncio.wait_for(started.wait(), timeout=0.2)
+        await asyncio.wait_for(started.wait(), timeout=2)
         await s.frame(20)
         await s.comment(20.4, "deadline-order")
         comment = next(
             e for e in await s.events() if e.get("comment_id") == "deadline-order" and e["type"] == "comment"
         )
         deadline = comment["ingested_ms"] + 4000
-        tolerance = 200  # logical milliseconds: 20 ms wall time at SPEED=10
+        tolerance = 200  # logical ms, judged on the outcome's own timestamps (later = recovery-late)
         await s.clock.until(23)
         await s.seen(20, "boot", "đen", "deadline-b")
         b = await s.price("BOOT-02", 200000)
         outcome = None
         observed_at = None
         events = []
-        while s.clock.now_ms() <= deadline + tolerance:
+        give_up = time.monotonic() + 2  # wall seconds: how long the harness looks, not a promptness claim
+        while outcome is None and time.monotonic() < give_up:
             events = await s.events()
             sellers = [
                 e
                 for e in events
                 if e["type"] == "order"
-                and e["order_id"] == "o-deadline-order"
+                and e["order_id"] == order_id_for("deadline-order")
                 and e["state"] == "NEEDS_SELLER"
             ]
             if sellers:
                 outcome, observed_at = sellers[-1], s.clock.now_ms()
-                break
-            await asyncio.sleep(0.001)
+            else:
+                await asyncio.sleep(0.005)
         orders = [e for e in events if e["type"] == "order"]
         print(
             "EXPIRY_DEADLINE "
@@ -471,7 +502,6 @@ async def test_expiry_deadline_while_lower_frame_result_is_blocked(scenario):
         assert outcome is not None, "seller timeout missing while lower frame result remains blocked"
         assert deadline <= outcome["ingested_ms"] <= deadline + tolerance
         assert deadline <= outcome["ts_ms"] <= deadline + tolerance
-        assert observed_at <= deadline + tolerance, "seller outcome observed after deadline tolerance"
         assert outcome["lines"][0].get("candidates") == [b["card_id"], a["card_id"]]
         assert all(e["ingested_ms"] >= deadline for e in orders), "order emitted before expiry"
         assert not [
