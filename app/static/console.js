@@ -21,6 +21,7 @@ const logs = new Map();      // order_id -> source log (C6) from /orders/{id}/lo
 const shown = new Set();     // the order whose source log is open (at most one)
 const prices = new Map();    // order_id -> unit price the seller typed
 const receivedAt = new Map(); // card_id -> ms the newest version arrived (render timing)
+const paintedAt = new Map();  // card_id -> {version, ms} of the last paint, so a re-render keeps data-painted-ms
 const renderTimings = [];    // {card_id, version, received_ms, painted_ms}; raw samples only, nothing summarised on screen
 const modelStats = new Map(); // spark|sam|voice -> {n, p50, lastOk, latencies}
 const MODEL_GROUP = { product_seen: "spark", card_from_speech: "spark", label_comments: "spark", card_cutout: "sam", transcribe: "voice" };
@@ -224,6 +225,8 @@ function markPainted(e) {
   const received = receivedAt.get(e.card_id);
   const paint = () => {
     const painted = Date.now();
+    const prev = paintedAt.get(e.card_id);
+    if (!prev || prev.version <= e.version) paintedAt.set(e.card_id, { version: e.version, ms: painted });
     const el = document.querySelector(`[data-card-id="${CSS.escape(e.card_id)}"]`);
     el?.setAttribute?.("data-painted-ms", String(painted));
     renderTimings.push({ card_id: e.card_id, version: e.version, received_ms: received, painted_ms: painted });

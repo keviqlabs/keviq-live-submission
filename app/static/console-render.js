@@ -52,7 +52,8 @@ function cardHtml(c) {
   const variants = (c.variants || []).map((v) => `<span class="variant">${esc([v.size, v.color].filter(Boolean).join(" · ") || "—")}
     <span class="muted">${esc(t("card.stock", { n: v.stock ?? "—" }))}</span></span>`).join("");
   const hidden = overlayHidden.has(c.card_id), received = receivedAt.get(c.card_id);
-  return `<article class="current-card${c.status === "retired" ? " retired" : ""}" data-card-id="${id}" data-version="${c.version}"${received ? ` data-received-ms="${received}"` : ""}>
+  const paint = paintedAt.get(c.card_id), painted = paint?.version === c.version ? paint.ms : null;
+  return `<article class="current-card${c.status === "retired" ? " retired" : ""}" data-card-id="${id}" data-version="${c.version}"${received ? ` data-received-ms="${received}"` : ""}${painted ? ` data-painted-ms="${painted}"` : ""}>
     <div class="product-image">${url ? `<img src="${esc(url)}" alt="" onerror="this.hidden=true">` : `<span class="no-image">${esc(t("card.noImage"))}</span>`}
       <div class="product-top-labels"><span class="pill ${statusClass(c.status)}">${esc(tEnum("card.status", c.status))}</span><span class="pill mono">${esc(t("card.version", { n: c.version }))}</span></div></div>
     <div class="product-head"><span class="label mono">${id}</span></div>
