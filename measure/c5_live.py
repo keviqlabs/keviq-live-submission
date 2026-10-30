@@ -19,7 +19,7 @@ Per loop: worker up (it reads from the head, as after a restart), media up; t0 =
 index * 1000 (media posts frame i at t0 + i * 1000); comments and customers on that clock; at t0 + loop + tail
 media is stopped if still running, the shop and customers finish, the runner waits at the barrier (Watch.barrier: the
 worker has finished every event of the session, by its own count; never on silence alone), every open card gets a
-retired version, the barrier again, then the worker gets SIGTERM and prints its waits snapshot (HQ419). A session_cap
+retired version, the barrier again, then the worker gets SIGTERM and prints its waits snapshot (ruling 419). A session_cap
 refusal ends the run after its loop. A barrier that times out is INCOMPLETE in the loop row, with what was left.
 Child logs go to --out next to the evidence files and are not evidence: they may hold utterances and comment text.
 

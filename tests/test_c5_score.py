@@ -6,7 +6,7 @@
   order comment that names an item and a current or previous card, and a comment with no card is wrong, never out
   of n; unresolved comments are scored in order_ids;
 - order_ids names every posted gold order comment, with what the system made of it and why a wrong one is wrong;
-- waits count one per (loop, reason, line event id) and sum the loops (HQ419).
+- waits count one per (loop, reason, line event id) and sum the loops (ruling 419).
 """
 
 import json

@@ -1,4 +1,4 @@
-"""Read-only ledger reconciliation for one session (HQ 10:20 item 3). Numbers only; the DB URL is never printed.
+"""Read-only ledger reconciliation for one session (ruling 10:20, item 3). Numbers only; the DB URL is never printed.
 
   (repo root) PYTHONPATH=. uv run python c5_ledger_sql.py RUN > RUN-ledger.json
 """

@@ -1,8 +1,8 @@
 """python -m measure.c5_proc worker|worker.media [args]: `python -m <module> [args]` after one line of what this
-process really loaded (HQ 01:39 item 2: the app's env proves nothing about the worker's or media's): the catalog
+process really loaded (ruling 01:39, item 2: the app's env proves nothing about the worker's or media's): the catalog
 file and its sha256, the catalog the card and labels brains hold, the cap and warning its Meter takes, the vision
 effort, the git sha. On SIGTERM it prints the card brain's `Session.waits` of each session it holds and exits: the
-loop-end snapshot, taken before the restart (HQ419). The worker also says, in "progress" lines, how far it has
+loop-end snapshot, taken before the restart (ruling 419). The worker also says, in "progress" lines, how far it has
 finished the stream (measure/c5_progress), for the loop-end barrier; the last one again on SIGTERM. Its lines start
 with "C5PROC " and hold no secret (the model key only as set or not).
 

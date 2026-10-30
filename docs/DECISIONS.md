@@ -136,11 +136,11 @@ owner decision before implementing those cases. This contract alone does not ope
 
 ## 2026-10-28 — CATALOG_PATH and category lists
 
-**D-026 `CATALOG_PATH` changes only the items on sale; the vision and speech prompts keep the words of `data/catalog.json`. An item may list `categories`, and a label plus colour that names exactly one SKU opens that SKU's card.** No contract change: no new field or event, no API change, `v` stays 1. HQ417, HQ423.
+**D-026 `CATALOG_PATH` changes only the items on sale; the vision and speech prompts keep the words of `data/catalog.json`. An item may list `categories`, and a label plus colour that names exactly one SKU opens that SKU's card.** No contract change: no new field or event, no API change, `v` stays 1. Rulings 417 and 423.
 
-HQ, verbatim:
+Decision text, verbatim:
 
-> "D-026 đêm nay thu hẹp: (1) CATALOG_PATH chỉ đổi dữ liệu món/size/tồn/giá/tên và mục catalog trong prompt nhãn; từ vựng vision và màu bộ đọc giá giữ từ catalog demo; test hash prompt vision và prompt giá không đổi so với main. (2) Category list theo membership, tương thích ngược. (3) Khớp SKU: nhãn+màu ra đúng một SKU → gán; còn lại → NEEDS_SELLER như hiện tại. Không thêm trường nào vào event/API, không contracts. (4) Trong measure/NOTE: phân rã đơn NEEDS_SELLER theo 'giá thẻ khớp đúng một giá catalog' (would-be candidate) / không, tính ngoại tuyến từ event. Agent 2 viết, Agent 1 review, vào main trước 13:00. Candidate UI/contract để Founder quyết ban ngày."
+> "D-026 đêm nay thu hẹp: (1) CATALOG_PATH chỉ đổi dữ liệu món/size/tồn/giá/tên và mục catalog trong prompt nhãn; từ vựng vision và màu bộ đọc giá giữ từ catalog demo; test hash prompt vision và prompt giá không đổi so với main. (2) Category list theo membership, tương thích ngược. (3) Khớp SKU: nhãn+màu ra đúng một SKU → gán; còn lại → NEEDS_SELLER như hiện tại. Không thêm trường nào vào event/API, không contracts. (4) Trong measure/NOTE: phân rã đơn NEEDS_SELLER theo 'giá thẻ khớp đúng một giá catalog' (would-be candidate) / không, tính ngoại tuyến từ event. […] Candidate UI/contract để Founder quyết ban ngày."
 
 - `CATALOG_PATH` (`app/settings.py` `catalog_path()`): a path relative to the repo root, or absolute; unset or empty means `data/catalog.json`. It is read once, when `worker/brain/card.py` is imported and when a `Labeler` is built.
 - From `CATALOG_PATH`: `card.CATALOG` (`match`, `item_by_sku`, `variants_of`, so the SKU, name, sizes, stock and price on a card) and the catalog in the label prompt (`labels.load_catalog`).
@@ -149,9 +149,9 @@ HQ, verbatim:
 - No SKU or two or more: the path stays as before. The card is a draft with no SKU, a name from the category and colour, no variants and stock 0; an order on it goes to NEEDS_SELLER (no price yet, or qty above stock 0).
 - (4), the offline split of NEEDS_SELLER orders in `measure/`, is not in this change.
 
-Why: HQ417 chose one catalog file per run, with category lists. The C5 catalog gives its items a `categories` list; matching on `category` alone leaves an item seen under another of its categories without a SKU. Keeping the prompt words fixed keeps the vision and speech prompts the earlier runs were measured with.
+Why: ruling 417 chose one catalog file per run, with category lists. The C5 catalog gives its items a `categories` list; matching on `category` alone leaves an item seen under another of its categories without a SKU. Keeping the prompt words fixed keeps the vision and speech prompts the earlier runs were measured with.
 
-Known limits: the vision enum and the speech colours do not grow with `CATALOG_PATH`, so a category or colour only in that catalog is never seen or heard. A spoken price is not matched to a SKU (HQ420 open). Restart the app and worker after changing `CATALOG_PATH`.
+Known limits: the vision enum and the speech colours do not grow with `CATALOG_PATH`, so a category or colour only in that catalog is never seen or heard. A spoken price is not matched to a SKU (ruling 420, open). Restart the app and worker after changing `CATALOG_PATH`.
 
 ## 2026-10-28 — which card a spoken price goes to
 
@@ -169,7 +169,7 @@ Known limits: the vision enum and the speech colours do not grow with `CATALOG_P
 
 Why: a price said around a switch went to whichever card was current when the line arrived. In the D-024 replay of test1, 7 proposals carried a later product's price on an earlier card.
 
-Changed on 2026-10-28 (HQ): a kind word picks between several candidates and is no longer required. In the 0 USD replay of test1, requiring it left 3 of the 6 right-card proposals waiting.
+Changed on 2026-10-28 (review ruling): a kind word picks between several candidates and is no longer required. In the 0 USD replay of test1, requiring it left 3 of the 6 right-card proposals waiting.
 
 Known limits: a price said before the session's first product_seen is not read. H holds only for the current vision prompt and effort, and was measured on files, not the live path; re-measure when either changes. Each line now waits up to HOLD_MS (4168 ms) before it is applied. A line that names no kind of item goes to the one card in view, also when the seller is talking about an item not shown yet. The wait counts live in the worker's memory and log only, and restart with the worker. The kind words cover the catalogue names and the words used in test1 only.
 

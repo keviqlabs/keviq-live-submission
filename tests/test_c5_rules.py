@@ -1,4 +1,4 @@
-"""The C5 rules HQ ruled on at 03:48, on synthetic events and the committed C5 gold (windows.json):
+"""The C5 rules ruled on at 03:48, on synthetic events and the committed C5 gold (windows.json):
 
 - interventions: a seller version that changes the price, or a seller order decision (core.c5 counts the same);
 - situation 2: a wrong proposal fails only when it is used; a right one passes when used, fixed or replaced;
