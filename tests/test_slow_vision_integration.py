@@ -193,8 +193,8 @@ async def running(client, handlers, sid, monkeypatch, speed=SPEED, progress=Fals
         task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await task
-        owned = [lane.task for lane in [getattr(worker, "fast", None), *getattr(worker, "vision", {}).values()]
-                 if lane is not None and lane.task is not None]  # fmt: skip
+        owned = [task for lane in [getattr(worker, "fast", None), *getattr(worker, "vision", {}).values()]
+                 if lane is not None for task in lane.tasks]  # fmt: skip
         for job in owned:
             job.cancel()
         await asyncio.gather(*owned, return_exceptions=True)

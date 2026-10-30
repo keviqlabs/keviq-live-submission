@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
-
-const source = readFileSync(new URL("../app/static/console.js", import.meta.url), "utf8");
+import { loadConsole } from "./console_harness.mjs";
 
 function setup(reply = { ok: true, changed: false, version: 4 }) {
   const nodes = new Map(), requests = [];
@@ -25,12 +23,12 @@ function setup(reply = { ok: true, changed: false, version: 4 }) {
       return { ok: reply.ok, status: reply.ok ? 200 : 409, json: async () => reply };
     },
   });
-  vm.runInContext(source, context);
-  vm.runInContext(`cards.set("unresolved", {
+  const run = loadConsole(context);
+  run(`cards.set("unresolved", {
     card_id: "unresolved", version: 4, sku: null, status: "draft", name: "Observed shoe",
     price: null, stock: 0, ts_ms: 1000, provenance: { frame_ts_ms: 1000, speech_event_ids: [] }
-  });`, context);
-  return { run: (code) => vm.runInContext(code, context), requests, nodes };
+  });`);
+  return { run, requests, nodes };
 }
 
 test("selection sends the exact typed SKU and latest visible card version to the item route only", async () => {
@@ -49,13 +47,14 @@ test("keeping identity unresolved uses null on the current version and no order 
   assert.deepEqual(ui.requests, [{
     url: "/api/sessions/sku-ui/cards/unresolved/item", body: { card_version: 4, sku: null },
   }]);
-  assert.match(ui.run('itemNotes.get("unresolved").text'), /chưa tạo đơn/);
+  assert.equal(ui.run('itemNotes.get("unresolved").key'), "item.kept");
+  assert.match(ui.run('itemHtml(cards.get("unresolved"))'), /no order created/);
 });
 
 test("unknown drafts expose identity controls before price; known and legacy cards cannot use them", () => {
   const ui = setup();
   assert.match(ui.run('itemHtml(cards.get("unresolved"))'), /assign-item/);
-  assert.match(ui.run('priceHtml(cards.get("unresolved"))'), /Chọn mã món trước/);
+  assert.match(ui.run('priceHtml(cards.get("unresolved"))'), /Pick the catalogue item/);
   assert.doesNotMatch(ui.run('priceHtml(cards.get("unresolved"))'), /data-card-price/);
   for (const status of ["live", "edited", "retired"]) {
     ui.run(`cards.get("unresolved").status = "${status}"`);

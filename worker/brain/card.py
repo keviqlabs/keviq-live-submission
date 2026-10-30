@@ -44,8 +44,8 @@ from worker.runner import BACKLOGS, build
 from worker.voice import vn
 
 log = logging.getLogger("worker.card")
-CATALOG: list[dict] = json.loads(catalog_path().read_text())  # the items on sale (HQ417)
-# The words the vision and speech prompts and the transcriber use stay those of data/catalog.json (HQ417)
+CATALOG: list[dict] = json.loads(catalog_path().read_text())  # the items on sale (ruling 417)
+# The words the vision and speech prompts and the transcriber use stay those of data/catalog.json (ruling 417)
 WORDS: list[dict] = json.loads((ROOT / "data" / "catalog.json").read_text())
 CATEGORIES = sorted({i["category"] for i in WORDS})
 COLORS = sorted({v["color"] for i in WORDS for v in i["variants"]})
@@ -100,7 +100,7 @@ def keywords() -> list[str]:
 
 def match(category: str, color: str | None) -> dict | None:
     """The one catalog item of this category (and colour, when seen); None when it is not unique. An item with
-    `categories` is of each of them; one without is of its `category` (HQ417)."""
+    `categories` is of each of them; one without is of its `category` (ruling 417)."""
     same = [i for i in CATALOG if category in (i.get("categories") or [i["category"]])]
     if color:
         same = [i for i in same if any(v["color"] == color for v in i["variants"])]

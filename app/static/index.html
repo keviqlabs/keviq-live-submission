@@ -4,15 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Keviq Live demo</title>
-<link rel="stylesheet" href="/static/console.css">
+<link rel="stylesheet" href="/static/shared.css">
 </head>
 <body>
-<header><h1>Keviq Live · demo</h1><span class="muted">replay sessions on this server</span></header>
-<main style="grid-template-columns:1fr">
-  <section>
-    <h2>Sessions</h2>
-    <div id="sessions" class="muted">loading…</div>
-    <p class="muted">Start one with <code>make replay SESSION=demo1</code>; it appears here.</p>
+<header class="topbar">
+  <div class="brand"><span>KEVIQ</span> <span class="live-word">LIVE</span></div>
+  <div class="session-name"><strong>demo</strong><small>replay sessions on this server</small></div>
+</header>
+<main class="page">
+  <section class="column">
+    <div class="column-header"><h2>Sessions</h2></div>
+    <div class="column-body">
+      <div id="sessions" class="muted">loading…</div>
+      <p class="muted">Start one with <code>make replay SESSION=demo1</code>; it appears here.</p>
+    </div>
   </section>
 </main>
 <script>
@@ -20,8 +25,8 @@
   async function load() {
     const { sessions } = await (await fetch("/api/sessions")).json();
     document.getElementById("sessions").innerHTML = sessions.length
-      ? sessions.map((s) => `<div class="item"><div class="row"><b>${esc(s.session_id)}</b><span class="muted">${s.events} events</span></div>
-          <a href="/console/${encodeURIComponent(s.session_id)}">console</a> · <a href="/overlay/${encodeURIComponent(s.session_id)}">overlay</a></div>`).join("")
+      ? sessions.map((s) => `<div class="item"><div class="row spread"><strong>${esc(s.session_id)}</strong><span class="muted mono">${s.events} events</span></div>
+          <div class="row"><a href="/console/${encodeURIComponent(s.session_id)}">console</a> · <a href="/overlay/${encodeURIComponent(s.session_id)}">overlay</a></div></div>`).join("")
       : "no sessions yet";
   }
   load(); setInterval(load, 5000);

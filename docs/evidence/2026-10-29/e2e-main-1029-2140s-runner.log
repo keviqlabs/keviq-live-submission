@@ -1,0 +1,11 @@
+session cap 8.0 USD, warning 6.0 USD (env)
+loop 1: t0 1793285370629
+loop 1: done, SETTLED/SETTLED behind 0, retired 10, waits {'many': 1}, failures 0
+run e2e-main-1029-2140s sha 7dc77430edf56ba3cec56cd77c9ce321c7dd8a35 loops 1
+wrote <scratch>/c5/e2e-main-1029-2140s.json
+wrote <scratch>/c5/e2e-main-1029-2140s-scenarios.json
+wrote <scratch>/c5/e2e-main-1029-2140s-comments.jsonl
+SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd
+FROM events WHERE type = 'model_call' AND session_id = 'e2e-main-1029-2140s' GROUP BY session_id;
+session_id | n | usd
+(0 rows)

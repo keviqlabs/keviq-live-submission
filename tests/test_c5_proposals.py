@@ -1,4 +1,4 @@
-"""The proposal rules HQ ruled on at 04:18, on synthetic events and the committed C5 gold (windows.json):
+"""The proposal rules ruled on at 04:18, on synthetic events and the committed C5 gold (windows.json):
 
 - stale on arrival: a proposal whose closing version was ingested before it keeps its raw handling time, is
   counted apart, and stays out of the handling median; the median over every timed proposal is kept beside it;

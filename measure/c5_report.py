@@ -53,7 +53,7 @@ def situations(run: Run, rows: list[dict], msgs: list[dict], sent: dict, parts: 
             cases.append(("pass", run.cards[card][0]["event_id"]) if card else ("fail", None))
     out[1] = verdict(cases, f"items with a card per loop out of {len(items)}")
 
-    cases, other = [], []  # HQ 03:48: a wrong proposal fails only when it is used; "other" is not scored
+    cases, other = [], []  # ruling 03:48: a wrong proposal fails only when it is used; "other" is not scored
     for p in (p for p in parts["proposals"]["rows"] if p["had_price"]):
         if p["outcome"] == "other":
             other.append(p["event_id"])
@@ -210,7 +210,7 @@ def per_loop(run: Run, rows: list[dict], parts: dict) -> list[dict]:
 
 
 def text(scored: dict) -> list[str]:
-    """HQ 06:58 (e), as printed lines: right_card | right_price | both per loop and in total, then one line per
+    """Ruling 06:58 (e), as printed lines: right_card | right_price | both per loop and in total, then one line per
     intervention (event id, loop, took_ms, cause). Numbers and event ids only."""
     p, iv = scored["proposals"], scored["interventions"]
     out = ["loop | proposals | right_card | right_price | both"]
@@ -262,7 +262,7 @@ def score(events: list[dict], run_file: dict, rows: list[dict], msgs: list[dict]
         "waits": waits(run_file["loops"]),
     }
     parts["interventions"] = interventions(run, c5)
-    parts["waits_lines"] = [  # one case per (loop, reason, line event id), as HQ419 counts them
+    parts["waits_lines"] = [  # one case per (loop, reason, line event id), as ruling 419 counts them
         sorted({(m[2], m[1]) for m in map(WAIT_LINE.search, lp.get("wait_lines", [])) if m})
         for lp in run_file["loops"]
     ]

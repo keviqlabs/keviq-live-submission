@@ -1,0 +1,39 @@
+Keviq Live
+Copyright 2026 KeviqLabs
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It depends on the third-party Python packages below, listed as in
+pyproject.toml. The license of each package is the one its installed
+metadata declares (read with importlib.metadata from the uv.lock
+environment on 2026-10-29). Each package keeps its own license text in
+its distribution.
+
+Runtime dependencies
+
+  fastapi 0.162.0            MIT
+  uvicorn 0.54.0             BSD-3-Clause
+  psycopg 3.3.6              LGPL-3.0-only
+  psycopg-binary 3.3.6       LGPL-3.0-only
+  jsonschema 4.26.0          MIT
+  httpx 0.28.1               BSD-3-Clause
+  websockets 17.3            BSD-3-Clause
+  meta-sam-parser 0.1.0      SAM License (Meta's license for the SAM
+                             materials, last updated 19 November 2025;
+                             the full text ships in the package)
+
+Development dependencies
+
+  pytest 9.1.1               MIT
+  pytest-asyncio 1.4.1       Apache-2.0
+  ruff 0.17.3                MIT
+
+Transitive dependencies are pinned in uv.lock and keep their own licenses.
+
+Scope of the SAM License
+
+  The SAM License covers only the meta-sam-parser package as installed
+  from PyPI into the Python environment (site-packages). No file in this
+  repository is a copy of that package. The code that calls it,
+  worker/vision/sam.py, and every other file in this repository are
+  licensed under the Apache License, Version 2.0 (see LICENSE).

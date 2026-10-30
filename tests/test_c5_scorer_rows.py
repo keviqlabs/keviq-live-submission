@@ -1,4 +1,4 @@
-"""HQ 06:58 (e), on synthetic events and the committed C5 gold (windows.json):
+"""Ruling 06:58 (e), on synthetic events and the committed C5 gold (windows.json):
 
 - the proposal totals count right_price and both (right_card and right_price) beside right_card, total and per loop;
 - each C5 intervention is a row: event id, loop, kind, took_ms from the last price proposal of its card that

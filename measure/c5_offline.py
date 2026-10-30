@@ -1,4 +1,4 @@
-"""Stand-ins for an unpaid C5 live run (HQ 05:33), installed in the worker process by measure/c5_proc when
+"""Stand-ins for an unpaid C5 live run (ruling 05:33), installed in the worker process by measure/c5_proc when
 C5_OFFLINE=<loop k> is set and the model key is empty. No model is called and no model_call is written: what they
 return is stored output of session test1, replayed, never a model result.
 

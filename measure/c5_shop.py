@@ -86,7 +86,7 @@ class Gold:
         return p.get("price_first")
 
     def right_price(self, sku: str | None, heard: int | None, start: int, end: int) -> bool:
-        """The one rule the shop and the scorer share (HQ 03:48): the gold price at the end of the line, or either
+        """The one rule the shop and the scorer share (ruling 03:48): the gold price at the end of the line, or either
         gold price of the item when the line [start, end] overlaps the window where the host says the change."""
         said = self.windows["price_changes"].get(sku)
         return (

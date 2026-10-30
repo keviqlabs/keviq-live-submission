@@ -217,11 +217,15 @@ def main(argv=None) -> int:
         "--seconds", type=float, help="live: only the first N seconds of each loop (plumbing test)"
     )
     p.add_argument("--paid", action="store_true", help="live: the children keep MODEL_API_KEY (paid calls)")
+    p.add_argument("--observations", metavar="JSONL", help="live, unpaid: replay the product_seen and speech "
+                   "events of a stored run's observations.jsonl instead of the test1 6b rows and lines")  # fmt: skip
     a = p.parse_args(argv)
     if not 1 <= a.loops <= 5:
         p.error("--loops is 1..5 (stream-1..5)")
-    if not a.base_url and (a.seconds or a.paid):
-        p.error("--seconds and --paid are for a live run")
+    if not a.base_url and (a.seconds or a.paid or a.observations):
+        p.error("--seconds, --paid and --observations are for a live run")
+    if a.paid and a.observations:
+        p.error("--observations replays stored media output; it is not for a paid run")
     if a.rescore:
         from measure import c5_rescore
 
@@ -235,7 +239,11 @@ def main(argv=None) -> int:
         return asyncio.run(c5_dry.main(**args))
     from measure import c5_live
 
-    return asyncio.run(c5_live.main(base_url=a.base_url, seconds=a.seconds, paid=a.paid, **args))
+    observations = Path(a.observations).resolve() if a.observations else None
+    if observations and not observations.is_file():
+        p.error(f"--observations: {observations} is not a file")
+    return asyncio.run(c5_live.main(base_url=a.base_url, seconds=a.seconds, paid=a.paid,
+                                    observations=observations, **args))  # fmt: skip
 
 
 if __name__ == "__main__":
