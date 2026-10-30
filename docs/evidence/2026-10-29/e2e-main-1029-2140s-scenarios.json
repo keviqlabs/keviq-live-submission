@@ -1,0 +1,170 @@
+{
+ "1": {
+  "status": "PASS",
+  "triggered": 10,
+  "passed": 10,
+  "event_id": "card_d16f790aa4d54724be3e",
+  "note": "items with a card per loop out of 10",
+  "code": {
+   "files": [
+    "tests/test_card.py",
+    "tests/test_card_handoff.py",
+    "tests/test_store_sse.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "2": {
+  "status": "PASS",
+  "triggered": 3,
+  "passed": 3,
+  "event_id": "card_41bed2d2c968443ab97b",
+  "note": "proposals on a card that already had a price",
+  "other": [],
+  "code": {
+   "files": [
+    "tests/test_price_route.py",
+    "tests/test_price_proposal.py",
+    "tests/test_orders_price_proposal.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "3": {
+  "status": "FAIL",
+  "triggered": 26,
+  "passed": 16,
+  "event_id": "e2e-main-1029-2140s.c5-1-016",
+  "note": "accuracy 0.6153846153846154 on n=26 (target 0.9 on >= 50); previous_card 4/4; no card 0",
+  "code": {
+   "files": [
+    "tests/test_labels.py",
+    "tests/test_measure.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "4": {
+  "status": "FAIL",
+  "triggered": 4,
+  "passed": 0,
+  "event_id": "e2e-main-1029-2140s.c5-1-010",
+  "note": "ask_variant <= 5 s; stock_question answered 0/13",
+  "code": {
+   "files": [
+    "tests/test_orders_ask_variant.py",
+    "tests/test_replay_ask_variant.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "5": {
+  "status": "PASS",
+  "triggered": 2,
+  "passed": 2,
+  "event_id": "e2e-main-1029-2140s.c5-1-024",
+  "note": "late comments tied to the card shown when they were written",
+  "code": {
+   "files": [
+    "tests/test_labels.py",
+    "tests/test_store_sse.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "6": {
+  "status": "PASS",
+  "triggered": 1,
+  "passed": 1,
+  "event_id": "e2e-main-1029-2140s.u1-44",
+  "note": "a price wait happened (lines per loop, deduped); existence only",
+  "code": {
+   "files": [
+    "tests/test_card_window.py",
+    "tests/test_price_proposal.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "7": {
+  "status": "PASS",
+  "triggered": 1,
+  "passed": 1,
+  "event_id": "e2e-main-1029-2140s.c5-1-063",
+  "note": "a 'do not cancel' comment leaves the order open",
+  "code": {
+   "files": [
+    "tests/test_orders_cancel.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "8": {
+  "status": "PASS",
+  "triggered": 1,
+  "passed": 1,
+  "event_id": "mi.m-e2e-main-1029-2140s-c5-1-m04.o-c5-1-060.reply",
+  "note": "CANCEL quick reply -> CANCELLED",
+  "code": {
+   "files": [
+    "tests/test_orders_cancel.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "9": {
+  "status": "PASS",
+  "triggered": 4,
+  "passed": 4,
+  "event_id": "e2e-main-1029-2140s.c5-1-002",
+  "note": "spelled-out phone hidden within 5 s",
+  "code": {
+   "files": [
+    "tests/test_labels.py",
+    "tests/test_measure.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "10": {
+  "status": "PASS",
+  "triggered": 1,
+  "passed": 1,
+  "event_id": "mi.m-e2e-main-1029-2140s-c5-1-m01.o-c5-1-006.reply.o-c5-1-006.approve",
+  "note": "'ok' after the card changed -> NEEDS_SELLER, confirm again",
+  "code": {
+   "files": [
+    "tests/test_orders_ok_after_card_change.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "11": {
+  "status": "TEST_ONLY",
+  "triggered": 0,
+  "passed": 0,
+  "event_id": null,
+  "note": "schema / 429: tests only",
+  "code": {
+   "files": [
+    "tests/test_meta.py",
+    "tests/test_worker.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "12": {
+  "status": "PASS",
+  "triggered": 2,
+  "passed": 2,
+  "event_id": "mi.m-e2e-main-1029-2140s-c5-1-m02.o-c5-1-016.reply",
+  "note": "CONFIRMED with the receipt at the confirmed version",
+  "code": {
+   "files": [
+    "tests/test_orders_flow.py",
+    "tests/test_measure.py"
+   ],
+   "status": "PASS"
+  }
+ }
+}

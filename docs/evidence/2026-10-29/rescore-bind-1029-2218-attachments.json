@@ -1,0 +1,510 @@
+{
+ "session": "rescore-bind-1029-2218",
+ "events": 727,
+ "types": {
+  "frame": 351,
+  "comment_labeled": 110,
+  "comment": 100,
+  "speech": 64,
+  "card": 39,
+  "comment_attachment": 30,
+  "order": 14,
+  "product_seen": 11,
+  "message_out": 7,
+  "price_proposal": 1
+ },
+ "comment_attachment": {
+  "n": 30,
+  "by_outcome": {
+   "expired": 30
+  },
+  "by_reason": {
+   "original attachment deadline expired": 30
+  },
+  "by_n_candidates": {
+   "0": 1,
+   "1": 2,
+   "2": 27
+  },
+  "two_candidates": 27,
+  "expired_waits": 30,
+  "ready": 0,
+  "ready_selected": {},
+  "without_order": [
+   "c5-1-001",
+   "c5-1-006",
+   "c5-1-010",
+   "c5-1-016",
+   "c5-1-029",
+   "c5-1-031",
+   "c5-1-032",
+   "c5-1-036",
+   "c5-1-035",
+   "c5-1-041",
+   "c5-1-043",
+   "c5-1-045",
+   "c5-1-047",
+   "c5-1-048",
+   "c5-1-060",
+   "c5-1-071",
+   "c5-1-074",
+   "c5-1-078",
+   "c5-1-082",
+   "c5-1-085",
+   "c5-1-091",
+   "c5-1-095",
+   "c5-1-098"
+  ]
+ },
+ "candidate_orders": {
+  "n": 7,
+  "two_candidates": 7,
+  "final_state": {
+   "NEEDS_SELLER": 7
+  },
+  "needs_seller_two_candidates": [
+   "o-c5-1-018",
+   "o-c5-1-021",
+   "o-c5-1-024",
+   "o-c5-1-054",
+   "o-c5-1-055",
+   "o-c5-1-056",
+   "o-c5-1-062"
+  ],
+  "ids": [
+   "o-c5-1-018",
+   "o-c5-1-021",
+   "o-c5-1-024",
+   "o-c5-1-054",
+   "o-c5-1-055",
+   "o-c5-1-056",
+   "o-c5-1-062"
+  ]
+ },
+ "rows": [
+  {
+   "comment_id": "c5-1-001",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 0,
+   "candidates": [],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-006",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 1,
+   "candidates": [
+    "card-1-00"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-010",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 1,
+   "candidates": [
+    "card-1-00"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-016",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-01",
+    "card-1-00"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4008,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-018",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-01",
+    "card-1-00"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4008,
+   "order_state": "NEEDS_SELLER"
+  },
+  {
+   "comment_id": "c5-1-021",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-01",
+    "card-1-00"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": "NEEDS_SELLER"
+  },
+  {
+   "comment_id": "c5-1-024",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-01",
+    "card-1-00"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4011,
+   "order_state": "NEEDS_SELLER"
+  },
+  {
+   "comment_id": "c5-1-029",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-02",
+    "card-1-01"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4009,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-031",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-02",
+    "card-1-01"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4015,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-032",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-02",
+    "card-1-01"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4008,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-036",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-02",
+    "card-1-01"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-035",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-02",
+    "card-1-01"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-041",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-03",
+    "card-1-02"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4011,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-043",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-03",
+    "card-1-02"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4004,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-045",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-03",
+    "card-1-02"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-047",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-03",
+    "card-1-02"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4009,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-048",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-03",
+    "card-1-02"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-054",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-04",
+    "card-1-03"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4008,
+   "order_state": "NEEDS_SELLER"
+  },
+  {
+   "comment_id": "c5-1-055",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-04",
+    "card-1-03"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4006,
+   "order_state": "NEEDS_SELLER"
+  },
+  {
+   "comment_id": "c5-1-056",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-04",
+    "card-1-03"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": "NEEDS_SELLER"
+  },
+  {
+   "comment_id": "c5-1-060",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-05",
+    "card-1-04"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4008,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-062",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-05",
+    "card-1-04"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": "NEEDS_SELLER"
+  },
+  {
+   "comment_id": "c5-1-071",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-06",
+    "card-1-05"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4004,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-074",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-06",
+    "card-1-05"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4008,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-078",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-07",
+    "card-1-06"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4011,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-082",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-08",
+    "card-1-07"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4007,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-085",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-08",
+    "card-1-07"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4003,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-091",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-09",
+    "card-1-08"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4005,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-095",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-10",
+    "card-1-09"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4008,
+   "order_state": null
+  },
+  {
+   "comment_id": "c5-1-098",
+   "outcome": "expired",
+   "action": "expire",
+   "n_candidates": 2,
+   "candidates": [
+    "card-1-10",
+    "card-1-09"
+   ],
+   "selected": null,
+   "reason": "original attachment deadline expired",
+   "wait_ms": 4008,
+   "order_state": null
+  }
+ ],
+ "app_non_2xx": {
+  "POST /api/sessions/rescore-bind-1029-2218/orders/o-c5-1-018/decision HTTP/1.1\" 422 Unprocessable Entity": 1,
+  "POST /api/sessions/rescore-bind-1029-2218/orders/o-c5-1-021/decision HTTP/1.1\" 422 Unprocessable Entity": 1,
+  "POST /api/sessions/rescore-bind-1029-2218/orders/o-c5-1-024/decision HTTP/1.1\" 422 Unprocessable Entity": 1,
+  "POST /api/sessions/rescore-bind-1029-2218/orders/o-c5-1-054/decision HTTP/1.1\" 422 Unprocessable Entity": 1,
+  "POST /api/sessions/rescore-bind-1029-2218/orders/o-c5-1-055/decision HTTP/1.1\" 422 Unprocessable Entity": 1,
+  "POST /api/sessions/rescore-bind-1029-2218/orders/o-c5-1-056/decision HTTP/1.1\" 422 Unprocessable Entity": 1,
+  "POST /api/sessions/rescore-bind-1029-2218/orders/o-c5-1-062/decision HTTP/1.1\" 422 Unprocessable Entity": 1
+ }
+}

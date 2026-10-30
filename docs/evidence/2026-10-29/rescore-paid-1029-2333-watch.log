@@ -1,0 +1,27 @@
+23:33:58 stage rescore-paid-1029-2333 seconds 120 wrapper pid 45992
+23:34:08 t=10 eval=0 cov=0 bad=0 usd=0.001246 attachments=0 expired=0 [ ]
+23:34:18 t=20 eval=0 cov=0 bad=0 usd=0.009215 attachments=1 expired=1 [expired:1 ]
+23:34:28 t=30 eval=0 cov=0 bad=0 usd=0.014691 attachments=1 expired=1 [expired:1 ]
+23:34:38 t=40 eval=0 cov=0 bad=0 usd=0.037882 attachments=2 expired=2 [expired:2 ]
+23:34:49 t=51 eval=0 cov=0 bad=0 usd=0.052626 attachments=3 expired=3 [expired:3 ]
+23:34:59 t=61 eval=0 cov=0 bad=0 usd=0.062617 attachments=3 expired=3 [expired:3 ]
+23:35:09 t=71 eval=0 cov=0 bad=0 usd=0.069601 attachments=3 expired=3 [expired:3 ]
+23:35:19 t=81 eval=0 cov=0 bad=0 usd=0.083731 attachments=4 expired=4 [expired:4 ]
+23:35:29 t=91 eval=0 cov=0 bad=0 usd=0.102608 attachments=6 expired=6 [expired:6 ]
+23:35:40 t=102 eval=0 cov=0 bad=0 usd=0.116493 attachments=6 expired=6 [expired:6 ]
+23:35:50 t=112 eval=0 cov=0 bad=0 usd=0.121345 attachments=8 expired=8 [expired:8 ]
+23:36:00 t=122 eval=0 cov=0 bad=0 usd=0.124869 attachments=10 expired=10 [expired:10 ]
+23:36:00 STOP: 10 attachments, all expired, no covered=True -> SIGTERM to the runner
+23:36:25 t=147 eval=0 cov=0 bad=0 usd=0 attachments=10 expired=10 [expired:10 ]
+23:36:25 STOP: 10 attachments, all expired, no covered=True -> SIGTERM to the runner
+23:36:51 t=173 eval=0 cov=0 bad=0 usd=0 attachments=10 expired=10 [expired:10 ]
+23:36:51 STOP: 10 attachments, all expired, no covered=True -> SIGTERM to the runner
+23:37:16 t=198 eval=0 cov=0 bad=0 usd=0 attachments=10 expired=10 [expired:10 ]
+23:37:16 STOP: 10 attachments, all expired, no covered=True -> SIGTERM to the runner
+23:37:41 t=223 eval=0 cov=0 bad=0 usd=0 attachments=10 expired=10 [expired:10 ]
+23:37:41 STOP: 10 attachments, all expired, no covered=True -> SIGTERM to the runner
+23:38:06 t=248 eval=0 cov=0 bad=0 usd=0 attachments=10 expired=10 [expired:10 ]
+23:38:06 STOP: 10 attachments, all expired, no covered=True -> SIGTERM to the runner
+23:38:31 t=273 eval=0 cov=0 bad=0 usd=0 attachments=10 expired=10 [expired:10 ]
+23:38:32 STOP: 10 attachments, all expired, no covered=True -> SIGTERM to the runner
+23:38:47 wrapper rc=143

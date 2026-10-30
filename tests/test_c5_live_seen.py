@@ -27,7 +27,7 @@ class Http:
     def __init__(self):
         self.posted = []
 
-    async def post(self, url, json):
+    async def post(self, url, json, headers=None):
         self.posted.extend(json)
         return self
 

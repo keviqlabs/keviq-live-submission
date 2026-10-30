@@ -28,6 +28,7 @@ read from DATABASE_URL (the .env the app reads)."""
 
 import asyncio
 import bisect
+import contextlib
 import json
 import logging
 import os
@@ -38,7 +39,7 @@ import time
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from measure import c5, c5_proc
+from measure import c5, c5_bind, c5_proc
 
 log = logging.getLogger("c5.live")
 SHOP_DELAY_S = 4.0
@@ -267,27 +268,40 @@ async def read_all(http, sid: str) -> list[dict]:
         return [ev async for _, ev in parse_sse(resp.aiter_lines())]
 
 
-async def post_comments(http, sid: str, items: list[tuple[int, dict]]) -> int:
-    """Posts each comment when due; returns the worst lateness in ms."""
+async def post_comments(http, sid: str, items: list[tuple[int, dict]], headers: dict | None = None) -> int:
+    """Posts each comment when due (headers: the source bearer of a bound session); returns the worst lateness
+    in ms."""
     from app.contracts import now_ms
 
     worst = 0
     for due, ev in sorted(items, key=lambda x: x[0]):
         await asyncio.sleep(max(due - now_ms(), 0) / 1000)
         worst = max(worst, now_ms() - due)
-        (await http.post(f"/api/sessions/{sid}/events", json=[ev])).raise_for_status()
+        (await http.post(f"/api/sessions/{sid}/events", json=[ev], headers=headers)).raise_for_status()
     return worst
 
 
 def replay_seen(
-    sid: str, k: int, t0: int, loop_ms: int, etype: str = "product_seen"
+    sid: str, k: int, t0: int, loop_ms: int, etype: str = "product_seen", observations: Path | None = None
 ) -> list[tuple[int, dict]]:
     """(post at, event) for the 6b new rows (or, etype "speech", the test1 lines) that start in the loop, on its
-    clock t0."""
-    from measure import c5_dry
+    clock t0; with observations, the rows a stored run observed instead (measure.c5_frozen)."""
+    from measure import c5_dry, c5_frozen
 
-    return [(due, ev) for due, ev in c5_dry.media_items(sid, k, t0)
-            if ev["type"] == etype and ev["ts_ms"] - t0 < loop_ms]  # fmt: skip
+    source = c5_frozen.items(observations, sid, k, t0) if observations else c5_dry.media_items(sid, k, t0)
+    return [(due, ev) for due, ev in source if ev["type"] == etype and ev["ts_ms"] - t0 < loop_ms]
+
+
+def frozen_note(etype: str, observations: Path) -> str:
+    return f"stored {etype} events of {observations.name} (measure.c5_frozen), replayed on the loop clock" + (
+        ", caused by this run's frames" if etype == "product_seen" else "; media --no-voice"
+    )
+
+
+def frozen_sha(observations: Path) -> str:
+    from measure import c5_frozen
+
+    return c5_frozen.sha256(observations)
 
 
 def caused(ev: dict, frames: list[dict]) -> dict | None:
@@ -302,8 +316,9 @@ def caused(ev: dict, frames: list[dict]) -> dict | None:
 
 
 async def post_seen(http, sid: str, items: list[tuple[int, dict]], frames: list[dict], start: int,
-                    wait_s: float = 2.0) -> dict:  # fmt: skip
-    """Posts each product_seen when due, caused by a frame of this loop (frames[start:], the watch's list).
+                    wait_s: float = 2.0, headers: dict | None = None) -> dict:  # fmt: skip
+    """Posts each product_seen when due, caused by a frame of this loop (frames[start:], the watch's list);
+    headers: the source bearer of a bound session.
 
     A label whose own frame has not come through the watch yet waits up to wait_s for it, then takes the frame just
     before; a label before the loop's first frame is not posted."""
@@ -320,13 +335,13 @@ async def post_seen(http, sid: str, items: list[tuple[int, dict]], frames: list[
         if (seen := caused(ev, frames[start:])) is None:
             no_frame.append(ev["event_id"])
             continue
-        (await http.post(f"/api/sessions/{sid}/events", json=[seen])).raise_for_status()
+        (await http.post(f"/api/sessions/{sid}/events", json=[seen], headers=headers)).raise_for_status()
         posted += 1
     return {"posted": posted, "no_frame": no_frame}
 
 
 async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, check_code: bool,
-               seconds: float | None = None, paid: bool = False) -> int:  # fmt: skip
+               seconds: float | None = None, paid: bool = False, observations: Path | None = None) -> int:  # fmt: skip
     import httpx
 
     from app import settings
@@ -343,6 +358,10 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
     env.pop("CARDS_FROM_REPLAY", None)
     if not paid:
         env["MODEL_API_KEY"] = ""
+    bind = c5_bind.credentials()  # the children inherit the C5_BIND_* variables through env
+    if bind is not None and bind["session"] != run:
+        raise SystemExit(f"C5_BIND_SESSION {bind['session']!r} is not the run {run!r}")
+    bearer = c5_bind.header(bind) if bind else None  # generic event posts only: console routes refuse it
     sha = c5.git_sha()
     want = {"catalog_sha256": c5.sha256(catalog), "labels_catalog_same": True, "session_cap_usd": cap,
             "session_warn_usd": warn, "sha": sha, "spark_effort": "minimal", "model_key_set": paid}  # fmt: skip
@@ -360,6 +379,11 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                              f"MODEL_SESSION_CAP_USD={cap:g} MODEL_SESSION_WARN_USD={warn:g}")  # fmt: skip
         if await read_all(http, run):
             raise SystemExit(f"{run} is not empty")
+        state = (await http.get(f"/api/sessions/{run}/state")).json()
+        if bool(state.get("attachment_enabled")) != bool(bind):
+            raise SystemExit(f"{run}: attachment_enabled {state.get('attachment_enabled')!r} in the app, the "
+                             f"runner is {'bound' if bind else 'not bound'} (start the app with the same "
+                             f"C5_BIND_* variables through measure.c5_bind:app)")  # fmt: skip
         feed, clock = Feed(), Loops()
         shop = Shop(http, run, gold, feed, clock, delay_s=SHOP_DELAY_S)
         customers = Customers(http, run, feed)
@@ -379,6 +403,8 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                 proofs = {"worker": await worker.said_kind("proof", 60)}
                 if not paid:
                     proofs["offline"] = await worker.said_kind("offline", 60)
+                if bind:
+                    proofs["worker_attachment"] = await worker.said_kind("attachment", 60)
                 if bad := check_proof(proofs["worker"], loop_want):
                     raise SystemExit(f"worker, loop {k}: {bad}")
                 await asyncio.wait_for(worker.ready.wait(), 30)
@@ -392,17 +418,24 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                 proofs["media"] = await media.said_kind("proof", 60)
                 if bad := check_proof(proofs["media"], loop_want):
                     raise SystemExit(f"media, loop {k}: {bad}")
+                if bind:
+                    proofs["media_attachment"] = await media.said_kind("attachment", 60)
                 t0 = t0_of(await watch.frame_after(n_frames, 120))
                 clock.t0.append(t0)
                 end = t0 + loop_ms
                 print(f"loop {k}: t0 {t0}", flush=True)
                 customers.start([m for m in msgs if m["not_before_ms"] < loop_ms], t0, end + c5.TAIL_MS, k)
                 due = [r for r in rows if r.get("arrives_ms", r["ts_ms"]) < loop_ms]
-                posting = asyncio.create_task(post_comments(http, run, c5.comment_schedule(due, run, t0)))
-                seen = None if paid else asyncio.create_task(post_seen(http, run, replay_seen(run, k, t0, loop_ms),
-                                                                       watch.frames, n_frames))  # fmt: skip
-                speech = [] if paid else replay_seen(run, k, t0, loop_ms, "speech")
-                speaking = None if paid else asyncio.create_task(post_comments(http, run, speech))
+                posting = asyncio.create_task(
+                    post_comments(http, run, c5.comment_schedule(due, run, t0), headers=bearer)
+                )
+                seen_items = [] if paid else replay_seen(run, k, t0, loop_ms, observations=observations)
+                seen = None if paid else asyncio.create_task(
+                    post_seen(http, run, seen_items, watch.frames, n_frames, headers=bearer))  # fmt: skip
+                speech = [] if paid else replay_seen(run, k, t0, loop_ms, "speech", observations)
+                speaking = (
+                    None if paid else asyncio.create_task(post_comments(http, run, speech, headers=bearer))
+                )
                 try:  # the loop end, or a session_cap refusal
                     await asyncio.wait_for(watch.cap.wait(), max(end + c5.TAIL_MS - now_ms(), 0) / 1000)
                 except TimeoutError:
@@ -419,7 +452,9 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                 ends = [await watch.barrier(worker, [shop.tasks, customers.tasks])]
                 retired = c5.retire_events(feed, run)
                 if retired:
-                    (await http.post(f"/api/sessions/{run}/events", json=retired)).raise_for_status()
+                    (
+                        await http.post(f"/api/sessions/{run}/events", json=retired, headers=bearer)
+                    ).raise_for_status()
                 ends.append(await watch.barrier(worker, [shop.tasks, customers.tasks]))
                 calm = all(e["status"] == "SETTLED" for e in ends)
                 worker_rc = await worker.term()
@@ -445,25 +480,33 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                 if task and not task.done():
                     task.cancel()
             await watch.halt(watching)  # not cancel(): the poll in flight ends before read_all queries
-            for child in children:
+            for child in children:  # a child killed here keeps its log too
                 if child.proc and child.proc.returncode is None:
                     child.proc.kill()
+                    with contextlib.suppress(TimeoutError):
+                        await asyncio.wait_for(child.reader, 5)
+                    write_log(child.log_path, child.lines)
         events = await read_all(http, run)
         cost_api = (await http.get("/api/cost", params={"session": run})).json()
     run_file = {
         "run": run, "session_id": run, "sha": sha, "loops": loop_rows,
         "config": {"mode": "live", "base_url_port": urlsplit(base_url).port, "healthz": health,
+                   "attachment": c5_bind.public(bind) if bind else None,
                    "catalog_path": c5.repo_path(catalog), "catalog_sha256": want["catalog_sha256"],
                    "vision": "worker vision brain (spark), effort minimal", "effort": "minimal", "fps": 1,
-                   "product_seen": "worker vision" if paid else "stored output of session test1 (6b rows, "
+                   "product_seen": "worker vision" if paid else frozen_note("product_seen", observations)
+                   if observations else "stored output of session test1 (6b rows, "
                    "c5_dry.media_items), replayed by the runner, caused by this run's frames",
                    "cutout": "on a card gone live (model call)" if paid else "stored output of session test1 "
                    "(probe/sam cut-out of the same source frame and noun, not chosen by the gold), replayed; none: no "
                    "image (NOT_RUN)", "model_client": "model client" if paid else "none (measure/c5_offline.NoModel)",
                    "card_line": False, "labels": "labels brain with the model" if paid else "gold labels through "
                    "the labels brain (GoldClient), stored gold of test1, replayed",
-                   "speech": "media voice (Voice Transcribe)" if paid else "stored output of session test1 "
+                   "speech": "media voice (Voice Transcribe)" if paid else frozen_note("speech", observations)
+                   if observations else "stored output of session test1 "
                    "(probe/voice.json), replayed on the loop clock; rule price reader (no key); media --no-voice",
+                   "observations": None if paid or not observations else
+                   {"path": str(observations), "sha256": frozen_sha(observations)},
                    "cap_usd": cap, "warn_usd": warn, "cap_from": cap_from, "paid": paid, "seconds": seconds,
                    "restart": "worker and media processes per loop", "shop_delay_s": SHOP_DELAY_S,
                    "tail_ms": c5.TAIL_MS, "loop_ms": loop_ms},

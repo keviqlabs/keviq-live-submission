@@ -1,0 +1,36 @@
+DATABASE_URL name: /keviq_test
+MODEL_API_KEY set: no
+healthz: {"ok":true,"store":"pg","head_seq":217596}
+== four steps
+session e2e-main-1029-2140s events 764 orders 25 confirmed 2
+
+order o-c5-1-016 card card-1-00 item SP01
+ 1 proposal seq 208962 price_proposal_932e513568e8466484e9 heard None status None
+ 2 card seq 208972 card-1-00 v5 price 220000 status edited edited_by seller caused_by_proposal True
+ - order seq 208998 DRAFT actor assistant reason drafted from comment c5-1-016 on card-1-00 v5 (220.000đ) line v5
+ - order seq 208999 NEEDS_SELLER actor assistant reason variant size 40 not on card-1-00 v5 line v5
+ 2 order seq 209010 CONFIRM_SENT actor seller reason seller approved: unit price 220000 = card price (was: variant size 40 not on card-1-00 v5) line v5
+ 3 order seq 209036 CONFIRMED actor customer reason customer confirmed in Messenger line v5
+ - message_out seq 209000 waiting_for_shop card_version None
+ - message_out seq 209011 confirm_order card_version 5
+ - message_out seq 209037 receipt card_version 5
+ 3 message_in seq 209035 mi.m-e2e-main-1029-2140s-c5-1-m02 template confirm_yes quick_reply CONFIRM:o-c5-1-016
+ 4 receipt seq 209036 card card-1-00 v5 price 220000 version_exists True price_matches_version True image False
+
+order o-c5-1-029 card card-1-01 item SP02
+ - order seq 209093 DRAFT actor assistant reason drafted from comment c5-1-029 on card-1-01 v3 (320.000đ) line v3
+ - order seq 209094 NEEDS_SELLER actor assistant reason variant size 41 not on card-1-01 v3 line v3
+ 2 order seq 209106 CONFIRM_SENT actor seller reason seller approved: unit price 320000 = card price (was: variant size 41 not on card-1-01 v3) line v3
+ 3 order seq 209128 CONFIRMED actor customer reason customer confirmed in Messenger line v3
+ - message_out seq 209095 waiting_for_shop card_version None
+ - message_out seq 209107 confirm_order card_version 3
+ - message_out seq 209129 receipt card_version 3
+ 3 message_in seq 209127 mi.m-e2e-main-1029-2140s-c5-1-m03 template confirm_yes quick_reply CONFIRM:o-c5-1-029
+ 4 receipt seq 209128 card card-1-01 v3 price 320000 version_exists True price_matches_version True image False
+== SSE close/reopen
+sse3: 764 ids, killed after 1 s, last id 209622
+healthz at once: 200
+healthz +5 s: 200
+sse4 reopened with Last-Event-ID 209622: first id none, last id none (0 ids in 3 s)
+healthz after: {"ok":true,"store":"pg","head_seq":217596}
+done rc=0
