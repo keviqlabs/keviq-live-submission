@@ -191,8 +191,11 @@ class FacebookCommentSource(CommentSource):
         return True
 
     async def poll(self) -> list[dict]:
-        """New comments since the previous poll, following cursors up to MAX_PAGES_PER_POLL pages."""
-        rows: list[dict] = []
+        """New comments since the previous poll, following cursors up to MAX_PAGES_PER_POLL pages.
+
+        Rows are staged until every page has answered: a poll that fails halfway marks nothing as seen and
+        leaves the cursor alone, so the retry delivers the rows of the pages that did answer."""
+        fetched: list[dict] = []
         after = None
         for _ in range(MAX_PAGES_PER_POLL):
             params: dict = {
@@ -212,12 +215,13 @@ class FacebookCommentSource(CommentSource):
             body = r.json()
             for raw in body.get("data") or []:
                 row = self.row(raw)
-                if row and self._remember(row["comment_id"]):
-                    rows.append(row)
+                if row:
+                    fetched.append(row)
             paging = body.get("paging") or {}
             after = (paging.get("cursors") or {}).get("after") if paging.get("next") else None
             if not after:
                 break
+        rows = [row for row in fetched if self._remember(row["comment_id"])]
         if rows:
             self._since = max(self._since or 0, max(r["ts_ms"] for r in rows) // 1000)
         return rows

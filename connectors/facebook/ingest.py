@@ -10,6 +10,7 @@ the app stays the only writer. Only GET requests reach Facebook; nothing is sent
 
 import argparse
 import asyncio
+import hashlib
 import os
 import re
 import sys
@@ -51,14 +52,22 @@ class Config:
         return f"Config(graph_version={self.graph_version!r}, poll_seconds={self.poll_seconds!r})"
 
 
+def comment_event_id(session_id: str, comment_id: str) -> str:
+    """Deterministic per (session, comment). The store deduplicates event_id across sessions, so the raw
+    Graph id would make the same video vanish from a second session; the pair itself can exceed the
+    contract's 96 characters (session up to 64, comment up to 96), so it is hashed: `fb.` + 32 hex."""
+    return "fb." + hashlib.sha256(f"fb-comment:{session_id}:{comment_id}".encode()).hexdigest()[:32]
+
+
 def event(session_id: str, row: dict, received_ms: int) -> dict:
-    """The contract event for one comment row; event_id = comment_id keeps re-polls idempotent in the app."""
+    """The contract event for one comment row; the event id is fixed per (session, comment), so a restart
+    re-posts idempotently and a second session keeps its own copy. comment_id stays the Graph id."""
     return make_event(
         "comment",
         session_id,
         row["ts_ms"],
         "facebook",
-        event_id=row["comment_id"],
+        event_id=comment_event_id(session_id, row["comment_id"]),
         comment_id=row["comment_id"],
         user_ref=row["user_ref"],
         text=row["text"],
