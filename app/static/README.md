@@ -16,7 +16,8 @@ flat (`/static/<name>`), so there are no subfolders.
 `?lang=vi` or `?lang=en` picks the language for one page load. The VI | EN toggle in the console
 header switches every label at once, stores the choice in `localStorage` (`keviq.lang`) and
 carries it into the overlay link. With nothing stored the default is English. Product names,
-prices, SKUs and customer text come from events and are never translated.
+prices, SKUs and customer text come from events and are never translated. The session list at `/`
+stays English and is outside the switch.
 
 ## Overlay
 
