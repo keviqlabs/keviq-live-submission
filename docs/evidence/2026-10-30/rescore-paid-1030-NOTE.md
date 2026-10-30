@@ -13,8 +13,9 @@ Against 29 October (`../2026-10-29/rescore-paid-1029-2333-NOTE.md`): every frame
 frames have a `product_seen` read, against 34 of 94), the "missing read" class is empty in both stages (29 October: 10
 of 10), and 7 of 10 and 23 of 30 order comments reached `ready`. The remaining expirations are of two kinds, both
 findings about the product on this tree rather than defects of the evidence: the first order comment of each loop
-arrives before any card exists (`unresolved`), and for a few comments the worker's readiness post reaches the app after
-the 4 s deadline although the frame reads it depends on had finished 1.0 to 2.2 s before it (`timing`, detailed below).
+arrives before any card exists (`unresolved`), and for a few comments the comment's own label reaches the app after the
+4 s deadline or within 12 ms of it, so no evaluation could run in time, although the frame reads it depends on had
+finished 1.0 to 2.2 s before the deadline (`timing`, detailed below).
 
 | Item | Stage 1 — `rescore-paid-1030-2243` | Stage 2 — `rescore-paid-1030-2248` |
 | --- | --- | --- |
@@ -24,7 +25,7 @@ the 4 s deadline although the frame reads it depends on had finished 1.0 to 2.2 
 | Watcher (rule d) | did not stop the run; last line before `wrapper rc=0`: `t=174 eval=9 cov=9 bad=0 usd=0.265725 attachments=10 expired=3 [expired:3 ready:7 ]` | did not stop the run; `t=408 eval=26 cov=26 bad=0 usd=0.754564 attachments=30 expired=7 [expired:7 ready:23 ]` |
 | Image guard | rc 0, `IMAGE_OK` at 22:44:06: `sam-3.1` cutout `model_call_138921d39524474aab3f` (0.0025 USD), card `card-d42adc7d454f` v4, image sha256 `7b08f438…`, 38573 bytes | rc 0, `IMAGE_OK` at 22:49:27: `sam-3.1` cutout `model_call_ade8796f19d64d9ea2f4` (0.0025 USD), card `card-00889dd9fba6` v5, image sha256 `34bfd130…`, 5023 bytes |
 | Media | 120 frames, 23 speech segments, 121.0 s | 350 frames, 54 speech segments, 351.1 s |
-| Frames read | 120 of 120 frames have a `product_seen` read; the read starts on arrival (`model_call.ts_ms` = frame `ts_ms`) | 350 of 350 |
+| Frames read | 120 of 120 frames have a `product_seen` read | 350 of 350 |
 | `comment_attachment` | 10 rows: `ready` 7, `expired` 3 | 30 rows: `ready` 23, `expired` 7 |
 | Classification (c) | n = 10 order comments with a deadline inside the window: missing read 0, **timing 2**, **unresolved 1**, evidence rejected 0, ready 7, ambiguous 0 | n = 30: missing read 0, **timing 5**, **unresolved 2**, evidence rejected 0, ready 23, ambiguous 0 |
 | App log | `attachment evaluation` lines 9, all `covered=True` (`resolved=True` 7, `resolved=False` 2); `POST /attachments/system` 11 (200 ×9, 202 ×2); `401`/`422` on it 0; `422` on `/orders/<id>/decision` 0; 5xx 0 | 26 lines, all `covered=True` (`resolved=True` 23, `resolved=False` 3); `POST /attachments/system` 31 (200 ×28, 202 ×3); 0; 0; 0 |
@@ -33,11 +34,16 @@ the 4 s deadline although the frame reads it depends on had finished 1.0 to 2.2 
 | Ports / databases | 8000 untouched (the main app's `/api/cost` still reports `today_usd 0.0` after both stages); 8040 answered nothing before the start and is closed after the stop; the `keviq` database untouched; `keviq_paid_test` kept | same; the ledger now holds 742 `model_call` rows in three sessions, 1.14515785 USD in total |
 
 Scorer detail of the FAIL rows (full text in `rescore-paid-1030-<run>-scenarios.json`): stage 1 situation 1, items with
-a card per loop 3 of 10 (stage 2: 10 of 10, PASS); situation 3, card accuracy 0.5556 on n = 9 and 0.3571 on n = 28
-against a target of 0.9 on at least 50 (no card 4 and 18, previous card 1 of 2 and 1 of 4); situation 4, stock questions
-answered 0 of 7 and 0 of 13; situation 5 (stage 2 only), late comments are not tied to the card shown when they were
-written. Situations 8 and 10 did not trigger in 350 s. These are findings about the product on this tree; nothing in
-this note changes them.
+a card per loop 3 of 10 (stage 2: 10 of 10, PASS); situation 3, the latest label's `referenced_card_id` names the gold
+item for 5 of 9 and 10 of 28 comments (0.5556 and 0.3571 against a target of 0.9 on at least 50; label without a card 4
+and 18, previous card 1 of 2 and 1 of 4), a score of the label's reference, not of the attachment selection; situation
+4, an `ask_variant` message within 5 s of the comment for 0 of 3 and 1 of 4 ask cases (the stock-question count the
+scorer prints beside it, answered 0 of 7 and 0 of 13, is a diagnostic, not the verdict); situation 5 (stage 2 only),
+1 of 2 late comments resolves to the gold card through an order line, an `ask_variant` payload or the latest label's
+reference: the failing one, c5-1-035, has no order, no `ask_variant` and a label without a card, so the scorer finds no
+reference at all, although its attachment was `ready` on card-0e6ec0abec44 (table below; the scorer does not read
+attachments). Situations 8 and 10 did not trigger in 350 s. These are findings about the product on this tree; nothing
+in this note changes them.
 
 ## Wrapper output (verbatim, `rescore-paid-1030-2243-wrapper.log`)
 
@@ -176,25 +182,35 @@ t0 + 17.0 s in both stages). `c5-1-036` (stage 2) was evaluated once, 422 ms bef
 and `resolved=False`.
 
 Timing: no evaluation line exists before the deadline, yet the read of the last frame of `R(C)` — and even the read of
-the next frame — had finished before it; the worker's post for the comment reached the app only after the deadline
-(`snapshot_at_ms` of the `expired` row, equal to the time of the matching `POST /attachments/system` in the app log).
-Gap = `emitted_ms` of the last required read minus `deadline_ms`; read length = that call's `latency_ms`.
+the next frame — had finished before it. What was missing at the deadline was the comment's own label: an evaluation
+needs the final order label, and for these comments it reached the app after the deadline, or within 12 ms of it (label
+arrival = `ingested_ms` of the `comment_labeled` row that the expiry's `label_event_id` names). Six of the seven
+`expired` rows were written by the app's own expiry sweep, at the deadline or when the late label arrived
+(`worker_epoch` null); one (stage 2, c5-1-095) by the worker. `snapshot_at_ms` of such a row is the time of that sweep,
+not of a worker post (stage 1, c5-1-006: snapshot 22:44:05.418, the matching `POST /attachments/system` in the app log
+22:44:05.436). Gap = `emitted_ms` of the last required read minus `deadline_ms`; read length = that call's `latency_ms`.
 
-| stage | comment | last required read − deadline (ms) | read length (ms) | next frame's read − deadline (ms) | worker's post − deadline (ms) |
-| --- | --- | --- | --- | --- | --- |
-| 1 | c5-1-006 | −1747 | 2367 | −1076 | +1437 |
-| 1 | c5-1-032 | −2085 | 1706 | −1161 | +831 |
-| 2 | c5-1-006 | −2238 | 1992 | −908 | +241 |
-| 2 | c5-1-032 | −1994 | 1791 | −134 | +73 |
-| 2 | c5-1-056 | −1509 | 2683 | −1195 | +779 |
-| 2 | c5-1-085 | −1008 | 3002 | −950 | +32 |
-| 2 | c5-1-095 | −2194 | 2453 | −1712 | +48 |
+| stage | comment | last required read − deadline (ms) | read length (ms) | next frame's read − deadline (ms) | label arrival − deadline (ms) | expiry snapshot − deadline (ms) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | c5-1-006 | −1747 | 2367 | −1076 | +1428 | +1437 |
+| 1 | c5-1-032 | −2085 | 1706 | −1161 | +805 | +831 |
+| 2 | c5-1-006 | −2238 | 1992 | −908 | +230 | +241 |
+| 2 | c5-1-032 | −1994 | 1791 | −134 | +48 | +73 |
+| 2 | c5-1-056 | −1509 | 2683 | −1195 | +733 | +779 |
+| 2 | c5-1-085 | −1008 | 3002 | −950 | −12 | +32 |
+| 2 | c5-1-095 | −2194 | 2453 | −1712 | −6 | +48 |
 
-Stage 1: gap median −1916 ms, nearest −1747 ms; read length median 2037 ms, max 2367 ms; the post arrived 831 and
-1437 ms late. Stage 2: gap median −1994 ms, nearest −1008 ms; read length median 2453 ms, max 3002 ms; the post arrived
-32 to 779 ms late (median 73 ms). So the vision lane is no longer the limit (29 October: 10 of 10 missing reads); the
-step between the last read and the readiness post is, by 0.03 to 1.4 s. For every frame of both stages
-`model_call.ts_ms − frame.ingested_ms` is about −230 ms, that is the reads start on arrival and run concurrently.
+Stage 1: gap median −1916 ms, nearest −1747 ms; read length median 2037 ms, max 2367 ms; the label arrived 805 and 1428
+ms after the deadline. Stage 2: gap median −1994 ms, nearest −1008 ms; read length median 2453 ms, max 3002 ms; the
+label arrived between 12 ms before and 733 ms after the deadline (after it for 3 of 5). So the vision lane is no longer
+the limit (29 October: 10 of 10 missing reads); on these seven comments the label lane is. Each of them reached the
+worker on arrival (`timing.received_ms` of the label about 4.0 s before the deadline), waited 0.4 to 2.5 s for the
+previous batch of the same session to finish (the worker labels one batch per session at a time,
+`worker/brain/labels.py`: a `label_comments` call was in flight when each of these comments arrived and ended 0.3 to 2.4
+s later, and their own inference began 43 to 106 ms after that end; the 1 s batch window had already elapsed by then and
+added nothing) and inferred for 1.7 to 3.6 s (`infer_start_ms` to `infer_end_ms`): 3.9 to 5.4 s in all against a 4 s
+window. The frame reads start on arrival: the approximate start of each `product_seen` call (`emitted_ms − latency_ms`)
+is 16 to 298 ms after the frame's `ingested_ms` (median 22 ms) for every frame of both stages.
 
 ## Model calls (ledger, `keviq_paid_test`)
 
