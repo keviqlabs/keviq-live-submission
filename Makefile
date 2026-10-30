@@ -8,7 +8,7 @@ SESSION ?= demo1
 SPEED ?= 1
 COMPOSE = docker compose -f deploy/compose.yml
 
-.PHONY: infra-up infra-down app worker replay lint fmt test measure-quick check smoke integration secrets
+.PHONY: infra-up infra-down app worker replay lint fmt test measure-quick check smoke integration secrets hygiene hooks
 
 infra-up:
 	$(COMPOSE) up -d --wait postgres
@@ -40,7 +40,7 @@ test:
 measure-quick:
 	uv run python -m measure --events-file data/sessions/demo1/events.jsonl --gold data/sessions/demo1/gold.json --no-write
 
-check: lint test measure-quick
+check: lint hygiene test measure-quick
 
 smoke:
 	bash tests/smoke.sh
@@ -51,3 +51,9 @@ integration:
 secrets:
 	gitleaks detect --source . --no-banner --redact
 	gitleaks detect --source . --no-banner --redact --no-git
+
+hygiene:
+	bash scripts/hygiene.sh
+
+hooks:
+	git config core.hooksPath .githooks
