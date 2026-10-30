@@ -1,24 +1,78 @@
 <!doctype html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Seller console</title>
-<link rel="stylesheet" href="/static/console.css">
+<title data-i18n="app.title">Seller console</title>
+<link rel="stylesheet" href="/static/shared.css">
 </head>
 <body>
-<header>
-  <h1>Console · <span id="sid"></span></h1>
-  <span class="muted">stream: <span id="conn">connecting</span> · seq <span id="seq">0</span></span>
-  <span class="muted">model cost today: <b id="cost">–</b> / <span id="cap">–</span> USD</span>
-  <a href="" id="overlay-link" target="_blank">overlay</a>
+<header class="topbar">
+  <div class="brand"><span>KEVIQ</span> <span class="live-word">LIVE</span></div>
+  <div class="session-name"><strong id="sid"></strong><small data-i18n="header.session">session</small></div>
+  <nav class="header-links" aria-label="pages">
+    <a href="/" data-i18n="nav.sessions">Sessions</a>
+    <a id="overlay-link" href="#" target="_blank" rel="noopener" data-i18n="nav.overlay">Overlay</a>
+    <a class="jump" href="#queue-column" data-i18n="nav.queue">Queue</a>
+    <a class="jump" href="#cards-column" data-i18n="nav.cards">Cards</a>
+    <a class="jump" href="#comments-column" data-i18n="nav.comments">Comments</a>
+  </nav>
+  <div class="lang" role="group" aria-label="language">
+    <button type="button" data-lang="vi">VI</button>
+    <button type="button" data-lang="en">EN</button>
+  </div>
 </header>
-<div id="banner"></div>
-<main>
-  <section><h2>Live cards</h2><div id="cards"></div></section>
-  <section><h2>Comments</h2><div id="comments"></div></section>
-  <section><h2>Approval queue</h2><div id="queue"></div><h2>Orders</h2><div id="orders"></div></section>
+
+<div class="statusbar">
+  <div class="status-time"><span class="session-clock mono" id="clock">--:--:--</span></div>
+  <div class="status-mode row">
+    <span class="label" data-i18n="status.mode">Mode</span>
+    <span class="pill" id="mode">—</span>
+    <small class="muted"><span data-i18n="status.source">source</span> <span class="mono" id="source">—</span></small>
+  </div>
+  <div class="status-models" id="models"></div>
+  <div class="cost" id="cost-box">
+    <div class="cost-top"><span data-i18n="cost.today">Model cost today</span>
+      <strong><span class="mono" id="cost">—</span> <span class="muted"><span data-i18n="cost.of">of</span> <span id="cap">—</span> <span data-i18n="cost.usd">USD</span></span></strong></div>
+    <div class="cost-track"><span id="cost-bar" style="width:0%"></span></div>
+  </div>
+  <div class="connect"><span class="dot idle" id="conn-dot"></span><span id="conn" data-i18n="conn.connecting">connecting</span>
+    <small class="muted"><span data-i18n="conn.seq">seq</span> <span class="mono" id="seq">0</span></small></div>
+</div>
+
+<div class="banner warning" id="sim-strip" data-i18n="strip.simulation">Simulation / replay — not a live broadcast.</div>
+<div class="banner" id="banner" hidden></div>
+
+<main class="workspace">
+  <section class="column queue-column" id="queue-column">
+    <div class="column-header"><h2><span data-i18n="queue.title">Approval queue</span> <span class="count" id="queue-count">0</span></h2></div>
+    <div class="column-body">
+      <div class="queue-list" id="queue"></div>
+      <div class="recent-orders">
+        <h3 class="label" data-i18n="orders.title">Recent orders</h3>
+        <div id="orders"></div>
+      </div>
+    </div>
+  </section>
+  <section class="column cards-column" id="cards-column">
+    <div class="column-header"><h2><span data-i18n="cards.title">Live cards</span> <span class="count" id="cards-count">0</span></h2></div>
+    <div class="column-body" id="cards"></div>
+  </section>
+  <section class="column comments-column" id="comments-column">
+    <div class="column-header"><h2><span data-i18n="comments.title">Comments</span> <span class="count" id="comments-count">0</span></h2></div>
+    <div class="column-body feed" id="comments"></div>
+  </section>
 </main>
+
+<dialog id="log-dialog">
+  <div class="modal-header"><h2 id="log-title" data-i18n="log.title">Order source</h2>
+    <button type="button" class="icon-btn" data-act="close-log" data-i18n-attr="aria-label:log.close,title:log.close" aria-label="Close">×</button></div>
+  <div class="modal-body" id="log-body"></div>
+</dialog>
+<div class="toast" id="toast" hidden></div>
+
+<script src="/static/i18n.js"></script>
+<script src="/static/console-render.js"></script>
 <script src="/static/console.js"></script>
 </body>
 </html>
