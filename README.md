@@ -22,7 +22,7 @@ Everything in this repository was made during the event, from 26 October 2026 23
 - All code, contracts, tests, data and docs in this repository. The first commit is dated 27 October 10:22 ICT, and no commit is older than the event start: `git log --format=%aI%n%cI | sort | head -1`.
 - Outside this repository: the test1 recording (27 October, kept local and out of Git), the project brief with criteria C1–C11 and the day-1 prompt (27 October morning), and a private UI mock-up (27 October) that is kept apart; nothing from the mock-up was copied here.
 
-AI coding assistants were used as tools. The entrant is the Founder, working alone. Some branch names carry an assistant's default prefix: `claude/` on 14 merged PRs between #2 and #29, and `codex/` on PR #47 and on draft PRs #48–#50, which were closed unmerged and reopened on tool-free branches as #53–#55. Some merge commits up to PR #20 show a `claude/` branch name; pull-request merges from #11 on use written titles. Those prefixes are the default branch names of the coding tools used during the hackathon. The history is kept as it is and is not rewritten.
+AI coding assistants were used as tools. The entrant is the Founder, working alone. Some branch names carry an assistant's default prefix: `claude/` on 14 merged PRs between #2 and #29, and `codex/` on PR #47 and on draft PRs #48–#50, which were closed unmerged and reopened on tool-free branches as #53–#55. Those prefixes are the default branch names of the coding tools used during the hackathon. The current convention: a pull request is merged under its written title, and commits carry the author's private GitHub address.
 
 ## Run it in 5 minutes
 
