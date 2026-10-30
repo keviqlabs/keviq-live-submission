@@ -17,9 +17,12 @@ grants seller, SKU, price or order-writing authority. Seller actions retain the 
 worker Authorization headers are refused there. This does not add a public seller identity system.
 
 Source intake enforces the ordered frame prefix and stores immutable transport receipts. The worker records
-actual terminal reads and completion through every required card post. Queue replacement leaves a coverage
-hole. A bounded read-through can observe stored output and label references without dispatching handlers,
-rerunning inference or advancing processed progress. The server checks the complete required prefix, causal
+actual terminal reads and completion through every required card post. A bound session's vision lane reads
+every frame, up to `VISION_READS_PER_SESSION` (default 4) at a time, and posts the results in media time order;
+only an unbound session's lane replaces a waiting frame with a newer one. Frames still in a lane when the worker
+stops are lost, since the stream cursor moves when a frame enters its lane, and a comment behind them stays
+pending until its deadline. A bounded read-through can observe stored output and label references without
+dispatching handlers, rerunning inference or advancing processed progress. The server checks the complete required prefix, causal
 references, accepted transport and active epoch; physical read completion remains the authenticated worker's
 attestation. Authentication alone is insufficient.
 

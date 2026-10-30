@@ -6,11 +6,15 @@ type's fields, optionally `ts_ms` (default: the trigger's ts_ms), extra `caused_
 and stamps `timing` (C8). A handler that raises is logged and skipped; the runner keeps going (C7).
 
 Lanes (RC1): a slow vision read never holds up comments, speech or orders. Frames go to their session's vision
-lane: one read at a time, within VISION_TIMEOUT_S, and one frame waiting; a newer frame takes the waiting one's
-place (that one is skipped), a frame not newer than the last one read or the one waiting is stale, so results
-are posted in media time order. Every other event goes to the fast lane, one at a time in arrival order. Each
-event leaves its lane once: done, skipped, stale or failed (a handler failed or timed out, or the post was
-refused; nothing is retried). stats() has the counts per lane and the work handlers keep in the background.
+lane, each read within VISION_TIMEOUT_S. A session without an attachment binding keeps the latest frame: one
+read at a time and one frame waiting; a newer frame takes the waiting one's place (that one is skipped). A bound
+session (attachment_auth) reads every frame, up to VISION_READERS at a time, because its order comments are
+proven ready only with a terminal for each frame up to the comment; the results of concurrent reads are posted
+in media time order, each read's post waiting for the one taken before it. In both, a frame not newer than the
+last one taken or the one waiting is stale. Every other event goes to the fast lane, one at a time in arrival
+order. Each event leaves its lane once: done, skipped, stale or failed (a handler failed or timed out, or the
+post was refused; nothing is retried). stats() has the counts per lane and the work handlers keep in the
+background.
 
 The stream cursor moves when an event is put in its lane, not when it is finished: a worker that stops with
 events in its lanes resumes after them and they are lost.
@@ -20,6 +24,7 @@ import asyncio
 import copy
 import json
 import logging
+import os
 from collections import Counter, deque
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass, field
@@ -32,6 +37,7 @@ log = logging.getLogger("worker")
 Handler = Callable[[dict, "Ctx"], Awaitable[list[dict]]]
 SLOW = frozenset({"frame"})  # event types read by the vision model: the vision lanes
 VISION_TIMEOUT_S = 10.0  # a frame's handlers past it are cancelled and the frame is failed
+VISION_READERS = int(os.environ.get("VISION_READS_PER_SESSION", "4"))  # concurrent reads of a bound session
 OUTCOMES = ("done", "skipped", "stale", "failed")
 # name -> {waiting, in_flight}: work handlers keep in the background (registered by their modules)
 BACKLOGS: dict[str, Callable[[], dict]] = {}
@@ -85,43 +91,67 @@ async def parse_sse(lines: AsyncIterator[str]) -> AsyncIterator[tuple[int, dict]
 
 
 class Lane:
-    """Events handled one at a time, each with the time the runner received it. A lane that keeps the latest (a
-    session's frames) holds one waiting: a newer frame takes its place, an older or equal one is stale. Its task
-    runs only while it has work."""
+    """Events handled in arrival order, each with the time the runner received it, by up to `readers` at a time.
+    A lane that keeps the latest (an unbound session's frames) holds one waiting: a newer frame takes its place,
+    an older or equal one is stale. A lane with several readers (a bound session's frames) reads every frame,
+    marks the ones not newer than the last taken stale, and posts in media time order: each read's post waits
+    for the read taken before it. Its tasks run only while it has work."""
 
-    def __init__(self, runner: "Runner", kind: str, keep_latest: bool = False, timeout: float | None = None):
+    def __init__(
+        self,
+        runner: "Runner",
+        kind: str,
+        keep_latest: bool = False,
+        timeout: float | None = None,
+        readers: int = 1,
+    ):
         self.runner, self.kind, self.keep_latest, self.timeout = runner, kind, keep_latest, timeout
+        self.readers = max(1, readers)
+        # frames: stale by media time, results posted in media time order
+        self.ordered = keep_latest or self.readers > 1
         self.waiting: deque[tuple[dict, int]] = deque()
         self.in_flight = 0
         self.last_ts: int | None = None  # ts_ms of the last frame taken to read
-        self.task: asyncio.Task | None = None
+        self.tasks: set[asyncio.Task] = set()
+        self.tail: asyncio.Future | None = None  # done when the last read taken has posted
 
     def put(self, event: dict, received_ms: int) -> None:
-        if self.keep_latest:
+        if self.ordered:
             newest = self.waiting[-1][0]["ts_ms"] if self.waiting else self.last_ts
             if newest is not None and event["ts_ms"] <= newest:
                 self.runner.release(self, event, "stale")
                 return
-            if self.waiting:
+            if self.keep_latest and self.waiting:
                 self.runner.release(self, self.waiting.pop()[0], "skipped")
         self.waiting.append((event, received_ms))
-        if self.task is None:
-            self.task = asyncio.create_task(self.work())
+        self.start()
 
-    async def work(self) -> None:
+    def start(self) -> None:
+        """Hand waiting events to the free readers; each is in flight from here on."""
+        while self.waiting and len(self.tasks) < self.readers:
+            event, received_ms = self.waiting.popleft()
+            if self.ordered:
+                self.last_ts = event["ts_ms"]
+            self.in_flight += 1
+            done = None
+            if self.readers > 1:  # this read's post waits for the read taken before it
+                done = asyncio.get_running_loop().create_future()
+                if self.tail is not None:
+                    self.runner.gates[event["event_id"]] = self.tail
+                self.tail = done
+            self.tasks.add(asyncio.create_task(self.read(event, received_ms, done)))
+
+    async def read(self, event: dict, received_ms: int, done: asyncio.Future | None) -> None:
         try:
-            while self.waiting:
-                event, received_ms = self.waiting.popleft()
-                if self.keep_latest:
-                    self.last_ts = event["ts_ms"]
-                self.in_flight += 1
-                try:
-                    outcome = await self.runner.process(event, received_ms, self.timeout)
-                finally:
-                    self.in_flight -= 1
-                self.runner.release(self, event, outcome)
+            outcome = await self.runner.process(event, received_ms, self.timeout)
         finally:
-            self.task = None
+            self.in_flight -= 1
+            self.runner.gates.pop(event["event_id"], None)
+            if done is not None and not done.done():
+                done.set_result(None)
+            self.tasks.discard(asyncio.current_task())
+        self.runner.release(self, event, outcome)
+        self.start()
 
 
 class Runner:
@@ -143,6 +173,7 @@ class Runner:
         self.fast = Lane(self, "fast")
         self.vision: dict[str, Lane] = {}  # session_id -> its vision lane
         self.counts = {kind: Counter(dict.fromkeys(("received", *OUTCOMES), 0)) for kind in self.KINDS}
+        self.gates: dict[str, asyncio.Future] = {}  # event_id -> the post this one waits for (bound lanes)
         self.attachment_auth = copy.deepcopy(attachment_auth or {})
         self._attachment_sessions = {}
         from worker.attachments import FrameEvidence
@@ -213,12 +244,18 @@ class Runner:
         return out
 
     async def process(self, event: dict, received_ms: int, limit_s: float | None = None) -> str:
-        """One event of a lane: its handlers, all within `limit_s` (cancelled past it), then the post of what they
-        returned. Its outcome: done or failed."""
+        """One event of a lane: its handlers, all within `limit_s` (cancelled past it), then, once the post this
+        one waits for is done (its lane's gate: the read taken before it), the post of what they returned. Its
+        outcome: done or failed. The signature is wrapped by measure/c5_progress; keep it."""
         try:
             out, failed = await asyncio.wait_for(self.consequences(event, received_ms), limit_s)
         except TimeoutError:
             log.warning("handlers of %s cancelled after %s s", event["event_id"], limit_s)
+            out = None
+        gate = self.gates.pop(event["event_id"], None)
+        if gate is not None:
+            await gate
+        if out is None:
             if event["type"] == "frame":
                 self.evidence.frame_finished(event, [], read_error=True)
             return "failed"
@@ -234,12 +271,17 @@ class Runner:
         return "failed" if failed else "done"
 
     def receive(self, event: dict) -> None:
-        """Put a stream event in its lane: a frame in its session's vision lane, any other event in the fast lane."""
+        """Put a stream event in its lane: a frame in its session's vision lane (reading every frame when the
+        session has an attachment binding, else keeping the latest), any other event in the fast lane."""
         self.evidence.receive(event)
         if event["type"] in SLOW:
             sid = event["session_id"]
             if sid not in self.vision:
-                self.vision[sid] = Lane(self, "vision", keep_latest=True, timeout=VISION_TIMEOUT_S)
+                self.vision[sid] = (
+                    Lane(self, "vision", timeout=VISION_TIMEOUT_S, readers=VISION_READERS)
+                    if sid in self.attachment_auth
+                    else Lane(self, "vision", keep_latest=True, timeout=VISION_TIMEOUT_S)
+                )
             lane = self.vision[sid]
         else:
             lane = self.fast
@@ -291,5 +333,5 @@ class Runner:
         finally:
             await self.evidence.close()
             for lane in [self.fast, *self.vision.values()]:
-                if lane.task:
-                    lane.task.cancel()
+                for task in lane.tasks:
+                    task.cancel()
