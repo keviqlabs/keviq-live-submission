@@ -1,0 +1,1 @@
+{"version":1,"disable_existing_loggers":false,"formatters":{"line":{"format":"%(asctime)s %(name)s %(levelname)s %(message)s"}},"handlers":{"err":{"class":"logging.StreamHandler","formatter":"line","stream":"ext://sys.stderr"}},"root":{"handlers":["err"],"level":"INFO"}}

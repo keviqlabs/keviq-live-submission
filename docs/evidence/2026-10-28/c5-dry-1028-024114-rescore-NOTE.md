@@ -68,7 +68,7 @@ Result: `(0 rows)`. 0 model calls, 0 USD.
 - NEEDS_SELLER: 19 (variant 9, over stock 8, price changed 1, discount 1). Would-be candidates (D-026: an order
   in NEEDS_SELLER whose referenced card version's price matches exactly one catalog item): 14. Not a gate number.
 - Waits: one price wait for reason many candidates; the end-of-loop snapshot, the deduped log lines and the
-  suffix agree (ruling 419 method).
+  suffix agree (the method of coordinator note 419).
 - Cards: 9 of 10 items got a card (SP03 none). SKU assigned on 5 cards (card-1-00 SP01, -01 SP02, -03 SP04,
   -04 SP05, -05 SP06); none on card-1-06, -08, -09, -10 (D-026: a SKU only when exactly one catalog item matches;
   D-026 lists the known limits).
@@ -326,3 +326,5 @@ after a seller version says a person edited it. Found by the author; not fixed i
 reviewer's ruling. "Price typed 6" above is these 1 + 2 + 3.
 
 Proposal outcomes: used 3, fixed 1, replaced 3, dropped 1; NEEDS_SELLER 19.
+
+Text edited 2026-10-29: wording only; sha256 before 7332d9eaa0cccde44b0081e5b5f226e08949c3e7016b34bdde05c58830c22f10 after f6dea13d55e3930e5cc21010d8dd372f2287883aee6aa4d355b1541b9308fc5b

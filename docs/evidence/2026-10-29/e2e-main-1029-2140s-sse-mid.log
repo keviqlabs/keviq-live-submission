@@ -1,0 +1,5 @@
+MODEL_API_KEY set: no
+healthz: {"ok":true,"store":"pg","head_seq":217596}
+sse5 reopened with Last-Event-ID 209000: first id 209001, last id 209622 (622 ids in 3 s)
+contiguous: yes
+done rc=0

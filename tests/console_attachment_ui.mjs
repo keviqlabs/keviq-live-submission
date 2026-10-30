@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
-
-const source = readFileSync(new URL("../app/static/console.js", import.meta.url), "utf8");
+import { loadConsole } from "./console_harness.mjs";
 
 function setup() {
   const nodes = new Map(), requests = [], listeners = new Map();
@@ -22,8 +20,7 @@ function setup() {
       return { ok: true, json: async () => ({}) };
     },
   });
-  vm.runInContext(source, context);
-  const run = (code) => vm.runInContext(code, context);
+  const run = loadConsole(context);
   run(`for (const [id, frame] of [["a", 10], ["b", 20]]) handlers.card({
     type: "card", event_id: id + "-v1", card_id: id, version: 1, sku: id.toUpperCase(), status: "edited",
     name: "Item " + id, price: 150000, stock: 5, ts_ms: frame, image_url: null,
