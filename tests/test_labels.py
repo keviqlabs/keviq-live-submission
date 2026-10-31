@@ -75,8 +75,13 @@ def wire(client, transport, moderator=None):
 
 
 async def drain(labeler):
-    """Wait for every flush the labeler spawned; a cancelled timer is fine, any other error is raised."""
+    """Wait for every flush the labeler spawned; a cancelled timer is fine, any other error is raised.
+
+    A batch task can finish between its consumer's end and this task's wakeup, with its removal from `tasks`
+    still a pending callback; gathering only done tasks does not yield, so yield once per round to let it run.
+    """
     while labeler.tasks:
+        await asyncio.sleep(0)
         for r in await asyncio.gather(*list(labeler.tasks), return_exceptions=True):
             if isinstance(r, Exception):
                 raise r
@@ -352,19 +357,23 @@ async def test_a_batch_goes_at_twenty_and_the_rest_after_the_wait(mem_app):
     assert ctx["catalog"] and ctx["card_timeline"][0]["card_id"] == "card-01"
 
 
-async def test_one_label_batch_at_a_time_per_session(mem_app):
-    """A flood never opens a model call per twenty comments at once: the next batch is cut when the last is done,
-    from what queued meanwhile (phone numbers are still hidden on receipt, before any batch)."""
+async def test_a_flood_opens_a_call_per_twenty_up_to_the_lane_cap(mem_app):
+    """Forty-five comments at once: two full batches open at once (each cut as its twenty queue), the five left
+    wait their window; never more calls open than the session's lanes (phone numbers are still hidden on
+    receipt, before any batch)."""
     _, store, client = mem_app
-    transport = TimedOracle(0.1)
+    transport = TimedOracle(0.5)
     labeler, runner = wire(client, transport)
     timed = plan(events(), SESSION, now_ms(), 1.0)
     schedule = [p for p in timed if p[1]["type"] == "card"][:1]
     comments = [p for p in timed if p[1]["type"] == "comment"][:45]
     await feed(client, runner, schedule + comments)
+    await asyncio.sleep(0.05)
+    assert labeler.backlog() == {"waiting": 5, "in_flight": 40}
     await drain(labeler)
-    assert transport.most == 1
     assert sizes(transport) == [20, 20, 5]
+    assert 2 <= transport.most <= labels_mod.BATCH_LANES
+    assert labeler.backlog() == {"waiting": 0, "in_flight": 0}
     labeled = {e["comment_id"] for e in await store.read(SESSION, 0, 500) if e["type"] == "comment_labeled"}
     assert labeled == {e["comment_id"] for _, e in comments}
 
