@@ -6,17 +6,44 @@ import { loadConsole, read } from "./console_harness.mjs";
 // Both languages are complete: the two dictionaries share one key set, every key the scripts and
 // pages ask for exists, and the console renders fully in each language from the same events.
 function setup() {
-  const nodes = new Map(), listeners = new Map(), store = new Map();
+  const nodes = new Map(), listeners = new Map(), store = new Map(), streams = [];
+  const element = (dataset = {}) => ({
+    dataset, attributes: {}, className: "", textContent: "",
+    setAttribute(name, value) { this.attributes[name] = String(value); },
+  });
+  const staticNodes = [], languageButtons = [];
+  for (const [, tag, attributes] of read("console.html").matchAll(/<([a-z][a-z0-9]*)\b([^>]*)>/gi)) {
+    const key = /\bdata-i18n="([^"]+)"/.exec(attributes)?.[1];
+    const attr = /\bdata-i18n-attr="([^"]+)"/.exec(attributes)?.[1];
+    const language = /\bdata-lang="([^"]+)"/.exec(attributes)?.[1];
+    if (!key && !attr && !language) continue;
+    const el = element({ ...(key ? { i18n: key } : {}), ...(attr ? { i18nAttr: attr } : {}), ...(language ? { lang: language } : {}) });
+    el.tagName = tag;
+    const id = /\bid="([^"]+)"/.exec(attributes)?.[1];
+    if (id) nodes.set(id, el);
+    staticNodes.push(el);
+    if (language) languageButtons.push(el);
+  }
   const document = {
-    activeElement: null,
-    getElementById(id) { if (!nodes.has(id)) nodes.set(id, {}); return nodes.get(id); },
+    activeElement: null, documentElement: { lang: "en" },
+    getElementById(id) { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id); },
+    querySelectorAll(selector) {
+      if (selector === "[data-i18n]") return staticNodes.filter((el) => el.dataset.i18n);
+      if (selector === "[data-i18n-attr]") return staticNodes.filter((el) => el.dataset.i18nAttr);
+      if (selector === "[data-lang]") return languageButtons;
+      return [];
+    },
     querySelector() { return null; },
     addEventListener(kind, listener) { listeners.set(kind, listener); },
   };
   const context = vm.createContext({
     document, location: { pathname: "/console/i18n-ui", search: "" }, CSS: { escape: (s) => s },
     localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)) },
-    EventSource: class { addEventListener() {} }, setInterval() {}, setTimeout() {}, clearTimeout() {},
+    EventSource: class {
+      constructor() { this.listeners = new Map(); streams.push(this); }
+      addEventListener(type, listener) { this.listeners.set(type, listener); }
+      emit(type, event) { this.listeners.get(type)({ lastEventId: "1", data: JSON.stringify(event) }); }
+    }, setInterval() {}, setTimeout() {}, clearTimeout() {},
     async fetch() { return { json: async () => ({ today_usd: 0, daily_cap_usd: 30 }) }; },
   });
   const run = loadConsole(context);
@@ -38,7 +65,11 @@ function setup() {
   // Visible text only: class names and data attributes are English identifiers, not labels.
   const snapshot = () => ["cards", "comments", "queue", "orders", "models", "conn"].map((id) => nodes.get(id).innerHTML ?? nodes.get(id).textContent)
     .join("\n").replace(/<[^>]+>/g, " ");
-  return { run, nodes, store, snapshot, async click(dataset) { await listeners.get("click")({ target: { closest: () => ({ dataset, disabled: false }) } }); } };
+  return {
+    run, nodes, store, snapshot, document, languageButtons, stream: streams[0],
+    staticText: (key) => staticNodes.find((el) => el.dataset.i18n === key)?.textContent,
+    click(dataset) { return listeners.get("click")({ target: { closest: () => ({ dataset, disabled: false }) } }); },
+  };
 }
 
 const dictionaries = () => {
@@ -72,7 +103,7 @@ test("every key used by the scripts and the pages exists in the dictionary", () 
   const missing = [...used].filter((k) => !(k.endsWith(".*") ? Object.keys(en).some((e) => e.startsWith(k.slice(0, -1))) : k in en));
   assert.deepEqual(missing, []);
   assert.ok(used.size > 60, `only ${used.size} keys referenced`);
-  for (const prefix of ["label", "order.state", "card.status", "actor", "comment.action", "conn"]) {
+  for (const prefix of ["label", "order.state", "card.status", "actor", "comment.action", "conn", "source"]) {
     assert.ok(Object.keys(en).some((k) => k.startsWith(prefix + ".")), `enum prefix ${prefix} missing`);
   }
 });
@@ -98,4 +129,54 @@ test("the console renders the same events in English by default and fully in Vie
   for (const k of englishOnly) assert.ok(vietnamese.includes(vi[k]), `Vietnamese render lacks ${k}: ${vi[k]}`);
   for (const k of englishOnly) assert.ok(!vietnamese.includes(en[k]), `English label left after the switch: ${k}`);
   assert.doesNotMatch(vietnamese, /\b(cards|queue|order|comment|card|price|item|attachment|models|conn|status)\.[a-z]+(\.[a-zA-Z_]+)?\b/);
+});
+
+
+test("one language click updates static headings, current language and dynamic content synchronously", () => {
+  const ui = setup();
+  const { en, vi } = dictionaries();
+  ui.click({ lang: "vi" });
+  for (const key of ["app.title", "queue.title", "cards.title", "comments.title", "status.localTime", "nav.overlay"]) {
+    assert.equal(ui.staticText(key), vi[key], `${key} updates in the same click`);
+  }
+  assert.equal(ui.document.documentElement.lang, "vi");
+  for (const button of ui.languageButtons) {
+    const selected = button.dataset.lang === "vi";
+    assert.equal(button.className, selected ? "active" : "");
+    assert.equal(button.attributes["aria-pressed"], String(selected));
+  }
+  assert.match(ui.nodes.get("queue").innerHTML, /Chưa chọn món/);
+  assert.match(ui.nodes.get("orders").innerHTML, /chờ khách/);
+  ui.click({ lang: "en" });
+  assert.equal(ui.staticText("queue.title"), en["queue.title"]);
+  assert.equal(ui.document.documentElement.lang, "en");
+  assert.equal(ui.languageButtons.find((b) => b.dataset.lang === "en").attributes["aria-pressed"], "true");
+  assert.match(ui.nodes.get("orders").innerHTML, /awaiting customer/);
+});
+
+test("the current source translates on receipt and language changes, while unknown data stays unchanged", () => {
+  const ui = setup();
+  ui.stream.emit("frame", { source: "replay" });
+  assert.equal(ui.nodes.get("source").textContent, "replay");
+  ui.click({ lang: "vi" });
+  assert.equal(ui.nodes.get("source").textContent, "phát lại");
+  ui.stream.emit("frame", { source: "sim" });
+  assert.equal(ui.nodes.get("source").textContent, "mô phỏng");
+  ui.stream.emit("frame", { source: "facebook" });
+  assert.equal(ui.nodes.get("source").textContent, "Facebook");
+  ui.stream.emit("frame", { source: "synthetic-unknown-source" });
+  assert.equal(ui.nodes.get("source").textContent, "synthetic-unknown-source");
+  ui.click({ lang: "en" });
+  assert.equal(ui.nodes.get("source").textContent, "synthetic-unknown-source");
+});
+
+test("seller and customer waiting states have consistent display labels without changing their values", () => {
+  const { en, vi } = dictionaries();
+  for (const dictionary of [en, vi]) {
+    for (const key of ["queue.title", "queue.needsDecision", "nav.queue"]) {
+      assert.equal(dictionary[key].toLowerCase(), dictionary["order.state.NEEDS_SELLER"]);
+    }
+  }
+  assert.equal(en["order.state.CONFIRM_SENT"], "awaiting customer");
+  assert.equal(vi["order.state.CONFIRM_SENT"], "chờ khách");
 });

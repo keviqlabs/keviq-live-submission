@@ -10,6 +10,7 @@ flat (`/static/<name>`), so there are no subfolders.
 | `console-render.js` | Renderer: builds HTML from the console state, writes it to the DOM, records paint timestamps. |
 | `console.js` | Data adapter: SSE stream with cursor resume, event handlers, seller actions, boot. |
 | `overlay.js` | Overlay: newest live card, price-change flash, hide button, `?size=`. |
+| `placeholder.svg` | Product illustration used when the console has no usable product photo. |
 
 ## Language
 
@@ -18,6 +19,11 @@ header switches every label at once, stores the choice in `localStorage` (`keviq
 carries it into the overlay link. With nothing stored the default is English. Product names,
 prices, SKUs and customer text come from events and are never translated. The session list at `/`
 stays English and is outside the switch.
+
+Known order reasons are translated in the console and their amounts use the same currency format as
+the cards. An unrecognized reason is shown unchanged so information is not lost. Known event sources
+have translated labels; unknown source values remain visible as received. Technical identifiers and
+reference details remain available in the source details and order log.
 
 ## Overlay
 
@@ -28,8 +34,12 @@ appears under the card. The hide button is browser-local: it does not change any
 
 ## Honesty rules on screen
 
-- The mode badge shows `—` until the API exposes the run mode; the simulation strip is shown
-  whenever the mode is not known to be LIVE.
+- The mode group is hidden while the API does not expose a known run mode; the simulation strip
+  remains visible whenever the mode is not known to be LIVE. The event source is shown separately.
+- The header clock is local machine time, not the replay or session clock. Increasing replay speed
+  does not change this clock.
+- Missing, simulated or failed product photos use an illustration labeled as such. The illustration
+  does not claim to show the actual product or a generated cutout.
 - Spark / SAM / Voice status comes from `model_call` events only: a dot for the last result and a
   p50 with `n` once at least one call was measured, otherwise `—`.
 - Model cost comes from `/api/cost`: warning at the daily warning line, blocked at the daily cap.
@@ -38,5 +48,5 @@ appears under the card. The hide button is browser-local: it does not change any
 
 ## Tests
 
-`node tests/console_*.mjs` runs the console tests against a simulated DOM
+`node --test tests/console_*_ui.mjs` runs all five console test files against a simulated DOM
 (`tests/console_harness.mjs` loads the three console scripts into one context).
