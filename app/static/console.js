@@ -2,6 +2,7 @@
 // app's seller endpoints and asks console-render.js to draw. Strings live in i18n.js.
 const sid = decodeURIComponent(location.pathname.split("/").filter(Boolean).pop());
 currentLang();
+let latestSource = null;
 const overlayUrl = () => `/overlay/${encodeURIComponent(sid)}?lang=${lang}`;
 $("sid").textContent = sid;
 $("overlay-link").href = overlayUrl();
@@ -136,7 +137,10 @@ function simReply(o, yes) {
 
 const unitPrice = (raw) => (/^\d+$/.test(raw) && Number(raw) > 0 ? Number(raw) : null);
 
+function renderSource() { $("source").textContent = latestSource == null ? t("status.unknown") : tEnum("source", latestSource); }
+
 function rerender() {
+  renderSource();
   $("overlay-link").href = overlayUrl();
   tick();
   renderConnection(connState);
@@ -295,7 +299,7 @@ function connect() {
     lastSeq = Number(m.lastEventId) || lastSeq;
     renderConnection(connState, lastSeq);
     const e = JSON.parse(m.data);
-    if (e.source) $("source").textContent = e.source;
+    if (e.source) { latestSource = e.source; renderSource(); }
     return e;
   };
   for (const [type, fn] of Object.entries(handlers)) es.addEventListener(type, (m) => fn(seen(m)));
