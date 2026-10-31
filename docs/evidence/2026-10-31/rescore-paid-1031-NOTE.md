@@ -19,10 +19,16 @@ Against 30 October: the label lane no longer makes a comment wait behind an in-f
 wait 1.06 s and 1.35 s against 2.5 s and 2.3 s), the `timing` class went from 2 and 5 comments to 1 and 1, and labels
 later than 4 s from 4 and 6 to 2 and 3. Expirations in stage 2 stayed at 7 of 30 because a class that was empty on 30
 October came back: five `missing read` comments, caused in the worker's vision lane by two reads cancelled at the 10 s
-cap and by four-reader saturation under slower reads (detailed below). Provider latency was higher than on 30 October
-for every purpose, which the branch does not control. Scorer: stage 1 PASS 4 / FAIL 4 (situation 12 went from PASS to
-FAIL, 10 from NOT_TRIGGERED to PASS), stage 2 PASS 7 / FAIL 3 (10 from NOT_TRIGGERED to PASS; 3 accuracy 0.357 to 0.5 on
-n=28; 4 passed 1 to 0 of 4; 6 triggered 3 to 2). Product findings about this tree, recorded, not fixed here.
+cap and by four-reader saturation under slower reads (detailed below). Model-call averages differed from 30 October by
+purpose (ledger tables, stage 1 and stage 2): `product_seen` 2368 and 2559 ms against 2144 and 2134 ms, `label_comments`
+2123 and 2079 ms against 1926 and 1928 ms, `card_from_speech` 3796 and 3817 ms against 3014 and 3065 ms, while
+`card_cutout` (1276 and 1020 ms against 1514 and 1129 ms) and `transcribe` (120.8 and 350.8 s against 120.9 and 350.9 s)
+were lower; whether the higher averages are the provider's latency on the day or an effect of this tree's own
+concurrency is not separated by these runs (detailed below). This evidence describes tree 4c53e72, which has a known
+out-of-order order/cancellation defect under repair in pull request #74; it does not validate that tree or any later
+repair head (see the e2e section). Scorer: stage 1 PASS 4 / FAIL 4 (situation 12 went from PASS to FAIL, 10 from
+NOT_TRIGGERED to PASS), stage 2 PASS 7 / FAIL 3 (10 from NOT_TRIGGERED to PASS; 3 accuracy 0.357 to 0.5 on n=28; 4
+passed 1 to 0 of 4; 6 triggered 3 to 2). Product findings about this tree, recorded, not fixed here.
 
 ## Comparison with 30 October
 
@@ -177,14 +183,17 @@ snapshot = the expiry row's `snapshot_at_ms`.
 | 2 | c5-1-091 | missing read | +1368 | 4162 | −392 | −1162 | +4 |
 
 The first order comment of each loop (`c5-1-001`, t0 + 3.5 s) again arrives before any card exists: the first `card` of
-the loop is at t0 + 20.7 s (stage 1) and t0 + 19.3 s (stage 2), the first `speech` at t0 + 12.5 s and 13.1 s (30
-October: 2.9 s and 3.0 s), the first `product_seen` at t0 + 20.6 s and 19.3 s. In stage 2 the comment was evaluated once
-inside the window (07:42:46.622, `resolved=False`, 79 ms left) with 0 candidates: `unresolved`. In stage 1 its label
-reached the app 61 ms after the deadline, so no evaluation ran before the sweep; rule (c) files it under `timing`
-because the last required read had finished 1.5 s before the deadline, but with 0 candidates it would have expired as
-`unresolved` in any case. The label itself took 4061 ms from the comment's ingestion to its arrival at the app
-(worker receipt after 8 ms, 1045 ms to inference start, inference 3003 ms, 5 ms to
-the app); in stage 2 the same comment's label took 3909 ms (14 / 1058 / 2831 / 6 ms).
+the loop is at t0 + 20.7 s (stage 1) and t0 + 19.3 s (stage 2), the first `speech` reached the app at t0 + 12.5 s and
+13.1 s (30 October, same clock: 12.6 s and 12.6 s), the first `product_seen` at t0 + 20.6 s and 19.3 s (30 October: 19.3
+s and 19.4 s). All offsets in this sentence are on the app's ingestion clock (`ingested_ms`); the 2.9 s and 3.0 s quoted
+for the first `speech` in the 30 October note are the media timestamps (`ts_ms`) of the same events, which are 2.9 s and
+2.9 s today, and its 17.0 s for the first `product_seen` is likewise a media timestamp. In stage 2 the comment was
+evaluated once inside the window (07:42:46.622, `resolved=False`, 79 ms left) with 0 candidates: `unresolved`. In stage
+1 its label reached the app 61 ms after the deadline, so no evaluation ran before the sweep; rule (c) files it under
+`timing` because the last required read had finished 1.5 s before the deadline, but with 0 candidates it would have
+expired as `unresolved` in any case. The label itself took 4061 ms from the comment's ingestion to its arrival at the
+app (worker receipt after 8 ms, 1045 ms to inference start, inference 3003 ms, 5 ms to the app); in stage 2 the same
+comment's label took 3909 ms (14 / 1058 / 2831 / 6 ms).
 
 Timing: `c5-1-036` (stage 2) is the only comment of the two stages whose label reached the app after its deadline
 (1023 ms after it; the expiry row's reason is `recovery-late: original attachment deadline expired`, the sweep ran when the label arrived). The frame reads it
@@ -213,12 +222,18 @@ which the branch does not touch:
   in time (1.2 s before the deadline) and the read that was missing finished 1.4 to 3.0 s after it. Stage 1 had no
   cancelled call; its two latest read starts were 1970 and 901 ms (frames t0 + 17 and 18 s).
 
-Every `product_seen` call was slower this morning than on 30 October (average 2368 and 2559 ms against 2144 and 2134
-ms, see the ledger table), as was every other purpose; that is the provider's latency on the day, not the tree. It
-also explains why the median label time at the app rose slightly (3.08 and 3.03 s against 2.89 and 2.91 s) although the
-wait behind in-flight batches is gone: `label_comments` inference averaged 2123 and 2079 ms against 1926 and 1928 ms.
-Labels later than 4 s after the comment fell from 4 to 2 (stage 1) and from 6 to 3 (stage 2). One run per stage on one
-morning cannot separate the two effects further; the wait-behind-in-flight measure is the direct evidence for the change.
+Model calls averaged differently by purpose than on 30 October (ledger tables, stage 1 and stage 2): `product_seen` 2368
+and 2559 ms against 2144 and 2134 ms; `label_comments` 2123 and 2079 ms against 1926 and 1928 ms; `card_from_speech`
+3796 and 3817 ms against 3014 and 3065 ms; `card_cutout` 1276 and 1020 ms against 1514 and 1129 ms (lower); `transcribe`
+120.8 and 350.8 s against 120.9 and 350.9 s (lower). Not every call was slower: paired in order of occurrence from the
+retained `*-model-calls.jsonl` files of both days, 42 of the 120 stage-1 and 112 of the 350 stage-2 `product_seen` reads
+were faster this morning than their 30 October counterpart. The median label time at the app rose slightly (3.08 and
+3.03 s against 2.89 and 2.91 s) while `label_comments` inference averaged 2123 and 2079 ms against 1926 and 1928 ms,
+although the wait behind in-flight batches is gone. Whether the higher averages are the provider's latency on the day or
+an effect of this tree's own concurrency (up to four open `label_comments` calls per session instead of one, so more
+simultaneous calls from this client at the provider) is not separated by one run per stage on one morning; that
+attribution is left unproven. Labels later than 4 s after the comment fell from 4 to 2 (stage 1) and from 6 to 3 (stage
+2). The wait-behind-in-flight measure is the direct evidence for the change.
 
 ## The 0 USD e2e on the same tree
 
@@ -240,16 +255,22 @@ concurrently. Every step returned rc 0 and neither session wrote a `model_call` 
 
 Against 30 October nothing changed in the outcomes. The dry run posted 100 comments and wrote 466 events
 (`comment_labeled 110, comment 100, order 77, speech 64, message_out 54, card 42, product_seen 12, message_in 4,
-price_proposal 3`), the stand-in run 92 comments and 764 events (`frame 330, comment_labeled 102, comment 92,
-order 71, speech 62, message_out 50, card 39, product_seen 11, message_in 4, price_proposal 3`): the same counts and
-distributions as on 30 October. The twelve situations of the scorer have the same status in both runs as on
-30 October: PASS 1, 2, 5, 6, 7, 8, 9, 10 and 12; FAIL 3 (`accuracy 0.5714285714285714 on n=28` in the dry run,
-16 of 26 in the stand-in run, target 0.9) and 4 (`ask_variant <= 5 s`, 0 of 4); TEST_ONLY 11. Interventions 22 (dry)
-and 20 (stand-in); needs-seller entries 19 and 17 (variant 4, over_stock 13 and 11, price_changed 1, discount 1);
-receipts 2 of 2 at the confirmed version; order recall 1.0; session minutes 6.32 and 6.01; phone visible at most
-0.043 s and 0.031 s (0.064 s and 0.043 s on 30 October, n 4). The e2e exercises the changed `_consume` path with the
-gold label client, whose calls return at once, so it shows that the change broke nothing in the flows; the timing
-effect of the change is measured only by the paid stages above.
+price_proposal 3`), the stand-in run 92 comments and 764 events (`frame 330, comment_labeled 102, comment 92, order 71,
+speech 62, message_out 50, card 39, product_seen 11, message_in 4, price_proposal 3`): the same counts and distributions
+as on 30 October. The twelve situations of the scorer have the same status in both runs as on 30 October: PASS 1, 2, 5,
+6, 7, 8, 9, 10 and 12; FAIL 3 (`accuracy 0.5714285714285714 on n=28` in the dry run, 16 of 26 in the stand-in run,
+target 0.9) and 4 (`ask_variant <= 5 s`, 0 of 4); TEST_ONLY 11. Interventions 22 (dry) and 20 (stand-in); needs-seller
+entries 19 and 17 (variant 4, over_stock 13 and 11, price_changed 1, discount 1); receipts 2 of 2 at the confirmed
+version; order recall 1.0; session minutes 6.32 and 6.01; phone visible at most 0.043 s and 0.031 s (0.064 s and 0.043 s
+on 30 October, n 4). The e2e exercises the changed `_consume` path with the gold label client, whose calls return at
+once, so it shows only that the outcomes of the exercised immediate-response scenarios are unchanged; it cannot exercise
+the reversed completion of overlapping label calls, and the timing effect of the change is measured only by the paid
+stages above. What this evidence does not show: tree 4c53e72 has a known out-of-order order/cancellation defect, found
+in the review of pull request #74 and under repair there. When the same customer orders and then asks to cancel and the
+cancel batch returns before the order batch, the cancel is dropped and a CONFIRM_SENT order follows without the cancel
+question. Neither paid stage reached it (scenario 8 NOT_TRIGGERED in both runs; scenario 7 checks cancellation replies
+through the sim webhook, including a negated one, not this race) and the e2e cannot. This note describes 4c53e72 only;
+it does not validate that tree or any later repair head, and the timing of the repair is unmeasured.
 
 Four steps, by sequence number. Dry run (`e2e-A-1031-0755-four-steps.txt`, header `events 466 orders 27 confirmed 2`):
 `o-c5-1-016` (card-1-00, SP01) price_proposal seq 569728 (heard 220000, current 250000, card_version 4), card v5
