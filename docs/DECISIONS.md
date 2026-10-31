@@ -2,6 +2,26 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-10-31 — video source
+
+**D-031 The video's main source is a recorded replay with synthetic comments, not a real level-2 live session (C9 and the C4 check amended).**
+C9 named one real level-2 live session as the main source of the video, with before/after numbers from that session.
+Three facts in the code make such a session a poor main source. The media worker reads finished files only: there is
+no live camera or stream input, and frames are stamped from the start of playback, while real Page comments carry
+Facebook's clock, so a comment like "the pair just now" could be matched against the wrong card. Real Messenger sends,
+real comment hiding and real confirmed orders stay closed, so a live session would show real comments beside a
+simulated order path. And a live session has no labelled gold, so it cannot produce measured numbers, while the
+replay's synthetic comments are labelled and scored with the real models.
+
+The video is therefore recorded from the replay: a recorded product video through the media worker on the session
+clock, with synthetic comments, both stated on screen, and the numbers shown taken from one measured run named in the
+README. An optional short scene shows real Page comments entering the console read-only (`make live-ingest`); it is
+labelled as such and carries no numbers. C4 is now checked by hand on the replay, because the cards in the video come
+from the recording. The judges' path (replay and simulators, no Meta account) and the stable URL in C9 are unchanged,
+and the "before" comparison remains the cited baseline of C5. No event, schema or version change; acceptance stays v1.
+No order rule, price authority, customer-confirmation rule or level-2 permission changes. Product-owner review/merge
+is required.
+
 ## 2026-10-28 — attachment reference eligibility
 
 **D-030 Clarify that frame coverage and reference resolution are separate prerequisites for ready.**
