@@ -1,0 +1,4 @@
+{"t": "22:48:57", "kind": "t0", "t0_ms": 1793375333131, "frame": "frame_adf1a49a7ba747cdb242"}
+{"t": "22:49:27", "kind": "cutout_call", "event_id": "model_call_ade8796f19d64d9ea2f4", "model": "sam-3.1", "cost_usd": 0.0025}
+{"t": "22:49:27", "kind": "card_image", "card_id": "card-00889dd9fba6", "version": 5, "event_id": "card_9d2d02bd78d34f5ca872", "image_sha256": "34bfd130e960e93309d4882789765eaac3f5d448e835a58e32a13803007c1058", "bytes": 5023}
+{"t": "22:49:27", "kind": "IMAGE_OK", "cutout_call": "model_call_ade8796f19d64d9ea2f4", "card_id": "card-00889dd9fba6", "version": 5, "event_id": "card_9d2d02bd78d34f5ca872", "image_sha256": "34bfd130e960e93309d4882789765eaac3f5d448e835a58e32a13803007c1058", "bytes": 5023}
