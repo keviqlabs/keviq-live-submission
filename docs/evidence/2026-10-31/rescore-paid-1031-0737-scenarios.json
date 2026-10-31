@@ -1,0 +1,170 @@
+{
+ "1": {
+  "status": "FAIL",
+  "triggered": 10,
+  "passed": 3,
+  "event_id": null,
+  "note": "items with a card per loop out of 10",
+  "code": {
+   "files": [
+    "tests/test_card.py",
+    "tests/test_card_handoff.py",
+    "tests/test_store_sse.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "2": {
+  "status": "PASS",
+  "triggered": 1,
+  "passed": 1,
+  "event_id": "card_a8e2020dd5214957ac14",
+  "note": "proposals on a card that already had a price",
+  "other": [],
+  "code": {
+   "files": [
+    "tests/test_price_route.py",
+    "tests/test_price_proposal.py",
+    "tests/test_orders_price_proposal.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "3": {
+  "status": "FAIL",
+  "triggered": 9,
+  "passed": 6,
+  "event_id": "rescore-paid-1031-0737.c5-1-029",
+  "note": "accuracy 0.6666666666666666 on n=9 (target 0.9 on >= 50); previous_card 1/2; no card 3",
+  "code": {
+   "files": [
+    "tests/test_labels.py",
+    "tests/test_measure.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "4": {
+  "status": "FAIL",
+  "triggered": 3,
+  "passed": 0,
+  "event_id": "rescore-paid-1031-0737.c5-1-010",
+  "note": "ask_variant <= 5 s; stock_question answered 0/7",
+  "code": {
+   "files": [
+    "tests/test_orders_ask_variant.py",
+    "tests/test_replay_ask_variant.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "5": {
+  "status": "PASS",
+  "triggered": 1,
+  "passed": 1,
+  "event_id": "rescore-paid-1031-0737.c5-1-024",
+  "note": "late comments tied to the card shown when they were written",
+  "code": {
+   "files": [
+    "tests/test_labels.py",
+    "tests/test_store_sse.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "6": {
+  "status": "NOT_TRIGGERED",
+  "triggered": 0,
+  "passed": 0,
+  "event_id": null,
+  "note": "a price wait happened (lines per loop, deduped); existence only",
+  "code": {
+   "files": [
+    "tests/test_card_window.py",
+    "tests/test_price_proposal.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "7": {
+  "status": "NOT_TRIGGERED",
+  "triggered": 0,
+  "passed": 0,
+  "event_id": null,
+  "note": "a 'do not cancel' comment leaves the order open",
+  "code": {
+   "files": [
+    "tests/test_orders_cancel.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "8": {
+  "status": "NOT_TRIGGERED",
+  "triggered": 0,
+  "passed": 0,
+  "event_id": null,
+  "note": "CANCEL quick reply -> CANCELLED",
+  "code": {
+   "files": [
+    "tests/test_orders_cancel.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "9": {
+  "status": "PASS",
+  "triggered": 3,
+  "passed": 3,
+  "event_id": "rescore-paid-1031-0737.c5-1-002",
+  "note": "spelled-out phone hidden within 5 s",
+  "code": {
+   "files": [
+    "tests/test_labels.py",
+    "tests/test_measure.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "10": {
+  "status": "PASS",
+  "triggered": 1,
+  "passed": 1,
+  "event_id": "mi.m-rescore-paid-1031-0737-c5-1-m01.o-c5-1-006.reply.o-c5-1-006.approve",
+  "note": "'ok' after the card changed -> NEEDS_SELLER, confirm again",
+  "code": {
+   "files": [
+    "tests/test_orders_ok_after_card_change.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "11": {
+  "status": "TEST_ONLY",
+  "triggered": 0,
+  "passed": 0,
+  "event_id": null,
+  "note": "schema / 429: tests only",
+  "code": {
+   "files": [
+    "tests/test_meta.py",
+    "tests/test_worker.py"
+   ],
+   "status": "PASS"
+  }
+ },
+ "12": {
+  "status": "FAIL",
+  "triggered": 1,
+  "passed": 0,
+  "event_id": "mi.m-rescore-paid-1031-0737-c5-1-m02",
+  "note": "CONFIRMED with the receipt at the confirmed version",
+  "code": {
+   "files": [
+    "tests/test_orders_flow.py",
+    "tests/test_measure.py"
+   ],
+   "status": "PASS"
+  }
+ }
+}

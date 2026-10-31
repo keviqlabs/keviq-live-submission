@@ -1,0 +1,12 @@
+session cap 8.0 USD, warning 6.0 USD (env)
+loop 1: t0 1793407035702
+loop 1: done, SETTLED/SETTLED behind 0, retired 3, waits {}, failures 0
+run rescore-paid-1031-0737 sha 4c53e720833c4cc895ae0f0901a9a2a790b446e7 loops 1
+wrote docs/evidence/2026-10-31/rescore-paid-1031-0737.json
+wrote docs/evidence/2026-10-31/rescore-paid-1031-0737-scenarios.json
+wrote docs/evidence/2026-10-31/rescore-paid-1031-0737-comments.jsonl
+SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd
+FROM events WHERE type = 'model_call' AND session_id = 'rescore-paid-1031-0737' GROUP BY session_id;
+session_id | n | usd
+rescore-paid-1031-0737 | 172 | 0.25752100
+(1 rows)

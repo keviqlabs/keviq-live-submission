@@ -1,0 +1,23 @@
+DATABASE_URL name: /keviq_paid_test
+MODEL_API_KEY set: yes
+binding: session rescore-paid-1031-0144 epoch epoch-rescore-paid-1031-0144 (two tokens generated, not shown)
+migrations applied: none (up to date)
+healthz: {"ok":true,"store":"pg","head_seq":2120}
+cost before: {"today_usd":0.0,"total_usd":1.145158,"daily_cap_usd":30.0,"daily_warn_usd":20.0,"total_cap_usd":300.0,"test_sessions":{"prefixes":["pytest","smoke-"],"today_usd":0.0,"total_usd":0.0},"session_usd":0.0,"session_cap_usd":8.0,"session_warn_usd":6.0}
+cost pre-flight ok
+runner rc=0
+guard rc=1
+{"t": "07:30:22", "kind": "IMAGE_MISSING", "window_s": 120.0, "cutout_call": null, "card_image": null}
+session cap 8.0 USD, warning 6.0 USD (env)
+loop 1: t0 1793385848313
+loop 1: done, INCOMPLETE/INCOMPLETE behind 42, retired 1, waits {}, failures 0
+run rescore-paid-1031-0144 sha 4c53e720833c4cc895ae0f0901a9a2a790b446e7 loops 1
+SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd
+FROM events WHERE type = 'model_call' AND session_id = 'rescore-paid-1031-0144' GROUP BY session_id;
+session_id | n | usd
+rescore-paid-1031-0144 | 34 | 0.03792415
+(1 rows)
+cost after: {"today_usd":0.037924,"total_usd":1.183082,"daily_cap_usd":30.0,"daily_warn_usd":20.0,"total_cap_usd":300.0,"test_sessions":{"prefixes":["pytest","smoke-"],"today_usd":0.0,"total_usd":0.0},"session_usd":0.037924,"session_cap_usd":8.0,"session_warn_usd":6.0}
+state after: {'attachment_enabled': True}
+app log: attachments INFO lines 1, covered=True 1
+app stopped
