@@ -1,5 +1,6 @@
 """Optional catalog kind evidence: no model, database or production permission changes."""
 
+import asyncio
 import copy
 from types import SimpleNamespace
 
@@ -7,9 +8,10 @@ import pytest
 
 from app.contracts import make_event
 from app.current import current_at
-from worker.brain import card
+from worker.brain import card, window
 from worker.runner import Runner
 from worker.vision import frames, spark
+from worker.voice import vn
 
 SID = "kind-evidence"
 
@@ -201,12 +203,12 @@ async def test_multiple_catalog_candidates_remain_unresolved_even_with_kind(mem_
     assert first["sku"] is None and first["price"] is None
 
 
-async def test_missing_kind_on_old_event_does_not_pick_single_other_candidate(mem_app, monkeypatch):
+async def test_missing_both_keys_on_old_event_preserves_unique_coarse_match(mem_app, monkeypatch):
     monkeypatch.setattr(card, "CATALOG", [CATALOG[0]])
     event = seen(1)
     del event["attributes"]["kind"], event["attributes"]["identity_state"]
     [first] = await ingest(mem_app, event)
-    assert first["sku"] is None and first["price"] is None
+    assert first["sku"] == "P-A" and first["price"] is None
 
 
 async def test_repeated_unknown_kind_preserves_version_and_cause_without_merging_different_kind(mem_app):
@@ -231,3 +233,122 @@ async def test_old_and_new_attributes_both_validate_without_contract_changes(mem
     cards = await ingest(mem_app, seen(2))
     assert cards[-1]["sku"] == "P-A" and cards[-1]["version"] == 1
     assert cards[-1]["card_id"] != cards[0]["card_id"]
+
+
+@pytest.mark.parametrize(
+    "attributes",
+    [
+        {"kind": None},
+        {"identity_state": None},
+        {"kind": None, "identity_state": "unclear"},
+        {"kind": "unknown", "identity_state": "one_product"},
+    ],
+)
+async def test_present_optional_key_never_takes_unique_legacy_fallback(mem_app, monkeypatch, attributes):
+    monkeypatch.setattr(card, "CATALOG", [CATALOG[0]])
+    event = seen(1)
+    event["attributes"] = {"color": "đen", **attributes}
+    [first] = await ingest(mem_app, event)
+    assert first["sku"] is None and first["price"] is None
+
+
+@pytest.fixture
+def speech_stub(monkeypatch):
+    async def read(text, ctx):
+        return vn.parse(text, set(card.COLORS)), (0, 0)
+
+    monkeypatch.setattr(card, "read_speech", read)
+    monkeypatch.setattr(window, "HOLD_MS", 0)
+
+
+async def deliver_speech(mem_app, text, start, end, drain=True):
+    _, store, client = mem_app
+    event = make_event(
+        "speech",
+        SID,
+        end,
+        "sim",
+        event_id="kind-price",
+        text=text,
+        start_ms=start,
+        end_ms=end,
+        final=True,
+        lang="vi",
+    )
+    assert (await client.post(f"/api/sessions/{SID}/events", json=[event])).status_code == 200
+    runner = NoModel("http://test", card.HANDLERS, http=client)
+    await runner.handle(event)
+    if drain:
+        while card.SESSIONS[SID].tasks:
+            await asyncio.gather(*list(card.SESSIONS[SID].tasks))
+    return {e["card_id"]: e for e in await store.read(SID, 0, 1000) if e["type"] == "card"}
+
+
+@pytest.mark.parametrize("interval", [(1100, 1500), (1500, 2500), (2100, 2500)])
+async def test_prior_kind_price_after_switch_never_prices_current_kind(mem_app, speech_stub, interval):
+    await ingest(mem_app, seen(1))
+    await ingest(mem_app, seen(2, kind="bàn phím"))
+    latest = await deliver_speech(mem_app, "tay cầm này 450 nghìn", *interval)
+    keyboard = next(c for c in latest.values() if c["sku"] == "P-B")
+    assert keyboard["price"] is None and keyboard["status"] == "draft"
+
+
+@pytest.mark.parametrize("text", ["tay cầm và bàn phím này 450 nghìn", "món này 450 nghìn"])
+async def test_typed_price_requires_one_matching_named_kind(mem_app, speech_stub, text):
+    await ingest(mem_app, seen(1, kind="bàn phím"))
+    latest = await deliver_speech(mem_app, text, 1100, 1500)
+    assert all(c["price"] is None for c in latest.values())
+
+
+async def test_matching_kind_price_still_opens_current_card(mem_app, speech_stub):
+    await ingest(mem_app, seen(1))
+    await ingest(mem_app, seen(2, kind="bàn phím"))
+    latest = await deliver_speech(mem_app, "bàn phím này 450 nghìn", 2100, 2500)
+    keyboard = next(c for c in latest.values() if c["sku"] == "P-B")
+    assert keyboard["price"] == 450000 and keyboard["status"] == "live"
+    assert keyboard["provenance"]["speech_event_ids"] == ["kind-price"]
+
+
+async def test_unclear_identity_cannot_gain_price_from_named_kind(mem_app, speech_stub):
+    await ingest(mem_app, seen(1, state="unclear"))
+    latest = await deliver_speech(mem_app, "tay cầm này 450 nghìn", 1100, 1500)
+    assert all(c["sku"] is None and c["price"] is None for c in latest.values())
+
+
+async def test_priced_previous_overlap_still_waits(mem_app, speech_stub):
+    _, store, client = mem_app
+    [first] = await ingest(mem_app, seen(1))
+    assert (
+        await client.post(
+            f"/api/sessions/{SID}/cards/{first['card_id']}/price", json={"card_version": 1, "price": 300000}
+        )
+    ).status_code == 200
+    priced = [e for e in await store.read(SID, 0, 1000) if e["type"] == "card"][-1]
+    await NoModel("http://test", card.HANDLERS, http=client).handle(priced)
+    await ingest(mem_app, seen(2, kind="bàn phím"))
+    latest = await deliver_speech(mem_app, "tay cầm này 450 nghìn", 1500, 2500)
+    assert next(c for c in latest.values() if c["sku"] == "P-B")["price"] is None
+    assert next(c for c in latest.values() if c["sku"] == "P-A")["price"] == 300000
+    assert card.SESSIONS[SID].waits["many"] == 1
+
+
+@pytest.mark.parametrize("text", ["tay cầm này 450 nghìn", "tay cầm và bàn phím này 450 nghìn"])
+async def test_pending_speech_before_switch_never_prices_new_kind(mem_app, monkeypatch, speech_stub, text):
+    started, release = asyncio.Event(), asyncio.Event()
+
+    async def read(text, ctx):
+        started.set()
+        await release.wait()
+        return vn.parse(text, set(card.COLORS)), (0, 0)
+
+    monkeypatch.setattr(card, "read_speech", read)
+    await ingest(mem_app, seen(1))
+    await deliver_speech(mem_app, text, 1100, 1500, drain=False)
+    await asyncio.wait_for(started.wait(), 1)
+    await ingest(mem_app, seen(2, kind="bàn phím"))
+    release.set()
+    while card.SESSIONS[SID].tasks:
+        await asyncio.gather(*list(card.SESSIONS[SID].tasks))
+    _, store, _ = mem_app
+    latest = {e["card_id"]: e for e in await store.read(SID, 0, 1000) if e["type"] == "card"}
+    assert next(c for c in latest.values() if c["sku"] == "P-B")["price"] is None

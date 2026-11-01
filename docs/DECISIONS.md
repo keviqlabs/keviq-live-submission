@@ -17,11 +17,18 @@ category and minimal reasoning effort stay unchanged. `product_seen.attributes.k
 API, event type, acceptance metric, threshold, order permission or confirmation rule changes.
 
 Code assigns SKU only while creating a new card and only when a clear observation above the existing
-confidence threshold matches exactly one catalog item by kind and observed color. Missing/unknown kind,
-missing/mismatched color, unclear/low-confidence evidence and multiple matches stay unresolved. There
+confidence threshold matches exactly one catalog item by kind and observed color. For new typed observations,
+missing/unknown kind, missing/mismatched color, unclear/low-confidence evidence and multiple matches stay
+unresolved. Legacy events with both optional attributes absent retain coarse unique matching; the presence
+of either attribute selects strict typed matching, including explicitly null or unclear values. There
 is no first-item, price, previous-SKU or previous-price fallback. A later clear observation creates a
 fresh unpriced card rather than changing an unresolved card's SKU. Repeats and item switches include
 kind/state in continuity checks; unresolved cards still occupy the normal current/previous position.
+
+The existing media-time price selection is retained. For refined identities, a price additionally requires
+exactly the same explicit kind in the speech text; unresolved, unnamed or conflicting kinds wait for seller
+input. Generic price-only speech can therefore lose automatic coverage. Legacy cards retain their old
+speech path. This guard changes no speech prompt, schema, price source or seller authority.
 
 Speech prompt, transcriber keywords, coarse categories, catalog data and all non-`other` behavior stay
 as before. With no explicit `other` kinds, the vision prompt/schema stay unchanged. No model price or

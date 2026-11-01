@@ -154,6 +154,27 @@ def observation(meta: dict) -> tuple:
     return tuple(meta.get(k) for k in ("category", "color", "kind", "identity_state"))
 
 
+def kind_price_reason(text: str, meta: dict) -> str | None:
+    """A refined identity needs the same explicit kind in the price line, not just 'other'."""
+    if "identity_state" not in meta:  # legacy cards retain the existing coarse speech decision
+        return None
+    if meta["identity_state"] != "one_product" or not meta.get("kind"):
+        return "kind_unclear"
+    target = tuple(vn.tokens(meta["kind"]))
+    words = {tuple(vn.tokens(i["kind"])) for i in other_items()}
+    words.update(kind for kind, categories in window.KINDS.items() if "other" in categories)
+    words.add(target)
+    tokens = vn.tokens(text)
+    mentioned = {
+        kind
+        for kind in words
+        if kind and any(tuple(tokens[i : i + len(kind)]) == kind for i in range(len(tokens)))
+    }
+    if mentioned == {target}:
+        return None
+    return "kind_mismatch" if mentioned else "kind_unclear"
+
+
 def item_by_sku(sku: str | None) -> dict | None:
     return next((i for i in CATALOG if i["sku"] == sku), None)
 
@@ -260,7 +281,7 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
     s.last_frame_ts = event["frame_ts_ms"]
     attrs = event.get("attributes") or {}
     category, color = event["category"], attrs.get("color")
-    refined = category == "other" and (other_items() or "kind" in attrs or "identity_state" in attrs)
+    refined = category == "other" and ("kind" in attrs or "identity_state" in attrs)
     item, identity = (
         other_identity(attrs, event.get("confidence")) if refined else (match(category, color), {})
     )
@@ -427,6 +448,8 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
             if c["status"] != "retired" and window.overlaps(s.spans.get(cid, []), line.start, line.end)
         }
         keep, reason = window.choose(event["text"], cands)
+        if reason is None and len(keep) == 1:
+            reason = kind_price_reason(event["text"], s.meta[keep[0]])
         if spoken.price is not None and reason:
             s.waits[reason] += 1
             log.info(

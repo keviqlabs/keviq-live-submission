@@ -14,7 +14,8 @@ recognition after an unresolved card opens a new card; it never changes SKU in p
 an older card's price. Repeated observations include kind/state in their identity comparison.
 
 Catalogs without explicit `other` kinds retain the original vision prompt/schema. Legacy events
-validate unchanged; with explicit `other` catalog kinds, missing new evidence stays unresolved.
+with both optional attributes absent preserve coarse unique matching. If either new attribute is
+present, missing/null/unclear evidence stays unresolved, even with one catalog item.
 Non-`other` handling, speech prompts/keywords, price authority, variants, schemas, rules, gold and
 catalog bytes are unchanged. This candidate does not solve the existing no-product transition
 behavior. A catalog match is evidence of identity, not seller confirmation of the prediction.
@@ -147,3 +148,38 @@ manufacture a better previous reference; all original current/previous semantics
 | `identity-1101-paid-0742-events.jsonl` | `5255380e49fa29ca7faace83eb20247e8b853bdc98a6d562758b6d41ad8e0214` |
 | `stream-1.jsonl` | `9c259c030cda0e74a10b6bf725aededdb741d874a3c63ff6653e38c9edb9e79c` |
 | `catalog.json` | `fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73` |
+
+## Repair checks after the first full suite
+
+The initial candidate at `d66be0540ffeb5153202d2c8d29bef7820f46ec9` did not pass the full gate:
+`make check` returned rc 2, with `4 failed, 1556 passed, 7 skipped in 866.99s`.
+All four failures were the original one-item legacy setup in `tests/test_sku_ambiguity.py`;
+no timing failure was reported. That existing test file is unchanged in this repair.
+
+A separate review reproduced three sequences where an explicit controller price could reach a
+new same-color keyboard card because both still have coarse category `other`. The repair retains
+the existing media-time candidate selection and adds a price gate for refined identities: exactly
+the card's explicit kind must be named, with no conflicting kind. Unknown identity, unnamed/generic
+item language and conflicting/multiple kinds leave the price unresolved. A bare "this is 450k"
+therefore waits for seller input on a refined card. This can reduce automatic price coverage;
+no end-to-end gain is claimed. Existing legacy-card speech decisions and prompts are unchanged.
+
+New deterministic tests plus the unchanged ambiguity file returned `11 failed, 37 passed`
+before the repair (rc 1). After repair, this focused command returned `160 passed in 3.44s` (rc 0):
+
+```sh
+DATABASE_URL= TEST_DATABASE_URL= MODEL_API_KEY= python -m pytest -q -p no:cacheprovider \
+  tests/test_catalog_item_kind.py tests/test_sku_ambiguity.py tests/test_identity_continuity.py \
+  tests/test_catalog_path.py tests/test_vision.py tests/test_card.py tests/test_card_handoff.py \
+  tests/test_card_window.py tests/test_orders_ok_after_card_change.py \
+  tests/test_attachment_reference_shapes.py tests/test_rules_invariants.py
+```
+
+The three wrong-kind arrival/media-time cases are blocked. Matching-kind pricing still opens
+the matching card; the already-priced previous-card ambiguity control still waits. Pending speech
+across an item switch cannot price the new wrong kind. True legacy absence matches the original
+coarse path, while explicitly null/unclear/partial typed attributes cannot take that fallback.
+The complete A and kind replay JSON results remain byte-identical to the original component
+outputs above. There is still no speech injected in that adapter, so this equality does not
+measure the new price gate's effect on real throughput. Final full-suite and verification results
+remain separate handoff/PR gates at the repaired head.
