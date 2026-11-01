@@ -277,6 +277,15 @@ async def test_a_cancel_instead_of_a_size_is_not_asked_again(c019):
     assert order_events(await stored(store)) == []
 
 
+@pytest.mark.parametrize("no", ["không", "ko", "thôi"])
+async def test_a_plain_no_with_no_open_order_then_ok_asks_the_size_again(c019, no):
+    # with no open order a plain "không" asks nothing, so the "ok" after it answers no cancel question
+    runner, store, client, _ = c019
+    assert await say(client, runner, "th-u064", no) == []
+    assert sent(await say(client, runner, "th-u064", "ok")) == ["ask_variant"]
+    assert order_events(await stored(store)) == []
+
+
 # --- 5. only the customer who was asked can answer ---------------------------------------------------------
 
 

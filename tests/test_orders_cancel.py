@@ -7,7 +7,7 @@ import json
 
 import pytest
 
-from app.contracts import now_ms
+from app.contracts import make_event, now_ms
 from app.settings import ROOT
 from connectors.sim import replay
 from connectors.sim.messenger import webhook_body
@@ -461,6 +461,35 @@ async def test_a_plain_yes_stored_before_the_question_for_a_plain_cancel_is_aske
     assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
 
 
+async def test_another_shop_message_after_the_cancel_question_lets_a_plain_yes_answer_it():
+    # a new order's confirm card sent after the cancel question is what the customer's "ok" answers
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    view.history["o-2"] = [order("o-2", "CONFIRM_SENT", ts=6500)]
+    card = {
+        "event_id": "mo-2",
+        "type": "message_out",
+        "ts_ms": 6500,
+        "thread_ref": "th-ux",
+        "template": "confirm_order",
+        "payload": {"order_id": "o-2"},
+    }
+    yes = said("mi-1", "ok", 7000)
+    view.messages += [ask, card, yes]
+    confirmed, receipt = await flow.on_reply(yes, view, Recorder(), now=7000)
+    assert (confirmed["order_id"], confirmed["state"], receipt["template"]) == ("o-2", "CONFIRMED", "receipt")
+
+
+@pytest.mark.parametrize("odd", [{"text": 5}, {"quick_reply": 7}, {"text": ["có"]}])
+async def test_an_odd_earlier_message_does_not_stop_a_plain_yes_from_confirming(odd):
+    # the event schema lets a message payload hold any value; one that is not text answers no question
+    mi, view = message_scene(odd, [order("o-1", "CONFIRM_SENT")])
+    yes = said("mi-2", "có", 5001)
+    view.messages.append(yes)
+    confirmed, receipt = await flow.on_reply(yes, view, Recorder(), now=5002)
+    assert (confirmed["order_id"], confirmed["state"], receipt["template"]) == ("o-1", "CONFIRMED", "receipt")
+
+
 @pytest.mark.parametrize("text", ["có", "ok"])
 @pytest.mark.parametrize("label", ["other", "complaint"])
 async def test_a_plain_yes_after_the_cancel_question_confirms_nothing(played, label, text):
@@ -512,6 +541,19 @@ async def test_the_confirm_button_still_confirms_after_the_cancel_question(playe
     runner, store, client = played
     await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label="complaint")
     confirmed, msg = await reply(client, runner, "th-u07", "CONFIRM:o-07", now_ms())
+    assert (confirmed["state"], confirmed["actor"], msg["template"]) == ("CONFIRMED", "customer", "receipt")
+
+
+async def test_an_odd_earlier_message_does_not_stop_the_worker_confirming_a_plain_yes(played):
+    runner, store, client = played
+    odd = make_event(
+        "message_in", SID, now_ms(), "sim", thread_ref="th-u07", template=None, payload={"text": 5}
+    )
+    assert (await client.post(f"/api/sessions/{SID}/events", json=[odd])).status_code == 200
+    await runner.handle(odd)
+    before = runner.failures
+    confirmed, msg = await say(client, runner, "th-u07", "có", now_ms() + 5)
+    assert runner.failures == before
     assert (confirmed["state"], confirmed["actor"], msg["template"]) == ("CONFIRMED", "customer", "receipt")
 
 
