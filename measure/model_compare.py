@@ -12,7 +12,8 @@ B0 = kind + colour with an explicit 'unclear', no item list; B = B0 + the sessio
 Every call goes through MetaClient, so every POST is checked by the meter first and logged as a model_call by
 `_log`. The meter here is CapMeter: before a call it holds the worst case of the call (two POSTs: the call and one
 schema retry), before each POST the worst case of that POST, and it releases the hold once the POST is logged.
-A POST whose cost is unknown (no reply) keeps its worst case as spent. The model_call events go to a JSONL file
+A POST that gets no reply (transport error or cancelled) has an unknown cost: its worst case is kept apart from
+spent, in `Budget.unknown`, and a restart rebuilds it from the ledger. The model_call events go to a JSONL file
 through `make_event` (contract-validated), not to the project database.
 
 Muse Wonder is BLOCKED in meta/pricing.py and has no price there. Inside `wonder_allowed()` only, this process
@@ -178,7 +179,9 @@ class Budget:
     """A hold is refused when spent (logged costs) + unknown (worst case of POSTs that got no reply) + held
     (worst case of the POSTs in flight or about to be sent) would go over the cap. The total stays within the
     cap only while each POST costs no more than its estimated worst case: the client sends no output-token
-    limit, so a POST can cost more, and its logged cost is added to spent whatever it is."""
+    limit, so a POST can cost more, and its logged cost is added to spent whatever it is. It also needs every
+    POST's model_call to reach the ledger: if the sink raises (the event fails validation or the file cannot be
+    written), that POST is in neither spent nor unknown, even when its reply was billed."""
 
     def __init__(self, cap: float, spent: float = 0.0, unknown: float = 0.0):
         self.cap, self.spent, self.unknown, self.held = cap, spent, unknown, 0.0
