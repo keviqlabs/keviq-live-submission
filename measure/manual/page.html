@@ -132,15 +132,39 @@ function banner(text) {
   b.style.display = "block";
 }
 
-// Lines go to the server one after another, so the log keeps click order.
+// Lines go to the server one after another, so the log keeps click order. Each resolves to true once the
+// server stored it. A line it did not store stops the run: nothing after it is sent, so the log has no lock
+// and the run is scored incomplete, even if the connection comes back.
 let chain = Promise.resolve();
+let lost = false;
 function log(entry) {
   const body = JSON.stringify({ ...entry, perf_ms: performance.now() });
-  const sent = chain.then(() => fetch("/log", { method: "POST", headers: { "Content-Type": "application/json" }, body }));
-  chain = sent.then(r => {
-    if (!r.ok) r.text().then(t => banner("Không ghi được thao tác (" + r.status + "): " + t));
-  }).catch(() => banner("Mất kết nối tới server cục bộ — thao tác chưa được ghi."));
+  const sent = chain.then(async () => {
+    if (lost) return false;
+    let why;
+    try {
+      const r = await fetch("/log", { method: "POST", headers: { "Content-Type": "application/json" }, body });
+      if (r.ok) return true;
+      why = "server trả " + r.status;
+    } catch (e) { why = "mất kết nối tới server cục bộ"; }
+    lost = true;
+    stopRun(entry, why);
+    return false;
+  });
+  chain = sent;
   return sent;
+}
+
+function stopRun(entry, why) {
+  running = false;
+  v.pause();
+  renderPanel();
+  const p = document.createElement("p");
+  p.textContent = "Thao tác chưa được ghi: " + entry.kind + " lúc " + mmss(entry.video_ms) + " (" + why + ").";
+  if (entry.kind === "start") { sheet("<h2>Không bắt đầu được</h2>", p); return; }
+  sheet(`<h2>Mất bản ghi — lượt đã dừng</h2>
+    <p>Đã ghi: ${tally.order} đơn, ${tally.ask} câu hỏi, ${tally.hide} lần ẩn, ${tally.reply} trả lời.</p>
+    <p>Lượt dừng ở đây và được chấm là <b>chưa xong</b>; trang không gửi thêm gì. Đóng tab và báo người dựng bộ đo.</p>`, p);
 }
 
 function sheet(html, button) {
@@ -174,8 +198,8 @@ function startSheet() {
     v.playbackRate = D.speed;
     // play() inside the click, so the browser allows sound; the start is logged once the video plays
     v.play().then(
-      () => log({ kind: "start", video_ms: clock() }).then(r => {
-        if (!r.ok) { v.pause(); r.text().then(t => sheet("<h2>Không bắt đầu được</h2><p>" + t + "</p>")); return; }
+      () => log({ kind: "start", video_ms: clock() }).then(ok => {
+        if (!ok) return;
         running = true;
         closeSheet();
       }),
@@ -198,11 +222,14 @@ function finishVideo(ms) {
 function lock() {
   locked = true;
   running = false;
-  log({ kind: "lock", video_ms: endMs + D.tail_ms });
   renderPanel();
-  sheet(`<h2>Hết giờ — trang đã khoá</h2>
+  sheet("<h2>Hết giờ — đang lưu…</h2>");
+  log({ kind: "lock", video_ms: endMs + D.tail_ms }).then(ok => {
+    if (!ok) return;
+    sheet(`<h2>Hết giờ — trang đã khoá</h2>
     <p>Đã ghi: ${tally.order} đơn, ${tally.ask} câu hỏi, ${tally.hide} lần ẩn, ${tally.reply} trả lời.</p>
     <p>Có thể đóng tab. Kết quả được chấm bằng lệnh <code>score</code>.</p>`);
+  });
 }
 
 function tick() {
@@ -305,7 +332,7 @@ function renderPanel() {
   const acts = document.createElement("div"); acts.className = "acts";
   const mk = (cls, label, enabled, fn) => {
     const b = document.createElement("button");
-    b.className = "act " + cls; b.textContent = label; b.disabled = locked || !running || !enabled; b.onclick = fn;
+    b.className = "act " + cls; b.textContent = label; b.disabled = locked || !running || busy || !enabled; b.onclick = fn;
     acts.appendChild(b);
   };
   mk("order", "Tạo đơn", !!pick.item, () => act("order"));
@@ -316,28 +343,35 @@ function renderPanel() {
   const f = document.createElement("div"); f.className = "flash"; f.id = "flash"; panel.appendChild(f);
 }
 
+// An action is timed at the click but shows as done (tag, count, flash) only once the server stored it;
+// the buttons wait until then.
+let busy = false;
 function act(kind) {
-  if (!running || locked || !selected) return;
+  if (!running || locked || !selected || busy) return;
   const id = selected;
-  const s = state[id] || (state[id] = { draft: null, hidden: false, replies: 0 });
   const e = { kind, video_ms: clock(), comment_id: id };
-  if (kind === "order" || kind === "ask") {
-    if (pick.item) {
-      e.item = pick.item;
-      e.qty = pick.qty;
-      if (pick.item !== "unclear" && pick.size !== null) e.size = pick.size;
-    }
-    s.draft = { kind, item: e.item || null, size: e.size || null, qty: e.qty || null };
-  } else if (kind === "hide") s.hidden = true;
-  else s.replies++;
-  tally[kind]++;
-  log(e);
-  drawTags(id);
+  if ((kind === "order" || kind === "ask") && pick.item) {
+    e.item = pick.item;
+    e.qty = pick.qty;
+    if (pick.item !== "unclear" && pick.size !== null) e.size = pick.size;
+  }
+  busy = true;
   renderPanel();
-  const label = { order: "Đã tạo đơn", ask: "Đã hỏi khách", hide: "Đã ẩn", reply: "Đã trả lời" }[kind];
-  document.getElementById("flash").textContent = label + " · " + mmss(e.video_ms);
-  document.getElementById("counts").textContent =
-    `Đơn ${tally.order} · Hỏi ${tally.ask} · Ẩn ${tally.hide} · Trả lời ${tally.reply}`;
+  log(e).then(ok => {
+    busy = false;
+    if (!ok) return;
+    const s = state[id] || (state[id] = { draft: null, hidden: false, replies: 0 });
+    if (kind === "order" || kind === "ask") s.draft = { kind, item: e.item || null, size: e.size || null, qty: e.qty || null };
+    else if (kind === "hide") s.hidden = true;
+    else s.replies++;
+    tally[kind]++;
+    drawTags(id);
+    renderPanel();
+    const label = { order: "Đã tạo đơn", ask: "Đã hỏi khách", hide: "Đã ẩn", reply: "Đã trả lời" }[kind];
+    document.getElementById("flash").textContent = label + " · " + mmss(e.video_ms);
+    document.getElementById("counts").textContent =
+      `Đơn ${tally.order} · Hỏi ${tally.ask} · Ẩn ${tally.hide} · Trả lời ${tally.reply}`;
+  });
 }
 
 function drawTags(id) {
