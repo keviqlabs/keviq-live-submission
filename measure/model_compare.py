@@ -25,6 +25,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import math
 import subprocess
 import sys
 import time
@@ -71,6 +72,7 @@ PHASES = {
     },
     "wonder": {"cap": 5.00, "arms": [("wonder-high", "B"), ("wonder-high", "B0")]},
 }
+PENDING_ACCOUNTING = "model-compare-accounting-pending.json"
 TOTAL_CAP = 5.00
 OUT_FLOOR = {"spark-minimal": 1000, "spark-high": 8000, "wonder-high": 8000}
 IN_FLOOR = 1500
@@ -169,22 +171,55 @@ class Call:
     config: str
     w: float  # worst case of one POST
     held: float = 0.0
+    pending: bool = False
     events: list = field(default_factory=list)
 
 
 CURRENT: ContextVar[Call | None] = ContextVar("model_compare_call", default=None)
 
 
+class AccountingError(RuntimeError):
+    """The measurement cannot establish its durable spending record; no further POST is allowed."""
+
+
 class Budget:
-    """A hold is refused when spent (logged costs) + unknown (worst case of POSTs that got no reply) + held
+    """A hold is refused when spent (known costs) + unknown (worst case of POSTs that got no reply) + held
     (worst case of the POSTs in flight or about to be sent) would go over the cap. The total stays within the
     cap only while each POST costs no more than its estimated worst case: the client sends no output-token
-    limit, so a POST can cost more, and its logged cost is added to spent whatever it is. It also needs every
-    POST's model_call to reach the ledger: if the sink raises (the event fails validation or the file cannot be
-    written), that POST is in neither spent nor unknown, even when its reply was billed."""
+    limit, so a POST can cost more, and its known cost is added to spent whatever it is. Validation or ledger
+    failure keeps the cost/reserve, stops further calls, and leaves the pre-POST checkpoint for reconciliation
+    before restarting. A checkpoint is cleared only after every attempted POST reaches the ledger."""
 
-    def __init__(self, cap: float, spent: float = 0.0, unknown: float = 0.0):
+    def __init__(
+        self, cap: float, spent: float = 0.0, unknown: float = 0.0, pending_path: Path | None = None
+    ):
         self.cap, self.spent, self.unknown, self.held = cap, spent, unknown, 0.0
+        self.pending_path, self.pending = pending_path, 0
+        self.accounting_error: str | None = None
+
+    def fail_accounting(self, exc: Exception) -> None:
+        self.accounting_error = f"accounting_failure: {type(exc).__name__}; reconcile before restarting"
+
+    def begin_post(self, call: Call) -> None:
+        if self.accounting_error:
+            raise AccountingError(self.accounting_error)
+        try:
+            if self.pending_path is not None and self.pending == 0:
+                with self.pending_path.open("x", encoding="utf-8") as f:
+                    f.write('{"state":"pending","action":"reconcile ledger before restarting"}\n')
+        except Exception as exc:
+            self.fail_accounting(exc)
+            raise AccountingError(self.accounting_error) from exc
+        self.pending += 1
+        call.pending = True
+
+    def finish_post(self, call: Call) -> None:
+        if not call.pending:
+            return
+        self.pending -= 1
+        call.pending = False
+        if self.pending_path is not None and self.pending == 0 and not self.accounting_error:
+            self.pending_path.unlink()
 
     def total(self) -> float:
         return self.spent + self.unknown + self.held
@@ -206,12 +241,15 @@ class CapMeter:
         self.budget = budget
 
     async def check(self, session_id=None) -> None:
+        if self.budget.accounting_error:
+            raise AccountingError(self.budget.accounting_error)
         call = CURRENT.get()
         need = call.w - call.held if call else float("inf")
         if need > 0:
             if call is None or not self.budget.hold(need):
                 raise BudgetExceeded("experiment_cap", self.budget.total(), self.budget.cap)
             call.held += need
+        self.budget.begin_post(call)
 
 
 def no_reply(event: dict) -> bool:
@@ -225,21 +263,28 @@ class Ledger:
         self.path, self.budget, self.session = path, budget, session
 
     async def __call__(self, fields: dict) -> None:
-        event = make_event("model_call", self.session, now_ms(), "replay", **fields)
-        with self.path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(event, ensure_ascii=False) + "\n")
-        self.budget.spent += event["cost_usd"]
+        # A failed sink cannot erase an attempted POST from the in-memory accounting.
         call = CURRENT.get()
-        if call is None:
-            return
-        call.events.append(event)
-        if event["error"] == "experiment_cap":  # refused before the POST: nothing was held for it
-            return
-        free = min(call.w, call.held)
-        call.held -= free
-        self.budget.release(free)
-        if no_reply(event):
-            self.budget.unknown += call.w
+        cost = fields.get("cost_usd")
+        known = type(cost) in (int, float) and math.isfinite(cost) and cost >= 0
+        if known:
+            self.budget.spent += cost
+        if call is not None and fields.get("error") != "experiment_cap":
+            free = min(call.w, call.held)
+            call.held -= free
+            self.budget.release(free)
+            if no_reply(fields) or not known:
+                self.budget.unknown += call.w
+        try:
+            event = make_event("model_call", self.session, now_ms(), "replay", **fields)
+            with self.path.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(event, ensure_ascii=False) + "\n")
+            if call is not None:
+                call.events.append(event)
+                self.budget.finish_post(call)
+        except Exception as exc:
+            self.budget.fail_accounting(exc)
+            raise AccountingError(self.budget.accounting_error) from exc
 
 
 # --- run -----------------------------------------------------------------------------------------------------
@@ -256,6 +301,9 @@ class Runner:
         self.out, self.read_frame = out, read_frame
         self.configs = dict(configs or CONFIGS)
         self.rows_path, self.ledger_path = out / ROWS, out / LEDGER
+        pending_path = out / PENDING_ACCOUNTING
+        if pending_path.exists():
+            raise AccountingError("accounting_failure: pending POST; reconcile ledger before restarting")
         rows, ledger = read_jsonl(self.rows_path), read_jsonl(self.ledger_path)
         self.seen = {c: {"in": 0, "out": 0} for c in self.configs}
         for r in rows:
@@ -268,7 +316,7 @@ class Runner:
             for e in ledger
             if no_reply(e)
         )
-        self.budget = Budget(min(cap, TOTAL_CAP), spent, unknown)
+        self.budget = Budget(min(cap, TOTAL_CAP), spent, unknown, pending_path)
         self.client = MetaClient(
             transport, CapMeter(self.budget), Ledger(self.ledger_path, self.budget), session_id=SESSION
         )
@@ -283,6 +331,9 @@ class Runner:
 
     async def one(self, frame: dict, config: str, schema: str) -> dict | None:
         """One call. None when the cap cannot cover its worst case (the run stops)."""
+        if self.budget.accounting_error:
+            self.stopped = self.budget.accounting_error
+            return None
         model, effort = self.configs[config]
         call = Call(config, self.w_post(config))
         if not self.budget.hold(2 * call.w):
@@ -305,6 +356,8 @@ class Runner:
                 reasoning=effort,
             )
             data, raw = res.data, res.raw
+        except AccountingError:
+            error = "accounting_failure"
         except SchemaError:
             error = "schema_failed_twice"
         except BudgetExceeded as exc:
@@ -315,6 +368,9 @@ class Runner:
         except Exception as exc:  # no reply: logged by the client with cost 0, kept as unknown here
             error = f"transport_{type(exc).__name__}"
         finally:
+            if self.budget.accounting_error:
+                error = "accounting_failure"
+                self.stopped = self.budget.accounting_error
             wall_ms = round((time.perf_counter() - started) * 1000)
             self.budget.release(call.held)
             call.held = 0.0
@@ -346,6 +402,12 @@ class Runner:
             "ledger_latency_ms": sum(e["latency_ms"] for e in posts),
             "event_ids": [e["event_id"] for e in posts],
         }
+        if error == "accounting_failure":
+            row["accounting_failure"] = {
+                "spent": self.budget.spent,
+                "unknown_reserve": self.budget.unknown,
+                "pending_posts": self.budget.pending,
+            }
         s = self.seen[config]
         s["in"], s["out"] = max(s["in"], row["max_post_in"]), max(s["out"], row["max_post_out"])
         if (
@@ -382,7 +444,7 @@ class Runner:
                     return
                 n += 1
                 self.errors_in_a_row = self.errors_in_a_row + 1 if row["error"] else 0
-                if self.errors_in_a_row >= STOP_AFTER_ERRORS:
+                if not self.stopped and self.errors_in_a_row >= STOP_AFTER_ERRORS:
                     self.stopped = f"{STOP_AFTER_ERRORS} failed calls in a row (last: {row['error']})"
                 log(
                     f"{n}/{len(todo)} t={row['t']} {row['config']}/{row['schema']} "
@@ -619,7 +681,10 @@ def main(argv=None) -> int:
             strata[f["stratum"]] = strata.get(f["stratum"], 0) + 1
         print(f"{len(man['frames'])} frames {strata} -> {OUT / MANIFEST}")
     elif a.cmd == "run":
-        print(json.dumps(asyncio.run(run_phase(a.phase, a.gold, a.concurrency))))
+        summary = asyncio.run(run_phase(a.phase, a.gold, a.concurrency))
+        print(json.dumps(summary))
+        if str(summary.get("stopped") or "").startswith("accounting_failure"):
+            return 1
     else:
         result = do_score()
         (OUT / SCORE).write_text(json.dumps(result, ensure_ascii=False, indent=1) + "\n")
