@@ -23,16 +23,19 @@ Each tree is printed by the replay wrapper (`git: <commit> tree <tree> status-li
 `identity-before-1101-1900-wrapper.log` and `identity-after-1101-2008-wrapper.log`. The first after tree emitted no
 event for a repeated reading (see "C1" below); its replay `identity-after-1101-1909-*` is kept only in git history
 (`git show 8cef645:docs/evidence/2026-11-01/identity-after-1101-1909-events.jsonl`) and is used here only for the
-C1 row.
+C1 row. Commits after 269018c on this branch change only tests, docstrings and this note; the replayed card logic
+is that of 269018c.
 
 ## The change
 
 One rule in `worker/brain/card.py` (`on_product_seen`): when vision reports the same category and colour again
 while the current card has no SKU and is not retired, that is the same item. No new card, no retired card. The kept
 card gets one new version that only moves `provenance.frame_ts_ms` to the repeated frame, with the repeated
-product_seen first in `caused_by`, so every product_seen still has a consequence within the cycle (D-009,
+product_seen first in `caused_by`, so the repeat still has a consequence within the cycle (D-009,
 `contracts/acceptance.md:9`). The version uses the existing `card` event and fields; SKU, name, price, status,
-variants, stock and the current/previous item stay as they are.
+variants, stock and the current/previous item stay as they are. The repeat also moves the kept card's stored frame
+(`frame_ts_ms` and `frame_event_id` in the card brain's session state, `worker/brain/card.py:235-236`): a later
+cut-out of that card uses the repeated frame and names that frame event in its `caused_by` (`attach_cutout`).
 
 Why it matters: parallel frame reads report one item several times as new. Before, each repeated report of an item
 the catalog cannot name opened a new SKU-less draft and retired the one before. In the sandal segment of these
@@ -61,17 +64,27 @@ Tests in `tests/test_identity_continuity.py`:
   item. The repeat stays on the same card, no version sets a SKU or changes the price, the order ends NEEDS_SELLER
   and no confirmation goes out. Red when the guard is changed to fire only for draft cards (the repeat then opens a
   second card), green after.
+- `test_a_different_item_in_the_same_colour_opens_its_own_card`: an 'other trắng' card without SKU is current, then
+  a 'shirt trắng' reading. The shirt opens its own card and the kept card's frame does not move. Red when the guard
+  compares the colour only (the shirt is then merged into the kept card), green after.
+  `test_category_jitter_after_uncertainty_does_not_restore_the_old_priced_identity` does not catch that change: a
+  frame-only version of the kept card also meets its asserts.
 
 ## C1 (D-009)
 
-`measure.core.c1` over the committed replay events (5000 ms cycle; triggers are every product_seen and every
-actionable comment_labeled), and, for product_seen only, whether any event names it in `caused_by` at any time:
+`measure.core.c1` over the committed, type-filtered replay events (5000 ms cycle; triggers are every product_seen
+and every actionable comment_labeled), and, for product_seen only, whether any event names it in `caused_by` at any
+time:
 
 | tree | C1 in cycle | product_seen with a consequence (any time) |
 |---|---|---|
 | before (635d8f4) | 70/109 | 41/45 |
 | first after (b3c263d) | 57/109 | 28/45 |
 | after (269018c) | 70/109 | 41/45 |
+
+The events files keep only the types listed under "Files" (card, comment, comment_labeled, comment_attachment,
+product_seen), so a consequence of any other type is not in them and 70/109 is not the C1 of the run. Only the change
+between the trees is meaningful here.
 
 On the first after tree the 13 repeats that kept one card (ps-1-07, 08, 20, 21, 25, 26, 31, 35, 36, 39, 40, 41,
 43) produced no event. On 269018c each of them has a version of the kept card caused by it, 8 to 42 ms after the
@@ -189,15 +202,16 @@ uv run python /tmp/attach.py docs/evidence/2026-11-01/identity-1101-paid-0742-ev
 uv run python /tmp/attach.py docs/evidence/2026-11-01/identity-after-1101-2008-events.jsonl --at deadline
 ```
 
-C1 row (any events file above):
+C1 row (runs on each of the four events files; the two paid files give figures for their own runs, which are not
+part of this comparison):
 
 ```
 uv run python -c "
 import json, sys
 sys.path.insert(0, '.')
 from measure.core import c1
-ev = sorted(({**r['body'], 'seq': r['seq'], 'ingested_ms': r['ingested_ms'], 'type': r['type'], 'ts_ms': r['ts_ms']}
-             for r in map(json.loads, open(sys.argv[1]))), key=lambda r: r['seq'])
+flat = lambda r: {**r['body'], 'seq': r['seq'], 'ingested_ms': r['ingested_ms'], 'type': r['type'], 'ts_ms': r['ts_ms']}
+ev = sorted((flat(r) if 'body' in r else r for r in map(json.loads, open(sys.argv[1]))), key=lambda r: r['seq'])
 r = c1(ev); used = {c for e in ev for c in e.get('caused_by') or []}
 ps = [e['event_id'] for e in ev if e['type'] == 'product_seen']
 print('c1', r['covered'], '/', r['n'], 'product_seen any time', sum(p in used for p in ps), '/', len(ps))
