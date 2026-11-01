@@ -60,17 +60,25 @@ echo "caps: day $MODEL_DAILY_CAP_USD total $MODEL_TOTAL_CAP_USD session 8 (warn 
 # 3. App, with a bounded graceful shutdown (an open SSE client otherwise holds it forever).
 uv run python -m app.migrate --test || exit 1
 if curl -s --max-time 1 "$BASE/healthz" >/dev/null 2>&1; then echo "port $PORT already answers; refusing"; exit 1; fi
-uv run uvicorn measure.c5_bind:app --host 127.0.0.1 --port "$PORT" --timeout-graceful-shutdown 10 \
+# Each child and its descendants have a private process group owned by this wrapper.
+start_group() {
+  exec python3 -c 'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "$@"
+}
+signal_group() {
+  [ -n "$2" ] && kill -"$1" -- "-$2" 2>/dev/null
+}
+start_group uv run uvicorn measure.c5_bind:app --host 127.0.0.1 --port "$PORT" --timeout-graceful-shutdown 10 \
   --log-config "$OUT/log-config.json" > "$OUT/$RUN-app.log" 2>&1 &
 APP=$!; RUNNER=""; GUARD=""
 stop() {
   echo "$(date +%T) stopping"
-  [ -n "$RUNNER" ] && kill -TERM "$RUNNER" 2>/dev/null
-  pkill -TERM -f "measure.c5 --base-url $BASE" 2>/dev/null
-  pkill -TERM -f "measure.c5_proc .*$RUN" 2>/dev/null
-  [ -n "$GUARD" ] && kill "$GUARD" 2>/dev/null
-  sleep 3; pkill -KILL -f "measure.c5_proc .*$RUN" 2>/dev/null
-  kill "$APP" 2>/dev/null; wait "$APP" 2>/dev/null; echo "app stopped"
+  for child in "$RUNNER" "$GUARD" "$APP"; do signal_group TERM "$child"; done
+  sleep 3
+  for child in "$RUNNER" "$GUARD" "$APP"; do
+    signal_group KILL "$child"
+    [ -n "$child" ] && wait "$child" 2>/dev/null
+  done
+  echo "app stopped"
 }
 trap 'stop; exit 130' INT TERM
 for _ in $(seq 1 60); do curl -s --max-time 1 "$BASE/healthz" >/dev/null 2>&1 && break; sleep 0.5; done
@@ -88,15 +96,49 @@ if [ "${PREFLIGHT_ONLY:-}" = 1 ]; then trap - INT TERM; stop; echo "pre-flight o
 
 # 4. The run: 5 loops, no --seconds, host kept awake.
 START=$(date +%s)
-caffeinate -i -s uv run python -m measure.c5 --base-url "$BASE" --loops 5 --paid --run "$RUN" --out "$OUT" \
+start_group caffeinate -i -s uv run python -m measure.c5 --base-url "$BASE" --loops 5 --paid --run "$RUN" --out "$OUT" \
   > "$OUT/$RUN-runner.log" 2>&1 &
 RUNNER=$!
-uv run python docs/evidence/2026-10-28/scripts/paid-image-5min.py --base-url "$BASE" --run "$RUN" --window-s 300 \
+start_group uv run python docs/evidence/2026-10-28/scripts/paid-image-5min.py --base-url "$BASE" --run "$RUN" --window-s 300 --passive \
   > "$OUT/$RUN-image-guard.log" 2>&1 &
 GUARD=$!
-wait $RUNNER; rc=$?
-echo "runner rc=$rc wall_s=$(( $(date +%s) - START ))" | tee -a "$NOTE"
-if kill -0 $GUARD 2>/dev/null; then kill $GUARD 2>/dev/null; echo "guard: no IMAGE_OK within 300 s"; else wait $GUARD; echo "guard rc=$?"; fi
+guard_done=0; guard_ok=0; guard_rc=0
+check_guard() {
+  wait "$GUARD"; guard_rc=$?
+  guard_done=1
+  if [ "$guard_rc" -eq 0 ] && python3 - "$OUT/$RUN-image-guard.log" <<'CHECK'
+import json, sys
+ok = False
+with open(sys.argv[1]) as stream:
+    for line in stream:
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(entry, dict) and entry.get("kind") == "IMAGE_OK":
+            ok = True
+sys.exit(0 if ok else 1)
+CHECK
+  then guard_ok=1; fi
+  echo "guard rc=$guard_rc IMAGE_OK=$guard_ok" | tee -a "$NOTE"
+}
+while kill -0 "$RUNNER" 2>/dev/null; do
+  if [ "$guard_done" -eq 0 ] && ! kill -0 "$GUARD" 2>/dev/null; then check_guard; fi
+  if [ "$guard_done" -eq 1 ] && [ "$guard_ok" -eq 0 ]; then
+    signal_group TERM "$RUNNER"
+    sleep 3
+    signal_group KILL "$RUNNER"
+    break
+  fi
+  sleep 0.2
+done
+wait "$RUNNER"; rc=$?
+if [ "$guard_done" -eq 0 ] && ! kill -0 "$GUARD" 2>/dev/null; then check_guard; fi
+if [ "$guard_ok" -ne 1 ]; then
+  echo "guard: required IMAGE_OK was not established; run failed" | tee -a "$NOTE"
+  [ "$rc" -ne 0 ] || rc=1
+fi
+echo "runner/run rc=$rc wall_s=$(( $(date +%s) - START ))" | tee -a "$NOTE"
 grep -E 'IMAGE_OK|IMAGE_MISSING' "$OUT/$RUN-image-guard.log" | head -3
 echo "cost after: $(curl -s --max-time 2 "$BASE/api/cost?session=$RUN")" | tee -a "$NOTE"
 trap - INT TERM; stop
