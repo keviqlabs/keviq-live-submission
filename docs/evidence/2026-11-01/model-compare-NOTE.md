@@ -7,18 +7,18 @@ Founder's request (2026-11-01), verbatim: "lập phép so sánh Spark minimal �
 
 ## Result in short
 
-- **Schema moved the result. The model choice barely moved it.** Of 50 clear frames, the production schema A gets 22 correct with both Spark efforts. B0 (same information, new schema) gets 31-34 and B (B0 plus the item list) gets 34-35, in all three configurations. With the schema fixed, two configurations disagree on 3 or 4 of the 70 frames.
+- **Schema moved the result most.** Of 50 clear frames, the production schema A gets 22 correct with both Spark efforts. B0 (same information, new schema) gets 31-34 and B (B0 plus the item list) gets 34-35. Under B the three configurations are within one frame of each other (35, 35, 34). Under B0 the model matters more: spark-high 31, spark-minimal 33, wonder-high 34. With the schema fixed, two configurations disagree on 0 of the 70 frames under A, 3 or 4 under B, and 4 to 7 under B0 (see "Model at a fixed schema").
 - **Almost every wrong pick is one item.** Each arm makes 6 or 7 wrong picks of SP03 read as SP02; spark-minimal/B0 makes one more (SP04 read as SP01). The catalog calls SP03 "giày xám". On frame t=97, viewed by eye, the shoes look cream or off-white, next to SP02 "giày trắng". SP09 ("bàn phím đen") has green or teal keycaps on t=277, and the B arms answer `unsure` there. Both are questions about the catalog data, not about model reading (see "Catalog against camera").
 - **Abstention works where nothing is for sale.** No arm makes a wrong pick on the 6 no-product frames or on the 14 boundary frames.
 - **The 0.5 confidence gate changes no verdict in any arm.** The lowest confidence on a pick is 0.6 to 0.9, depending on the arm.
-- **Cost and latency.** Per call, spark-minimal costs about 0.0013 USD, spark-high 0.0043-0.0053 and wonder-high 0.016-0.019. Median latency is 1.6-1.8 s, 4.0-4.1 s and 3.9-4.2 s.
+- **Cost and latency.** Per call, spark-minimal costs about 0.0013 USD, spark-high 0.0043-0.0053 and wonder-high 0.016-0.019. Latency p50 (nearest rank, see "Cost and latency") is 1.6-1.8 s, 4.0-4.1 s and 3.9-4.2 s.
 - **The pre-registered selection rule picks wonder-high/B.** It ties spark-high/B0 on wrong picks (6 each) and wins on correct clear frames (34 against 31). Its lead over spark-minimal/B is one frame: on t=103 (SP03) wonder-high/B abstains and spark-minimal/B picks SP02. That lead costs about 15 times more per call. One video cannot separate the two.
 - **For the 13 order comments that got no card in run 1615**, the B and B0 schemas name the right item code on the comment's frame for 5-6 of them (A: 3). Three or four would name a wrong code (SP03 read as SP02). Naming the item is not an order: see the per-comment table.
 - **Spend, from the model_call ledger:** 3.7242853 USD over 560 calls: spark-minimal 0.27568665, spark-high 0.98927865, wonder-high 2.45932. This has not been reconciled with Billing. The 5.00 USD figure is the cap for all three configurations together, not an amount spent.
 
 The Founder asked for two decisions to stay separate. The data for each:
 
-- **Running cost (operations):** spark-minimal/B reads 35 of 50 clear frames correctly with 7 wrong picks (all SP03), at 0.00131 USD per call and a 1.7 s median.
+- **Running cost (operations):** spark-minimal/B reads 35 of 50 clear frames correctly with 7 wrong picks (all SP03), at 0.00131 USD per call and a 1.7 s p50.
 - **Quality search:** on this video Wonder read no more clear frames correctly than Spark under B. The errors left over trace back to catalog descriptions.
 
 Neither decision is taken here. Nothing on this branch changes production.
@@ -55,6 +55,7 @@ How the exception works:
 | B | B0 plus `sku` (SP01..SP10, `unsure`, `none`), with the catalog item list in the prompt | an SP code is a pick; `unsure` or `none` is an abstention |
 
 - Wonder ran B and B0 only. A cannot tell SP07 from SP09, or SP08 from SP10, whatever the model sees: all four are `other` plus black or white.
+- **Where the item list in B comes from.** `data/comments/c5/catalog.json`, a file generated from the local test1 gold (see `data/comments/c5/README.md`). Prompt B carries only each code's kind and colour (`SP01: giày, đen; SP02: giày, trắng; ...`). It carries no per-frame label, time, price or stock.
 - **Same information (B0 against A):** neither prompt holds the item list. B0 only replaces the shape of the answer. B adds the item list. So "A to B0" is the schema's share and "B0 to B" is the information's share.
 - **No gold in any prompt.** Every call sends `last=None` (no previous card). `test_prompts_carry_no_gold_and_only_b_lists_the_items` checks both.
 - **Logging.** Every call goes through `MetaClient.responses`, whose `_log` emits a `model_call` event (session `model-compare-1101`, purpose `model_compare`). The sink is a JSONL file that captures the exact event payload. No app and no database were used, so ports 8000/8001, the `keviq` database, the `keviq-live` compose project and `keviq_paid_test` were not touched.
@@ -80,7 +81,8 @@ How the exception works:
   - `no_product`: 6.
 
   Total: 70 frames, of which 50 are clear.
-- **Code after the freeze.** `19c3acc` and `472f30a` change only scoring and reporting: per-configuration spend from the ledger, gated verdicts in the comment links, and checking stock per variant. The call path and the prompts are those of the frozen commit.
+- **Code after the freeze.** `19c3acc` and `472f30a` change only scoring and reporting: per-configuration spend from the ledger and gated verdicts in the comment links. The call path and the prompts are those of the frozen commit.
+- **Two commit subjects say more than their diff.** `19c3acc` ("... and stock per variant") and `472f30a` ("... and the size-first stock check") mention a stock check that is not in their own diff. The per-variant stock check came in `6b6039c` and its no-size test in `3aeb64c`, both before the freeze. This line is here so readers are not misled; the history is not rewritten.
 
 ## Cap accounting
 
@@ -208,18 +210,34 @@ Correct clear frames out of 50:
 | spark-high | 22 | 31 | 35 | +9 of +13 (69%) | +4 (31%) |
 | wonder-high | not run | 34 | 34 | n/a | 0 |
 
-- **Where the gain comes from.** Neither change reduces wrong picks: the SP03 errors stay. The whole gain is frames where A could not name an item. On `same_colour_other`, A gets 0 of 20 (19 collisions, 1 `none`) and B0/B get 13-15.
+- **Wrong picks.** From A to B they do not change in either Spark effort (7 and 7): the SP03 errors stay. From A to B0 they move by one frame, in opposite directions: spark-high goes 7 → 6 (t=103, SP03, becomes cannot name) and spark-minimal goes 7 → 8 (t=139, SP04 read as SP01, which A read correctly).
+- **Where the gain comes from.** Frames where A could not name an item. Over all 70 frames, 19 of A's cannot-name frames become correct under B in both efforts, and 19 (spark-minimal) or 16 (spark-high) under B0. In the other direction, 2 to 5 frames per arm that A read correctly get no pick under B0 or B. On `same_colour_other`, A gets 0 of 20 (19 collisions, 1 `none`) and B0/B get 13-15.
 - **Over all 70 frames:** spark-minimal goes 26 → 41 → 42 and spark-high 26 → 37 → 43.
 - **B0 to B changes the form of the non-answers.** On SP09, B0 says `no_match` (the black keyboard is seen as green or teal) and B says `unsure`. Both leave no card.
 
 ## Model at a fixed schema (same 70 frames)
 
-| pair | frames where the verdicts differ |
-|---|---|
-| wonder-high/B vs spark-minimal/B | t=103 abstain vs wrong; t=169 correct vs abstain; t=339 abstain vs correct |
-| wonder-high/B vs spark-high/B | t=103 abstain vs wrong; t=256 correct vs abstain; t=270 abstain vs correct; t=339 abstain vs correct |
-| spark-minimal/B vs spark-high/B | t=169 abstain vs correct; t=256 correct vs abstain; t=270 abstain vs correct |
-| wonder-high/B0 vs spark-minimal/B0 | t=93 abstain vs correct; t=139 correct vs wrong; t=205 correct vs cannot name; t=339 abstain vs correct |
+All seven same-schema pairs. Verdicts are read from `rows` in the committed `model-compare-score.json` (one row per configuration, schema and frame); no model was called again for this table.
+
+| schema | pair | frames that differ | verdicts (first vs second) |
+|---|---|---|---|
+| A | spark-minimal vs spark-high | 0 | none |
+| B0 | spark-minimal vs spark-high | 7 | t=35 correct vs cannot name; t=93 correct vs abstain; t=103 wrong vs cannot name; t=139 wrong vs correct; t=250 correct vs abstain; t=256 correct vs abstain; t=289 correct vs abstain |
+| B0 | spark-minimal vs wonder-high | 4 | t=93 correct vs abstain; t=139 wrong vs correct; t=205 cannot name vs correct; t=339 correct vs abstain |
+| B0 | spark-high vs wonder-high | 7 | t=35 cannot name vs correct; t=103 cannot name vs wrong; t=205 cannot name vs correct; t=250 abstain vs correct; t=256 abstain vs correct; t=289 abstain vs correct; t=339 correct vs abstain |
+| B | spark-minimal vs spark-high | 3 | t=169 abstain vs correct; t=256 correct vs abstain; t=270 abstain vs correct |
+| B | spark-minimal vs wonder-high | 3 | t=103 wrong vs abstain; t=169 abstain vs correct; t=339 correct vs abstain |
+| B | spark-high vs wonder-high | 4 | t=103 wrong vs abstain; t=256 abstain vs correct; t=270 correct vs abstain; t=339 correct vs abstain |
+
+- Under A the two Spark efforts give the same verdict on every frame.
+- Under B0, spark-high gets no pick on six frames that at least one other configuration reads correctly (t=35, 93, 205, 250, 256, 289); on four of them (t=35, 250, 256, 289) both others are correct. That is most of why B0 spans 31 to 34 correct clear frames.
+- Under B the configurations differ on 3 or 4 frames, and no difference is a wrong pick against a correct one.
+
+Command:
+
+```
+$ python3 -c "import json,itertools; d=json.load(open('docs/evidence/2026-11-01/model-compare-score.json')); v={(r['config'],r['schema'],r['t']):r['verdict'] for r in d['rows']}; [print(s,a,b,[(t,v[(a,s,t)],v[(b,s,t)]) for t in sorted({k[2] for k in v if k[:2]==(a,s)}) if v[(a,s,t)]!=v[(b,s,t)]]) for s in ['A','B0','B'] for a,b in itertools.combinations([c for c in ['spark-minimal','spark-high','wonder-high'] if (c,s,13) in v],2)]"
+```
 
 ## Selection rule (fixed before the run)
 
@@ -260,6 +278,7 @@ Result: wonder-high/B. It has 6 wrong picks, tied with spark-high/B0; it then wi
 | wonder-high/B | 4159 / 14488 / 21619 | 668 | 835.0 / 3026 | 1.3561 | 0.01937 | 6.780 |
 
 - **What latency means here:** wall time per call on the client. Spark ran at concurrency 3 and Wonder at 1.
+- **How p50 and p95 are taken:** `measure.core.pct`, a nearest-rank percentile: the value at rank ceil(p/100 x n) in sorted order. With n=70, p50 is the 35th value, not the mean of the 35th and 36th as an ordinary median would give.
 - **What "USD per 350 frames" means:** USD per call x 350. It is a projection for one pass over the 350-second video at one frame per second, not a measurement.
 - **What the USD figures are:** ledger prices, not Billing.
 
@@ -314,6 +333,8 @@ In every case, recognising the item is not creating an order. The comment's inte
 - **Cap estimate.** No output-token limit is sent, so the worst case per POST is an estimate. No call's output reached the floor of its configuration's worst case (largest tokens_out: spark-minimal 716 against 1000, spark-high 4388 against 8000, Wonder 3026 against 8000).
 - **Spend tracking.** The project's daily and total meters were not consulted. These events went to a JSONL sink, not to the database.
 - **Comments.** No text-only (comment) model call was made. The comment section uses gold order fields.
+- **Item list from the same gold.** The catalog behind prompt B is generated from the test1 gold that also scores the frames (kind and colour per code only), so B knows the exact item set of this video.
+- **Wonder exception is process-wide.** `wonder_allowed()` rebinds module globals of `meta.client` for the whole process. If `run` raised while Wonder calls were still in flight, the names would be restored under those calls, and a late call could lose its `model_call` event. In this run every call has its event (560 of 560), and production code never enters this path. The code was not changed for this.
 
 ## Not verified
 
