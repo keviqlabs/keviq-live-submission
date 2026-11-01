@@ -533,6 +533,19 @@ async def run_phase(phase: str, gold: Path, concurrency: int) -> dict:
         await transport.aclose()
 
 
+def ledger_by_config(ledger: list[dict], rows: list[dict]) -> dict:
+    """Spend per configuration from the model_call events, joined to the call rows by event id. Two
+    configurations share a model, so the model alone cannot split them; an event no row names is 'unattributed'."""
+    config = {i: r["config"] for r in rows for i in r.get("event_ids", [])}
+    out: dict = {}
+    for e in ledger:
+        k = config.get(e["event_id"], "unattributed")
+        d = out.setdefault(k, {"model_calls": 0, "usd": 0.0})
+        d["model_calls"] += 1
+        d["usd"] = round(d["usd"] + e["cost_usd"], 8)
+    return dict(sorted(out.items()))
+
+
 def do_score(out: Path = OUT) -> dict:
     man = json.loads((out / MANIFEST).read_text())
     rows = read_jsonl(out / ROWS)
@@ -551,6 +564,8 @@ def do_score(out: Path = OUT) -> dict:
             for m in sorted({e["model"] for e in ledger})
         },
         "no_reply_posts": sum(no_reply(e) for e in ledger),
+        "by_config": ledger_by_config(ledger, read_jsonl(out / ROWS)),
+        "billing": "not reconciled with Billing",
     }
     result["comment_links"] = {
         arm: sc.comment_links(

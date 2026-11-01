@@ -402,8 +402,16 @@ def comment_links(
                 "gold": gold,
                 "reference_kind": c["order"]["reference_kind"],
                 "frame_t": frame["t"],
-                "read": None if r is None else {"sku": r["sku"], "verdict": r["verdict"], "why": r["why"]},
+                "read": None
+                if r is None
+                else {
+                    "sku": r["sku"],
+                    "verdict": r["verdict"],
+                    "verdict_gated": r["verdict_gated"],
+                    "why": r["why"],
+                },
                 "valid_sku_card": r is not None and r["verdict"] == "correct",
+                "valid_sku_card_gated": r is not None and r["verdict_gated"] == "correct",
                 "item_frames_correct": f"{sum(x['verdict'] == 'correct' for x in item)}/{len(item)}",
                 "still_blocks": blockers(c, catalog, price_changes),
             }
