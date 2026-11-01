@@ -1,0 +1,269 @@
+Offline attachment calculator output, 1 November. Code: the python block in identity-1101-NOTE.md (attach.py below),
+run from the repository root at commit b3c263d; app/current.py is the same on 635d8f4 and b3c263d.
+Each line: comment, gold item, verdict (right / none / WRONG), item carried, label reference kind, current and previous card
+(last 6 characters of the card id : SKU : price : status) at the view's time.
+
+### validation 1: paid record rescore-paid-1031-0742, at the snapshot time of each stored attachment
+$ uv run python attach.py identity-1101-paid-0742-events.jsonl --at actual
+identity-1101-paid-0742-events.jsonl actual {'right': 14, 'none': 14}
+  c5-1-006 gold=SP01 right SP01 kind=current_card cur=946ec9:SP01:250000:live prev=None
+  c5-1-010 gold=SP01 right SP01 kind=current_card cur=946ec9:SP01:250000:live prev=None
+  c5-1-016 gold=SP02 right SP02 kind=current_card cur=bb259c:SP02:None:draft prev=946ec9:SP01:220000:edited
+  c5-1-018 gold=SP01 right SP01 kind=previous_card cur=bb259c:SP02:320000:live prev=946ec9:SP01:220000:edited
+  c5-1-021 gold=SP02 right SP02 kind=current_card cur=bb259c:SP02:320000:live prev=946ec9:SP01:220000:edited
+  c5-1-024 gold=SP02 right SP02 kind=current_card cur=bb259c:SP02:320000:live prev=946ec9:SP01:220000:edited
+  c5-1-029 gold=SP03 none None kind=current_card cur=928658:None:280000:live prev=68b8b5:None:None:retired
+  c5-1-031 gold=SP02 none None kind=previous_card cur=928658:None:280000:live prev=68b8b5:None:None:retired
+  c5-1-032 gold=SP03 none None kind=current_card cur=928658:None:280000:live prev=68b8b5:None:None:retired
+  c5-1-035 gold=SP03 none None kind=current_card cur=928658:None:280000:live prev=68b8b5:None:None:retired
+  c5-1-041 gold=SP04 none None kind=current_card cur=928658:None:280000:live prev=68b8b5:None:None:retired
+  c5-1-043 gold=SP04 right SP04 kind=current_card cur=67358f:SP04:180000:live prev=928658:None:280000:live
+  c5-1-045 gold=SP03 none None kind=previous_card cur=67358f:SP04:180000:live prev=928658:None:280000:live
+  c5-1-047 gold=SP04 right SP04 kind=current_card cur=67358f:SP04:180000:live prev=928658:None:280000:live
+  c5-1-048 gold=SP04 right SP04 kind=current_card cur=67358f:SP04:180000:live prev=928658:None:280000:live
+  c5-1-054 gold=SP05 right SP05 kind=current_card cur=9645c4:SP05:None:draft prev=67358f:SP04:160000:edited
+  c5-1-055 gold=SP04 right SP04 kind=previous_card cur=9645c4:SP05:150000:live prev=67358f:SP04:160000:edited
+  c5-1-056 gold=SP05 right SP05 kind=current_card cur=9645c4:SP05:150000:live prev=67358f:SP04:160000:edited
+  c5-1-060 gold=SP06 right SP06 kind=current_card cur=ad6308:SP06:None:draft prev=9645c4:SP05:150000:live
+  c5-1-062 gold=SP06 right SP06 kind=current_card cur=ad6308:SP06:210000:live prev=9645c4:SP05:150000:live
+  c5-1-071 gold=SP07 none None kind=current_card cur=efd6f6:None:None:draft prev=6ce035:None:None:retired
+  c5-1-074 gold=SP07 none None kind=current_card cur=efd6f6:None:450000:live prev=6ce035:None:None:retired
+  c5-1-078 gold=SP08 none None kind=current_card cur=eb97f8:None:None:draft prev=e1131e:None:None:retired
+  c5-1-082 gold=SP09 none None kind=current_card cur=1c7d76:None:None:draft prev=ccd2ee:None:None:retired
+  c5-1-085 gold=SP09 none None kind=current_card cur=a6cfa8:None:None:draft prev=1c7d76:None:None:retired
+  c5-1-091 gold=SP10 none None kind=current_card cur=65e598:None:None:draft prev=4283af:None:850000:live
+  c5-1-095 gold=SP01 none None kind=current_card cur=5f8adc:None:None:draft prev=ea325e:None:None:retired
+  c5-1-098 gold=SP01 none None kind=current_card cur=5f8adc:None:None:draft prev=ea325e:None:None:retired
+rc=0
+
+### validation 2: paid record rescore-paid-1030-2248, at the snapshot time of each stored attachment
+$ uv run python attach.py identity-1101-paid-2248-events.jsonl --at actual
+identity-1101-paid-2248-events.jsonl actual {'right': 12, 'none': 16}
+  c5-1-006 gold=SP01 right SP01 kind=current_card cur=d9fba6:SP01:250000:live prev=None
+  c5-1-010 gold=SP01 right SP01 kind=current_card cur=d9fba6:SP01:250000:live prev=None
+  c5-1-016 gold=SP02 right SP02 kind=current_card cur=77231d:SP02:None:draft prev=d9fba6:SP01:220000:edited
+  c5-1-018 gold=SP01 right SP01 kind=previous_card cur=77231d:SP02:320000:live prev=d9fba6:SP01:220000:edited
+  c5-1-021 gold=SP02 right SP02 kind=current_card cur=77231d:SP02:320000:live prev=d9fba6:SP01:220000:edited
+  c5-1-024 gold=SP02 right SP02 kind=current_card cur=77231d:SP02:320000:live prev=d9fba6:SP01:220000:edited
+  c5-1-029 gold=SP03 none None kind=current_card cur=abec44:None:None:draft prev=7fa4d7:None:None:retired
+  c5-1-031 gold=SP02 none None kind=previous_card cur=abec44:None:280000:live prev=7fa4d7:None:None:retired
+  c5-1-032 gold=SP03 none None kind=current_card cur=abec44:None:280000:live prev=7fa4d7:None:None:retired
+  c5-1-035 gold=SP03 none None kind=current_card cur=abec44:None:280000:live prev=7fa4d7:None:None:retired
+  c5-1-041 gold=SP04 right SP04 kind=current_card cur=3c60f5:SP04:None:draft prev=abec44:None:280000:live
+  c5-1-043 gold=SP04 right SP04 kind=current_card cur=3c60f5:SP04:180000:live prev=abec44:None:280000:live
+  c5-1-045 gold=SP03 none None kind=previous_card cur=3c60f5:SP04:180000:live prev=abec44:None:280000:live
+  c5-1-047 gold=SP04 right SP04 kind=current_card cur=3c60f5:SP04:180000:live prev=abec44:None:280000:live
+  c5-1-048 gold=SP04 right SP04 kind=current_card cur=3c60f5:SP04:180000:live prev=abec44:None:280000:live
+  c5-1-054 gold=SP05 right SP05 kind=current_card cur=b8da42:SP05:150000:live prev=3dcded:None:None:retired
+  c5-1-055 gold=SP04 none None kind=previous_card cur=b8da42:SP05:150000:live prev=3dcded:None:None:retired
+  c5-1-056 gold=SP05 right SP05 kind=current_card cur=b8da42:SP05:150000:live prev=3dcded:None:None:retired
+  c5-1-060 gold=SP06 none None kind=current_card cur=6f877b:None:210000:live prev=af5bc0:None:None:retired
+  c5-1-062 gold=SP06 none None kind=current_card cur=6f877b:None:210000:live prev=af5bc0:None:None:retired
+  c5-1-071 gold=SP07 none None kind=current_card cur=c7bf49:None:None:draft prev=04b2cd:None:None:retired
+  c5-1-074 gold=SP07 none None kind=current_card cur=c7bf49:None:None:draft prev=04b2cd:None:None:retired
+  c5-1-078 gold=SP08 none None kind=current_card cur=01034c:None:None:draft prev=2fc966:None:None:retired
+  c5-1-082 gold=SP09 none None kind=current_card cur=072e11:None:None:draft prev=2bf822:None:None:retired
+  c5-1-085 gold=SP09 none None kind=current_card cur=072e11:None:650000:live prev=2bf822:None:None:retired
+  c5-1-091 gold=SP10 none None kind=current_card cur=c71ee8:None:None:draft prev=7d713e:None:None:retired
+  c5-1-095 gold=SP01 none None kind=current_card cur=9822a0:None:None:draft prev=5eada6:None:None:retired
+  c5-1-098 gold=SP01 none None kind=current_card cur=9822a0:None:None:draft prev=5eada6:None:None:retired
+rc=0
+
+### before: replay on 635d8f4, at comment + 4 s
+$ uv run python attach.py identity-before-1101-1900-events.jsonl --at deadline
+identity-before-1101-1900-events.jsonl deadline {'right': 14, 'none': 14}
+  c5-1-006 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-010 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-016 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited
+  c5-1-018 gold=SP01 right SP01 kind=previous_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-021 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-024 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-029 gold=SP03 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-031 gold=SP02 none None kind=previous_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-032 gold=SP03 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-035 gold=SP03 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-041 gold=SP04 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-043 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-045 gold=SP03 none None kind=previous_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-047 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-048 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-054 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-055 gold=SP04 right SP04 kind=previous_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-056 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-060 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:None:draft prev=d-1-13:SP05:150000:live
+  c5-1-062 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:210000:live prev=d-1-13:SP05:150000:live
+  c5-1-071 gold=SP07 none None kind=current_card cur=d-1-21:None:450000:live prev=d-1-20:None:None:retired
+  c5-1-074 gold=SP07 none None kind=current_card cur=d-1-21:None:450000:live prev=d-1-20:None:None:retired
+  c5-1-078 gold=SP08 none None kind=current_card cur=d-1-26:None:550000:live prev=d-1-25:None:None:retired
+  c5-1-082 gold=SP09 none None kind=current_card cur=d-1-30:None:None:draft prev=d-1-29:None:None:retired
+  c5-1-085 gold=SP09 none None kind=current_card cur=d-1-31:None:None:draft prev=d-1-30:None:None:retired
+  c5-1-091 gold=SP10 none None kind=current_card cur=d-1-37:None:None:draft prev=d-1-36:None:850000:live
+  c5-1-095 gold=SP01 none None kind=current_card cur=d-1-43:None:None:draft prev=d-1-42:None:None:retired
+  c5-1-098 gold=SP01 none None kind=current_card cur=d-1-43:None:None:draft prev=d-1-42:None:None:retired
+rc=0
+
+### after: replay on b3c263d, at comment + 4 s
+$ uv run python attach.py identity-after-1101-1909-events.jsonl --at deadline
+identity-after-1101-1909-events.jsonl deadline {'right': 15, 'none': 13}
+  c5-1-006 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-010 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-016 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited
+  c5-1-018 gold=SP01 right SP01 kind=previous_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-021 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-024 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-029 gold=SP03 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-031 gold=SP02 right SP02 kind=previous_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-032 gold=SP03 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-035 gold=SP03 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-041 gold=SP04 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-043 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-045 gold=SP03 none None kind=previous_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-047 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-048 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-054 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-055 gold=SP04 right SP04 kind=previous_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-056 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-060 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:None:draft prev=d-1-13:SP05:150000:live
+  c5-1-062 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:210000:live prev=d-1-13:SP05:150000:live
+  c5-1-071 gold=SP07 none None kind=current_card cur=d-1-19:None:450000:live prev=d-1-16:SP06:210000:live
+  c5-1-074 gold=SP07 none None kind=current_card cur=d-1-19:None:450000:live prev=d-1-16:SP06:210000:live
+  c5-1-078 gold=SP08 none None kind=current_card cur=d-1-23:None:550000:live prev=d-1-22:None:None:retired
+  c5-1-082 gold=SP09 none None kind=current_card cur=d-1-30:None:None:draft prev=d-1-29:None:None:retired
+  c5-1-085 gold=SP09 none None kind=current_card cur=d-1-30:None:None:draft prev=d-1-29:None:None:retired
+  c5-1-091 gold=SP10 none None kind=current_card cur=d-1-37:None:None:draft prev=d-1-34:None:850000:live
+  c5-1-095 gold=SP01 none None kind=current_card cur=d-1-42:None:None:draft prev=d-1-38:None:None:retired
+  c5-1-098 gold=SP01 none None kind=current_card cur=d-1-42:None:None:draft prev=d-1-38:None:None:retired
+rc=0
+
+### before: replay on 635d8f4, at label time
+$ uv run python attach.py identity-before-1101-1900-events.jsonl --at label
+identity-before-1101-1900-events.jsonl label {'right': 14, 'none': 14}
+  c5-1-006 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-010 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-016 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited
+  c5-1-018 gold=SP01 right SP01 kind=previous_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited
+  c5-1-021 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-024 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-029 gold=SP03 none None kind=current_card cur=d-1-08:None:None:draft prev=d-1-07:None:None:retired
+  c5-1-031 gold=SP02 none None kind=previous_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-032 gold=SP03 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-035 gold=SP03 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-041 gold=SP04 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-043 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:None:draft prev=d-1-08:None:280000:live
+  c5-1-045 gold=SP03 none None kind=previous_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-047 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-048 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-054 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:None:draft prev=d-1-09:SP04:160000:edited
+  c5-1-055 gold=SP04 right SP04 kind=previous_card cur=d-1-13:SP05:None:draft prev=d-1-09:SP04:160000:edited
+  c5-1-056 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-060 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:None:draft prev=d-1-13:SP05:150000:live
+  c5-1-062 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:210000:live prev=d-1-13:SP05:150000:live
+  c5-1-071 gold=SP07 none None kind=current_card cur=d-1-21:None:None:draft prev=d-1-20:None:None:retired
+  c5-1-074 gold=SP07 none None kind=current_card cur=d-1-21:None:450000:live prev=d-1-20:None:None:retired
+  c5-1-078 gold=SP08 none None kind=current_card cur=d-1-26:None:None:draft prev=d-1-25:None:None:retired
+  c5-1-082 gold=SP09 none None kind=current_card cur=d-1-30:None:None:draft prev=d-1-29:None:None:draft
+  c5-1-085 gold=SP09 none None kind=current_card cur=d-1-31:None:None:draft prev=d-1-30:None:None:retired
+  c5-1-091 gold=SP10 none None kind=current_card cur=d-1-36:None:None:draft prev=d-1-35:None:None:retired
+  c5-1-095 gold=SP01 none None kind=current_card cur=d-1-42:None:None:draft prev=d-1-41:None:None:retired
+  c5-1-098 gold=SP01 none None kind=current_card cur=d-1-43:None:None:draft prev=d-1-42:None:None:retired
+rc=0
+
+### after: replay on b3c263d, at label time
+$ uv run python attach.py identity-after-1101-1909-events.jsonl --at label
+identity-after-1101-1909-events.jsonl label {'right': 15, 'none': 13}
+  c5-1-006 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-010 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-016 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited
+  c5-1-018 gold=SP01 right SP01 kind=previous_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited
+  c5-1-021 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-024 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-029 gold=SP03 none None kind=current_card cur=d-1-06:None:None:draft prev=d-1-03:SP02:320000:live
+  c5-1-031 gold=SP02 right SP02 kind=previous_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-032 gold=SP03 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-035 gold=SP03 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-041 gold=SP04 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-043 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:None:draft prev=d-1-06:None:280000:live
+  c5-1-045 gold=SP03 none None kind=previous_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-047 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-048 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-054 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:None:draft prev=d-1-09:SP04:160000:edited
+  c5-1-055 gold=SP04 right SP04 kind=previous_card cur=d-1-13:SP05:None:draft prev=d-1-09:SP04:160000:edited
+  c5-1-056 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-060 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:None:draft prev=d-1-13:SP05:150000:live
+  c5-1-062 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:210000:live prev=d-1-13:SP05:150000:live
+  c5-1-071 gold=SP07 none None kind=current_card cur=d-1-19:None:None:draft prev=d-1-16:SP06:210000:live
+  c5-1-074 gold=SP07 none None kind=current_card cur=d-1-19:None:450000:live prev=d-1-16:SP06:210000:live
+  c5-1-078 gold=SP08 none None kind=current_card cur=d-1-23:None:None:draft prev=d-1-22:None:None:retired
+  c5-1-082 gold=SP09 none None kind=current_card cur=d-1-30:None:None:draft prev=d-1-29:None:None:draft
+  c5-1-085 gold=SP09 none None kind=current_card cur=d-1-30:None:None:draft prev=d-1-29:None:None:retired
+  c5-1-091 gold=SP10 none None kind=current_card cur=d-1-34:None:None:draft prev=d-1-32:None:600000:live
+  c5-1-095 gold=SP01 none None kind=current_card cur=d-1-42:None:None:draft prev=d-1-38:None:None:retired
+  c5-1-098 gold=SP01 none None kind=current_card cur=d-1-42:None:None:draft prev=d-1-38:None:None:retired
+rc=0
+
+### before: replay on 635d8f4, labels of the paid record 0742, at comment + 4 s
+$ uv run python attach.py identity-before-1101-1900-events.jsonl --labels identity-1101-paid-0742-events.jsonl --at deadline
+identity-before-1101-1900-events.jsonl deadline {'right': 14, 'none': 14}
+  c5-1-006 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-010 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-016 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited
+  c5-1-018 gold=SP01 right SP01 kind=previous_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-021 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-024 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-029 gold=SP03 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-031 gold=SP02 none None kind=previous_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-032 gold=SP03 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-035 gold=SP03 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-041 gold=SP04 none None kind=current_card cur=d-1-08:None:280000:live prev=d-1-07:None:None:retired
+  c5-1-043 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-045 gold=SP03 none None kind=previous_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-047 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-048 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-08:None:280000:live
+  c5-1-054 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-055 gold=SP04 right SP04 kind=previous_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-056 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-060 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:None:draft prev=d-1-13:SP05:150000:live
+  c5-1-062 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:210000:live prev=d-1-13:SP05:150000:live
+  c5-1-071 gold=SP07 none None kind=current_card cur=d-1-21:None:450000:live prev=d-1-20:None:None:retired
+  c5-1-074 gold=SP07 none None kind=current_card cur=d-1-21:None:450000:live prev=d-1-20:None:None:retired
+  c5-1-078 gold=SP08 none None kind=current_card cur=d-1-26:None:550000:live prev=d-1-25:None:None:retired
+  c5-1-082 gold=SP09 none None kind=current_card cur=d-1-30:None:None:draft prev=d-1-29:None:None:retired
+  c5-1-085 gold=SP09 none None kind=current_card cur=d-1-31:None:None:draft prev=d-1-30:None:None:retired
+  c5-1-091 gold=SP10 none None kind=current_card cur=d-1-37:None:None:draft prev=d-1-36:None:850000:live
+  c5-1-095 gold=SP01 none None kind=current_card cur=d-1-43:None:None:draft prev=d-1-42:None:None:retired
+  c5-1-098 gold=SP01 none None kind=current_card cur=d-1-43:None:None:draft prev=d-1-42:None:None:retired
+rc=0
+
+### after: replay on b3c263d, labels of the paid record 0742, at comment + 4 s
+$ uv run python attach.py identity-after-1101-1909-events.jsonl --labels identity-1101-paid-0742-events.jsonl --at deadline
+identity-after-1101-1909-events.jsonl deadline {'right': 15, 'none': 13}
+  c5-1-006 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-010 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
+  c5-1-016 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited
+  c5-1-018 gold=SP01 right SP01 kind=previous_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-021 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-024 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:320000:live prev=d-1-00:SP01:220000:edited
+  c5-1-029 gold=SP03 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-031 gold=SP02 right SP02 kind=previous_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-032 gold=SP03 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-035 gold=SP03 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-041 gold=SP04 none None kind=current_card cur=d-1-06:None:280000:live prev=d-1-03:SP02:320000:live
+  c5-1-043 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-045 gold=SP03 none None kind=previous_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-047 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-048 gold=SP04 right SP04 kind=current_card cur=d-1-09:SP04:180000:live prev=d-1-06:None:280000:live
+  c5-1-054 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-055 gold=SP04 right SP04 kind=previous_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-056 gold=SP05 right SP05 kind=current_card cur=d-1-13:SP05:150000:live prev=d-1-09:SP04:160000:edited
+  c5-1-060 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:None:draft prev=d-1-13:SP05:150000:live
+  c5-1-062 gold=SP06 right SP06 kind=current_card cur=d-1-16:SP06:210000:live prev=d-1-13:SP05:150000:live
+  c5-1-071 gold=SP07 none None kind=current_card cur=d-1-19:None:450000:live prev=d-1-16:SP06:210000:live
+  c5-1-074 gold=SP07 none None kind=current_card cur=d-1-19:None:450000:live prev=d-1-16:SP06:210000:live
+  c5-1-078 gold=SP08 none None kind=current_card cur=d-1-23:None:550000:live prev=d-1-22:None:None:retired
+  c5-1-082 gold=SP09 none None kind=current_card cur=d-1-30:None:None:draft prev=d-1-29:None:None:retired
+  c5-1-085 gold=SP09 none None kind=current_card cur=d-1-30:None:None:draft prev=d-1-29:None:None:retired
+  c5-1-091 gold=SP10 none None kind=current_card cur=d-1-37:None:None:draft prev=d-1-34:None:850000:live
+  c5-1-095 gold=SP01 none None kind=current_card cur=d-1-42:None:None:draft prev=d-1-38:None:None:retired
+  c5-1-098 gold=SP01 none None kind=current_card cur=d-1-42:None:None:draft prev=d-1-38:None:None:retired
+rc=0
+
