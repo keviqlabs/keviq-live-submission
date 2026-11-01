@@ -6,6 +6,7 @@ import json
 import pytest
 
 from app.contracts import make_event
+from app.current import current_at
 from app.settings import ROOT
 from worker.brain import card
 from worker.runner import Runner
@@ -103,3 +104,22 @@ async def test_duplicate_and_stale_changed_observations_add_no_versions(mem_app)
             "comment_attachment",
         }
     ]
+
+
+async def test_repeated_reading_of_the_current_unidentified_item_keeps_one_card(mem_app):
+    _, store, client = mem_app
+    runner = NoModel("http://test", card.HANDLERS, http=client)
+    old = await priced_first(store, client, runner)
+    for eid, ts in [("ps-sandal-1", 2000), ("ps-sandal-2", 3000), ("ps-sandal-3", 4000)]:
+        await ingest(client, runner, seen(eid, "sandal", "trắng", ts))
+    cards = await history(store)
+    opened = {event["card_id"] for event in cards if event["card_id"] != old}
+    assert len(opened) == 1
+    [unknown] = opened
+    assert not [event for event in cards if event["status"] == "retired"]
+    current, previous = current_at(cards, 4500)
+    assert current["card_id"] == unknown and current["sku"] is None
+    assert previous["card_id"] == old and previous["sku"] == "SP02" and previous["price"] == 320000
+    await ingest(client, runner, seen("ps-black", "sandal", "đen", 5000))
+    current, previous = current_at(await history(store), 5500)
+    assert current["card_id"] not in {old, unknown} and previous["card_id"] == unknown
