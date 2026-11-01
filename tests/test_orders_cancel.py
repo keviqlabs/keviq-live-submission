@@ -159,9 +159,10 @@ async def played(mem_app, demo_events):
     return runner, store, client
 
 
-async def test_one_open_order_is_asked_then_cancelled_on_its_quick_reply(played):
+@pytest.mark.parametrize("label", ["other", "complaint"])  # the model may call a plain cancel a complaint
+async def test_one_open_order_is_asked_then_cancelled_on_its_quick_reply(played, label):
     runner, store, client = played
-    [ask] = await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop")
+    [ask] = await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label=label)
     assert (ask["type"], ask["template"], ask["thread_ref"]) == ("message_out", "ask_cancel", "th-u07")
     assert ask["payload"]["order_id"] == "o-07" and "o-07" in ask["payload"]["text"]
     assert ask["payload"]["send_api"]["recipient"] == {"comment_id": "cm-90"}  # private reply to the comment
@@ -180,9 +181,10 @@ async def test_one_open_order_is_asked_then_cancelled_on_its_quick_reply(played)
     assert msg["template"] == "order_cancelled" and msg["caused_by"][-1] == cancelled["event_id"]
 
 
-async def test_keep_changes_nothing(played):
+@pytest.mark.parametrize("label", ["other", "complaint"])
+async def test_keep_changes_nothing(played, label):
     runner, store, client = played
-    await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop")
+    await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label=label)
     before = await history(store, "o-07")
     assert await reply(client, runner, "th-u07", "KEEP:o-07", now_ms()) == []
     assert await history(store, "o-07") == before
@@ -277,6 +279,49 @@ async def test_order_label_with_cancel_text_makes_no_draft():
     label, view = comment_scene("huỷ đơn đôi 39", [order("o-1", "CONFIRM_SENT")], label="order")
     [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
     assert ask["template"] == "ask_cancel" and quick_replies(ask) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+async def test_complaint_label_with_cancel_text_is_asked_and_changes_no_order():
+    label, view = comment_scene(
+        "huỷ đơn giúp mình nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint"
+    )
+    rec = Recorder()
+    [ask] = await flow.on_labeled(label, view, rec, now=6000)  # a question only: no order event
+    assert (ask["type"], ask["template"]) == ("message_out", "ask_cancel")
+    assert quick_replies(ask) == ["CANCEL:o-1", "KEEP:o-1"]
+    assert [template for _, template, _ in rec.sent] == ["ask_cancel"]
+    label, view = comment_scene("huỷ đơn giúp mình nha shop", [], label="complaint")
+    assert await flow.on_labeled(label, view, Recorder(), now=6000) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "đừng huỷ đơn nha shop",
+        "ko huỷ nha",
+        "có nên huỷ không ta",
+        "lần trước bị huỷ đơn rồi",
+        "giao chậm quá shop",
+    ],
+)
+async def test_complaint_label_without_a_clear_cancel_sends_nothing_and_never_drafts(text):
+    label, view = comment_scene(text, [order("o-1", "CONFIRM_SENT")], label="complaint")
+    label["order_draft"] = {
+        "variant": {"size": "39", "color": None},
+        "qty": 1,
+        "referenced_card_id": "card-x",
+    }
+    rec = Recorder()
+    assert await flow.on_labeled(label, view, rec, now=6000) == []
+    assert rec.sent == []
+
+
+@pytest.mark.parametrize("label", ["scam", "spam"])
+async def test_scam_or_spam_label_with_cancel_text_never_asks(label):
+    labeled, view = comment_scene("huỷ đơn giúp mình nha shop", [order("o-1", "CONFIRM_SENT")], label=label)
+    rec = Recorder()
+    assert await flow.on_labeled(labeled, view, rec, now=6000) == []
+    assert rec.sent == []
 
 
 @pytest.mark.parametrize(
