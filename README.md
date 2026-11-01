@@ -103,7 +103,7 @@ The Founder confirmed the review sample c001–c030 on 27 October (all 30, none 
 | label end to end p50 / p95 | 3835 / 5325 ms |
 | model_call latency_ms p50 / p95 | 2804 / 4331 ms |
 
-- The model labels both cancel comments `complaint`. Contract v1 has no cancel label and the labeling prompt says nothing about cancelling, so the shop does not see the cancel as `other`. Not fixed here.
+- The model labels both cancel comments `complaint`. Contract v1 has no cancel label and the labeling prompt says nothing about cancelling, so the label score stays 0/1. The orders stream now also reads a `complaint` label when the comment is a clear cancel request (c192 is one): it asks the customer to cancel or keep the open order and never drafts an order. A negated or unclear cancel labeled `complaint` (c169 is negated) sends nothing. This table is from the run before that change and was not re-run.
 - c106 "size như bạn trên" was labeled `other`, so it got no order and no question. In the previous run on this row (session `comments200-s1-1027-135456`, before the cancel rows) it was an order with the item unresolved. The same comment gets different labels from run to run.
 - These rows score the model's labels only. Whether the shop then asks the customer, waits for the seller or confirms a cancel is up to the orders and Messenger streams.
 
