@@ -402,8 +402,8 @@ def missed(run: Run, rows: list[dict]) -> dict:
 
 
 def receipts(run: Run) -> dict:
-    """Each CONFIRMED order: its receipt names a card version that exists, at that version's price, and the
-    version the customer was asked to confirm. The image is counted apart (the C5 catalog has none)."""
+    """Keep the legacy component counts; the joint count requires the requested card/version,
+    its price, and its actual image to match the receipt."""
     rows = []
     for oid, evs in run.orders.items():
         for e in (e for e in evs if e["state"] == "CONFIRMED"):
@@ -415,17 +415,29 @@ def receipts(run: Run) -> dict:
                 for m in run.out.get(oid, [])
                 if m["template"] == "confirm_order" and m["ts_ms"] <= e["ts_ms"]
             ]
+            quote = asked[-1]["payload"] if asked else {}
+            quoted_card = run.version(quote.get("card_id"), quote.get("card_version"))
+            joint_ok = bool(
+                quoted_card
+                and (e.get("receipt") or {}).get("card_id") == quote.get("card_id")
+                and r.get("card_version") == quote.get("card_version")
+                and quoted_card.get("price") is not None
+                and r.get("price") == quoted_card["price"]
+                and quoted_card.get("image_url")
+                and r.get("image_url") == quoted_card["image_url"]
+            )
             rows.append({
                 "event_id": e["event_id"], "order_id": oid,
                 "version_ok": bool(card and r.get("price") == card["price"]
                                    and asked and asked[-1]["payload"]["card_version"] == r.get("card_version")),
                 "image": bool(r.get("image_url")),
+                "version_and_image": joint_ok,
                 "image_source": image_source(run, r),
             })  # fmt: skip
     ok = sum(r["version_ok"] for r in rows)
     return {"n": len(rows), "version_ok": ok, "rate": ok / len(rows) if rows else None,
             "with_image": sum(r["image"] for r in rows),
-            "version_and_image": sum(r["version_ok"] and r["image"] for r in rows),
+            "version_and_image": sum(r["version_and_image"] for r in rows),
             "image_path_run": sum(r["image_source"]["image_path"] == "RUN" for r in rows), "rows": rows}  # fmt: skip
 
 
@@ -438,8 +450,8 @@ def funnel(run: Run, order_rows: list[dict], receipt_rows: list[dict]) -> dict:
     (the label's card when there is no order) is the gold item, and false when the draft left the seller to pick one
     of several frozen candidates (`seller_pick`: a card chosen later by the seller is not the system's); order = an
     order exists; confirmed = the order reached CONFIRMED; receipt = a CONFIRMED receipt at the confirmed version's
-    price and version, with an image. `chain` counts the comments that pass every tier up to and including that one."""
-    good = {r["order_id"] for r in receipt_rows if r["version_ok"] and r["image"]}
+    price, identity, version and actual image. `chain` counts comments passing every tier up to that one."""
+    good = {r["order_id"] for r in receipt_rows if r["version_and_image"]}
     rows = []
     for r in order_rows:
         cid = r["comment_id"]
