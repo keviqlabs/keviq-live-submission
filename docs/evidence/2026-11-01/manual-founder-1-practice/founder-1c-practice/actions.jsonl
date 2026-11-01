@@ -1,0 +1,5 @@
+{"seq": 0, "server_ms": 1793494557242, "kind": "start", "video_ms": 0, "perf_ms": 11586.399999976158}
+{"seq": 1, "server_ms": 1793494594197, "kind": "reply", "video_ms": 36873, "perf_ms": 48544.5, "comment_id": "c5-2-003"}
+{"seq": 2, "server_ms": 1793494615290, "kind": "order", "video_ms": 57969, "perf_ms": 69640.69999998808, "comment_id": "c5-2-005", "item": "SP02", "qty": 1}
+{"seq": 3, "server_ms": 1793494617364, "kind": "end", "video_ms": 60000, "perf_ms": 71714.59999999404}
+{"seq": 4, "server_ms": 1793494627367, "kind": "lock", "video_ms": 70000, "perf_ms": 81715.0}

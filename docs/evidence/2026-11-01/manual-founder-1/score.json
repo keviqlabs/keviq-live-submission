@@ -1,0 +1,530 @@
+{
+  "run": {
+    "mode": "run",
+    "stream": {
+      "path": "data/comments/c5/stream-1.jsonl",
+      "sha256": "9c259c030cda0e74a10b6bf725aededdb741d874a3c63ff6653e38c9edb9e79c",
+      "rows": 100
+    },
+    "catalog": {
+      "path": "data/comments/c5/catalog.json",
+      "sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73"
+    },
+    "video": {
+      "name": "test1-h264.mp4",
+      "bytes": 26225951,
+      "sha256": "02cd69752fc2b0a89e16466ba558b37578f3394e818a3d8a645426507cf176fc"
+    },
+    "speed": 1.0,
+    "tail_ms": 30000,
+    "stop_ms": null,
+    "git_head": "1e37fb64d0184eba2ab9a1c60e4a67d34b737f55",
+    "git_dirty": false,
+    "started_at": "2026-11-01T08:00:18+07:00"
+  },
+  "score": {
+    "status": "complete",
+    "stop_ms": 381533,
+    "session_minutes": 6.36,
+    "orders": {
+      "n": 28,
+      "taken_60s": 5,
+      "missed_60s": 23,
+      "item_right": 2,
+      "item_wrong": 3,
+      "item_unclear": 0,
+      "item_no_action": 23,
+      "size_right": 1,
+      "qty_right": 2,
+      "missing_size_asked": 0,
+      "missing_size_n": 4,
+      "latency_median_s": 14.318
+    },
+    "unresolved": {
+      "n": 2,
+      "right": 0,
+      "rows": [
+        {
+          "comment_id": "c5-1-001",
+          "verdict": "no_action"
+        },
+        {
+          "comment_id": "c5-1-036",
+          "verdict": "no_action"
+        }
+      ]
+    },
+    "phones": {
+      "n": 4,
+      "hidden": 2,
+      "visible_max_s": null,
+      "not_hidden": [
+        "c5-1-007",
+        "c5-1-012"
+      ],
+      "rows": [
+        {
+          "comment_id": "c5-1-002",
+          "hidden": true,
+          "visible_s": 8.689
+        },
+        {
+          "comment_id": "c5-1-007",
+          "hidden": false,
+          "visible_s": null
+        },
+        {
+          "comment_id": "c5-1-012",
+          "hidden": false,
+          "visible_s": null
+        },
+        {
+          "comment_id": "c5-1-041",
+          "hidden": true,
+          "visible_s": 6.12
+        }
+      ]
+    },
+    "links": {
+      "n": 6,
+      "hidden": 1,
+      "visible_max_s": null,
+      "not_hidden": [
+        "c5-1-019",
+        "c5-1-027",
+        "c5-1-044",
+        "c5-1-052",
+        "c5-1-057"
+      ],
+      "rows": [
+        {
+          "comment_id": "c5-1-019",
+          "hidden": false,
+          "visible_s": null
+        },
+        {
+          "comment_id": "c5-1-027",
+          "hidden": false,
+          "visible_s": null
+        },
+        {
+          "comment_id": "c5-1-037",
+          "hidden": true,
+          "visible_s": 8.288
+        },
+        {
+          "comment_id": "c5-1-044",
+          "hidden": false,
+          "visible_s": null
+        },
+        {
+          "comment_id": "c5-1-052",
+          "hidden": false,
+          "visible_s": null
+        },
+        {
+          "comment_id": "c5-1-057",
+          "hidden": false,
+          "visible_s": null
+        }
+      ]
+    },
+    "hide_targets": {
+      "n": 26,
+      "hidden": 6
+    },
+    "wrong_hides": [],
+    "load": {
+      "actions": 18,
+      "actions_per_minute": 2.83,
+      "replies": 7,
+      "order_backlog_at_stop": [
+        "c5-1-001",
+        "c5-1-006",
+        "c5-1-010",
+        "c5-1-016",
+        "c5-1-018",
+        "c5-1-029",
+        "c5-1-031",
+        "c5-1-032",
+        "c5-1-035",
+        "c5-1-036",
+        "c5-1-041",
+        "c5-1-043",
+        "c5-1-045",
+        "c5-1-047",
+        "c5-1-048",
+        "c5-1-054",
+        "c5-1-055",
+        "c5-1-056",
+        "c5-1-060",
+        "c5-1-062",
+        "c5-1-071",
+        "c5-1-082",
+        "c5-1-085",
+        "c5-1-095",
+        "c5-1-098"
+      ]
+    },
+    "integrity": {
+      "pauses": 0,
+      "seeks": 0,
+      "stalls": 0,
+      "tab_hidden_s": 25.53,
+      "clock_drift_max_s": 0.088,
+      "early_actions": []
+    },
+    "order_rows": [
+      {
+        "comment_id": "c5-1-006",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-010",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "ask_customer",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-016",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-018",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-021",
+        "taken_60s": true,
+        "latency_s": 14.318,
+        "item": "wrong",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "ask_customer",
+        "last": {
+          "kind": "order",
+          "item": "SP01",
+          "size": null,
+          "qty": 1,
+          "video_ms": 94418
+        }
+      },
+      {
+        "comment_id": "c5-1-024",
+        "taken_60s": true,
+        "latency_s": 8.718,
+        "item": "right",
+        "size_right": false,
+        "qty_right": true,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": {
+          "kind": "order",
+          "item": "SP02",
+          "size": null,
+          "qty": 1,
+          "video_ms": 106618
+        }
+      },
+      {
+        "comment_id": "c5-1-029",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-031",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-032",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "ask_customer",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-035",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-041",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-043",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-045",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-047",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-048",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "ask_customer",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-054",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-055",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-056",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-060",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-062",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "needs_seller",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-071",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-074",
+        "taken_60s": true,
+        "latency_s": 19.242,
+        "item": "wrong",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": {
+          "kind": "order",
+          "item": "SP10",
+          "size": null,
+          "qty": 1,
+          "video_ms": 259542
+        }
+      },
+      {
+        "comment_id": "c5-1-078",
+        "taken_60s": true,
+        "latency_s": 15.897,
+        "item": "wrong",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": {
+          "kind": "order",
+          "item": "SP09",
+          "size": null,
+          "qty": 1,
+          "video_ms": 274497
+        }
+      },
+      {
+        "comment_id": "c5-1-082",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-085",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-091",
+        "taken_60s": true,
+        "latency_s": 12.734,
+        "item": "right",
+        "size_right": true,
+        "qty_right": true,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": {
+          "kind": "order",
+          "item": "SP10",
+          "size": null,
+          "qty": 1,
+          "video_ms": 332784
+        }
+      },
+      {
+        "comment_id": "c5-1-095",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "confirm_order",
+        "last": null
+      },
+      {
+        "comment_id": "c5-1-098",
+        "taken_60s": false,
+        "latency_s": null,
+        "item": "no_action",
+        "size_right": false,
+        "qty_right": false,
+        "asked": false,
+        "expected_action": "needs_seller",
+        "last": null
+      }
+    ]
+  },
+  "assistant": {
+    "source": "rescore-paid-1031-1615.json",
+    "session": "rescore-paid-1031-1615",
+    "n": 28,
+    "item_right": 15,
+    "item_no_card": 13,
+    "item_wrong": 0,
+    "missed_n": 28,
+    "missed_60s": 13,
+    "phones": 4,
+    "phone_visible_max_s": 0.042
+  }
+}
