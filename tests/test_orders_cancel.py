@@ -490,6 +490,41 @@ async def test_an_odd_earlier_message_does_not_stop_a_plain_yes_from_confirming(
     assert (confirmed["order_id"], confirmed["state"], receipt["template"]) == ("o-1", "CONFIRMED", "receipt")
 
 
+@pytest.mark.parametrize("odd", [{"text": 5}, {"quick_reply": 5}])
+async def test_a_no_button_with_an_odd_field_still_opens_the_cancel_question(odd):
+    # the template says no even when the text or quick reply beside it is not a string
+    mi, view = message_scene(odd, [order("o-1", "CONFIRM_SENT")], template="confirm_no")
+    yes = said("mi-2", "có", 5001)
+    view.messages.append(yes)
+    [ask] = await flow.on_reply(mi, view, Recorder(), now=5002)
+    assert ask["template"] == "ask_cancel"
+    view.messages.append(ask)
+    [again] = await flow.on_reply(yes, view, Recorder(), now=5003)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize(
+    "payload", [{"text": "không", "quick_reply": 1}, {"text": "huỷ", "quick_reply": None}]
+)
+async def test_a_plain_cancel_beside_an_odd_or_empty_quick_reply_still_opens_the_cancel_question(payload):
+    # the text is read even when the quick reply beside it is not a string, or is empty
+    mi, view = message_scene(payload, [order("o-1", "CONFIRM_SENT")])
+    yes = said("mi-2", "có", 5001)
+    view.messages.append(yes)
+    [again] = await flow.on_reply(yes, view, Recorder(), now=5002)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+async def test_a_plain_yes_to_the_cancel_question_for_a_confirmed_order_is_asked_again():
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRMED")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    assert quick_replies(ask) == ["CANCEL:o-1", "KEEP:o-1"]
+    yes = said("mi-c", "có", 7000)
+    view.messages += [ask, yes]
+    [again] = await flow.on_reply(yes, view, Recorder(), now=7000)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
 @pytest.mark.parametrize("text", ["có", "ok"])
 @pytest.mark.parametrize("label", ["other", "complaint"])
 async def test_a_plain_yes_after_the_cancel_question_confirms_nothing(played, label, text):
@@ -561,5 +596,31 @@ async def test_a_plain_yes_after_keep_confirms(played):
     runner, store, client = played
     await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label="complaint")
     assert await reply(client, runner, "th-u07", "KEEP:o-07", now_ms()) == []
+    confirmed, msg = await say(client, runner, "th-u07", "ok", now_ms() + 5)
+    assert (confirmed["state"], confirmed["actor"], msg["template"]) == ("CONFIRMED", "customer", "receipt")
+
+
+async def test_a_plain_yes_stored_with_a_no_button_with_odd_text_confirms_nothing(played):
+    runner, store, client = played
+    t = now_ms()
+    no = make_event(
+        "message_in", SID, t, "sim", thread_ref="th-u07", template="confirm_no", payload={"text": 5}
+    )
+    assert (await client.post(f"/api/sessions/{SID}/events", json=[no])).status_code == 200
+    yes = await stored(client, "th-u07", "có", t + 1)
+    for mi in (no, yes):
+        [ask] = await runner.handle(mi)
+        assert ask["template"] == "ask_cancel"
+    assert runner.failures == 0
+    assert (await history(store, "o-07"))[-1]["state"] == "CONFIRM_SENT"
+
+
+async def test_a_plain_yes_after_keep_with_odd_text_confirms(played):
+    # the sim webhook passes any text through; the KEEP:o-07 button beside it still answers the question
+    runner, store, client = played
+    await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label="complaint")
+    body = webhook_body("th-u07", now_ms(), text=5, quick_reply="KEEP:o-07")
+    [keep] = (await client.post(f"/api/sessions/{SID}/sim/messenger", json=body)).json()["events"]
+    assert await runner.handle(keep) == []
     confirmed, msg = await say(client, runner, "th-u07", "ok", now_ms() + 5)
     assert (confirmed["state"], confirmed["actor"], msg["template"]) == ("CONFIRMED", "customer", "receipt")
