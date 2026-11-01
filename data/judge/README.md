@@ -13,7 +13,7 @@ judge1 is the hand-written session `data/sessions/demo1` with product pictures d
 | source of judge1 | `data/sessions/demo1/events.jsonl` | the hand-written session (picture addresses that the console cannot show) | `512af00b4eab7a8e2e5cb790a24ad2b6e5cf3feb5e98bb5c5eb8188024d1cee9` |
 | source of judge1 | `data/sessions/demo1/gold.json` | its answer key | `a8e3f2a6b28bf209723f4ad7f92b7402dfaa1a4d820408dfa9b2a949a005c45d` |
 | modes 2 and 3 | `data/local/judge1/judge1.mp4` | drawn by `make judge-video`: 64 s, 720x1280, no sound; not stored | rebuilt on each machine |
-| modes 2 and 3 | `data/catalog.json` | the four products of judge1 (default `CATALOG_PATH`) | `0687e99b54c7c6053edb1987af8ca3228f4ff0b53e2588ec1075ce3cdf946ad3` |
+| modes 2 and 3 | `data/catalog.json` | 20 items, including the four products of judge1 (default `CATALOG_PATH`) | `0687e99b54c7c6053edb1987af8ca3228f4ff0b53e2588ec1075ce3cdf946ad3` |
 
 ## test1 (the recording of the measured paid run)
 
