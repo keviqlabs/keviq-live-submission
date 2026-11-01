@@ -7,7 +7,8 @@ or repeated version of a card is ignored. Standard library only.
 """
 
 import re
-from dataclasses import dataclass
+import unicodedata
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,16 @@ class Facts:
     price: int | None
     approved: bool
     stock: tuple[tuple[str | None, int], ...] | None
+    variant_stock: tuple[tuple[str | None, str | None, int], ...] | None = None
+
+    def for_color(self, color: str | None) -> "Facts":
+        """Scope counts to one requested colour; unknown colours never use another variant's stock."""
+        if color is None:
+            return self
+        rows = [v for v in self.variant_stock or () if v[0] == normalize_color(color)]
+        stock = size_counts(rows) if rows else None
+        name = f"{self.name} màu {rows[0][0]}" if rows else self.name
+        return replace(self, stock=stock, name=name)
 
     def stock_of(self, size: str | None) -> int | None:
         return dict(self.stock).get(size) if self.stock is not None else None
@@ -30,6 +41,17 @@ class Facts:
     @property
     def sized(self) -> bool:
         return self.stock is not None and any(s is not None for s, _ in self.stock)
+
+
+def normalize_color(color: str | None) -> str | None:
+    return " ".join(unicodedata.normalize("NFC", color).lower().split()) if color else None
+
+
+def size_counts(rows: list | tuple) -> tuple[tuple[str | None, int], ...]:
+    sizes: dict[str | None, int] = {}
+    for _, size, n in rows:
+        sizes[size] = sizes.get(size, 0) + n
+    return tuple(sizes.items())
 
 
 def display_name(name: str) -> str:
@@ -45,14 +67,18 @@ def facts_from_card(card: dict) -> Facts:
         and not isinstance(price, bool)
         and price > 0
     )
-    stock = None
+    stock, variants = None, None
     if card.get("sku") and card.get("variants"):
-        sizes: dict[str | None, int] = {}
-        for v in card["variants"]:
-            size = v.get("size")
-            size = str(size).upper() if size is not None else None
-            sizes[size] = sizes.get(size, 0) + int(v["stock"])
-        stock = tuple(sizes.items())
+        variants = tuple(
+            (
+                normalize_color(v.get("color")),
+                str(v["size"]).upper() if v.get("size") is not None else None,
+                int(v["stock"]),
+            )
+            for v in card["variants"]
+        )
+        if len({color for color, _, _ in variants}) == 1:
+            stock = size_counts(variants)
     return Facts(
         card["card_id"],
         int(card["version"]),
@@ -61,6 +87,7 @@ def facts_from_card(card: dict) -> Facts:
         price if approved else None,
         approved,
         stock,
+        variants,
     )
 
 

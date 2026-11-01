@@ -25,6 +25,7 @@ class Answer:
     version: int | None
     kind: str
     reason: str
+    color: str | None = None
 
 
 def money(vnd: int) -> str:
@@ -47,10 +48,12 @@ def _count(size: str | None, n: int) -> str:
 def compose(q: Question, facts: Facts | None) -> Answer:
     def out(action, text, reason):
         card_id, version = (facts.card_id, facts.version) if facts else (None, None)
-        return Answer(action, text, card_id, version, q.kind, reason)
+        return Answer(action, text, card_id, version, q.kind, reason, q.color)
 
     if facts is None:
         return out("silent", "", "no_card")
+    if q.kind in ("stock", "ask_size"):
+        facts = facts.for_color(q.color)
     name = display_name(facts.name)
     if q.kind == "policy":
         return out("defer", "Câu này để người bán trả lời bạn nhé.", "policy")
@@ -65,7 +68,7 @@ def compose(q: Question, facts: Facts | None) -> Answer:
     if q.kind == "stock":
         if facts.stock is None:
             return out("defer", f"Số lượng {name} " + SELLER_CONFIRMS, "stock_unknown")
-        if q.size is not None and facts.sized:
+        if q.size is not None:
             n = facts.stock_of(q.size)
             if n is None:
                 return out("defer", "Size này " + SELLER_CONFIRMS, "size_not_on_card")
@@ -123,6 +126,8 @@ def check(answer: Answer, now: Facts | None, text: str | None = None) -> str | N
         return "item_changed"
     if answer.version != now.version:
         return "version_changed"
+    if answer.kind in ("stock", "ask_size"):
+        now = now.for_color(answer.color)
     t = " ".join(unicodedata.normalize("NFC", answer.text if text is None else text).lower().split())
     name = display_name(now.name).lower()
     rest = t.replace(name, " " * len(name)) if name else t

@@ -16,6 +16,7 @@ KINDS = ("price", "policy", "stock", "ask_size")
 class Question:
     kind: str
     size: str | None = None
+    color: str | None = None
 
 
 def _norm(text: str) -> str:
@@ -51,6 +52,32 @@ def size_of(text: str) -> str | None:
     return m.group(1) if m else None
 
 
+_COLOR_WORD = re.compile(
+    r"(?<!\w)(?:xanh lá cây|xanh dương|xanh lá|đen|trắng|kem|be|nâu|hồng|đỏ|xám|xanh|bạc|vàng|tím)(?!\w)"
+)
+_COLOR_END = re.compile(r"(?<!\w)(?:size|sz|cỡ|còn|hết|shop|không|ạ|vậy|nhé|nha|giúp|bao|mấy)(?!\w)|[?.!,;:]")
+
+
+def color_of(text: str) -> str | None:
+    """Keep an explicit colour phrase exact; unsupported or mixed phrases will defer against card facts."""
+    t = _norm(text)
+    marker = re.search(r"(?<!\w)(?:màu|colou?r)(?!\w)\s*", t)
+    if marker:
+        return _COLOR_END.split(t[marker.end() :], maxsplit=1)[0].strip() or "?"
+    colors = list(_COLOR_WORD.finditer(t))
+    if not colors:
+        return None
+    phrase = _COLOR_END.split(t[colors[0].start() :], maxsplit=1)[0].strip()
+    return phrase or "?"
+
+
+def stock_size_of(text: str) -> str | None:
+    """A choice between sizes is not a request for the first one."""
+    t = _norm(text)
+    sizes = {s.upper() for s in _SIZE_WORD.findall(t) + _SIZE_BARE.findall(t)}
+    return "?" if len(sizes) > 1 else size_of(text)
+
+
 def _price_kind(t: str) -> str:
     return "policy" if _any(POLICY, t) else "price"
 
@@ -60,7 +87,7 @@ def parse(text: str, label: str | None = None) -> Question | None:
     if _LINK.search(t) or _any(OTHER_ITEM, t):
         return None
     if label == "stock_question":
-        return Question("stock", size_of(text))
+        return Question("stock", stock_size_of(text), color_of(text))
     if label == "price_question":
         return Question(_price_kind(t))
     if label == "order":
@@ -73,7 +100,7 @@ def parse(text: str, label: str | None = None) -> Question | None:
     if _any(PRICE, t):
         return Question(_price_kind(t))
     if _any(STOCK, t):
-        return Question("stock", size_of(text))
+        return Question("stock", stock_size_of(text), color_of(text))
     if _any(POLICY, t):
         return None
     if _any(ORDER, t) and not size_of(text) and not _any(DISCOUNT, t):

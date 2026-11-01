@@ -1,6 +1,6 @@
 """Which question about the item on screen gets an answer, and when.
 
-Comments that ask the same thing about the same card (same kind, same size) within window_ms form one group and get
+Comments that ask the same thing about the same card (same kind, same size and colour) within window_ms form one group and get
 one answer, written when the group is due, from the card state of that moment. Spoken answers keep cooldown_ms
 apart; silent decisions do not count. A group that cannot be answered within max_wait_ms of its first comment is
 dropped as too_late instead of being said late. When the item on screen changes, every pending group is dropped
@@ -77,7 +77,7 @@ class Selector:
         switched = self.board.switched_ms
         if switched is not None and ts_ms - switched < self.guard_ms:
             return [*out, self._silent(ts_ms, [comment_id], q, "just_switched", ts_ms, facts)]
-        key = (facts.card_id, q.kind, q.size)
+        key = (facts.card_id, q.kind, q.size, q.color)
         self._groups.setdefault(key, _Group(q, facts.card_id, ts_ms)).ids.append(comment_id)
         return out
 
