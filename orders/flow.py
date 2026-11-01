@@ -259,9 +259,17 @@ async def ask_cancel(
     comment_id: str | None = None,
 ) -> list[dict]:
     """Ask the customer which of their open orders to cancel. Never picks one and changes no state: only the
-    customer's CANCEL:<order_id> quick reply cancels. No open order or no 24h window -> nothing is sent."""
+    customer's CANCEL:<order_id> quick reply cancels. No open order or no 24h window -> nothing is sent. A comment
+    is asked once, however many labels it gets (the shield's interim label, then the batch label)."""
     mine = view.open_orders(thread)
     if not mine or not rules.can_message(view.last_contact.get(thread), now).allowed:
+        return []
+    if comment_id and any(
+        m["type"] == "message_out"
+        and m.get("template") == "ask_cancel"
+        and (m.get("payload") or {}).get("comment_id") == comment_id
+        for m in view.messages
+    ):
         return []
     if len(mine) == 1:
         oid = mine[0]["order_id"]
@@ -590,16 +598,42 @@ def card_change(view: View, order: dict, at: int) -> tuple[dict | None, str | No
     return latest, None
 
 
+def answers_cancel_question(view: View, trigger: dict) -> bool:
+    """Before the trigger in its thread, the shop's last message is the ask_cancel question or the customer's last
+    plain "huỷ" / "không" came after it (that gets ask_cancel too), and no reply naming an order (a CONFIRM, CANCEL,
+    KEEP or PICK button) came after either. Other plain text in between ("sao vậy shop", or a first "có" whose
+    question asked again is stored after this one) leaves the question open."""
+    open_question = False
+    for m in view.messages:
+        if m["event_id"] == trigger["event_id"]:
+            break
+        if m["thread_ref"] != trigger["thread_ref"]:
+            continue
+        if m["type"] == "message_out":
+            open_question = m.get("template") == "ask_cancel"
+            continue
+        kind, order_id = customer_reply(m.get("template"), m.get("payload") or {})
+        if order_id:
+            open_question = False
+        elif kind == "no":
+            open_question = True
+    return open_question
+
+
 async def on_reply(trigger: dict, view: View, messenger, now: int) -> list[dict]:
     """The customer's yes / no / keep / variant pick in Messenger. Only the customer's own thread can confirm or
     cancel its order, and only a reply naming the order (CANCEL:<order_id>) cancels; a plain "huỷ" gets
-    ask_cancel. Other text may answer an open ask_variant question (on_variant_reply). A yes after the card's
-    price changed, or after its new version dropped the line's variant, goes to the seller (card_change)."""
+    ask_cancel, and so does a plain yes to a cancel question no button has answered (answers_cancel_question).
+    Other text may answer an open ask_variant question (on_variant_reply). A yes after the card's price changed,
+    or after its new version dropped the line's variant, goes to the seller (card_change)."""
     payload = trigger.get("payload") or {}
     kind, order_id = customer_reply(trigger.get("template"), payload)
     thread = trigger["thread_ref"]
     if kind == "keep" or is_fixture(trigger["event_id"]):
         return []
+    if kind == "yes" and not order_id and answers_cancel_question(view, trigger):
+        # "có" to "huỷ đơn ...?" is not an ok to the order; the CONFIRM:<order_id> button still confirms
+        return await ask_cancel(trigger, view, messenger, now, thread)
     if kind == "yes" and not order_id and view.open_order(thread) is None and pending_asks(view, thread):
         kind = None  # "ok" to "which size?" names no size: it is asked again
     if kind in (None, "pick"):
