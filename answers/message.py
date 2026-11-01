@@ -14,7 +14,6 @@ be about the item before), a size question about an order (the order flow asks f
 """
 
 import hashlib
-import re
 
 from app.current import appearances, current_at
 from orders.flow import View, is_fixture, thread_for
@@ -28,13 +27,11 @@ QUESTION_LABELS = ("price_question", "stock_question")
 TEMPLATE = "answer_question"
 GUARD_MS = 3000
 SPOKEN = ("answer", "defer")
-_UNSAFE = re.compile(r"[^A-Za-z0-9._:-]")
 
 
-def answer_id(comment_id: str) -> str:
-    """Event id of the reply, derived from the comment, so a replayed label makes a duplicate the store drops."""
-    out = "ans." + _UNSAFE.sub("-", comment_id)
-    return out if len(out) <= 96 else "ans.h" + hashlib.sha1(comment_id.encode()).hexdigest()
+def answer_id(session_id: str, comment_id: str) -> str:
+    """One schema-valid identity per source comment within a session, including replay retries."""
+    return "ans.h" + hashlib.sha256((session_id + "\0" + comment_id).encode()).hexdigest()
 
 
 def switched_at(cards: list[dict], card_id: str, ts_ms: int) -> int | None:
@@ -111,4 +108,6 @@ async def on_question(label: dict, events: list[dict], messenger, now: int) -> t
     }
     msg = await messenger.send(thread, TEMPLATE, payload)
     causes = [label["event_id"], comment["event_id"], again["event_id"]]
-    return [{**msg, "event_id": answer_id(cid), "ts_ms": now, "caused_by": causes}], answer.action
+    return [
+        {**msg, "event_id": answer_id(label["session_id"], cid), "ts_ms": now, "caused_by": causes}
+    ], answer.action
