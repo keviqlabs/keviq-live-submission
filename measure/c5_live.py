@@ -81,6 +81,32 @@ def write_log(path: Path, lines: list[str]) -> None:
     path.write_text("".join(line + "\n" for line in lines))
 
 
+def loop_waits(lines: list[str], cumulative: dict, previous: dict) -> dict:
+    """Derive loop-local counter suffixes for the existing scorer, retaining the authentic reports.
+
+    Event IDs/reasons and the raw process log are unchanged. Counter deltas omit zero entries; negative
+    deltas remain visible if a producer unexpectedly resets a counter, rather than concealing disagreement.
+    """
+
+    def delta(counts):
+        return {reason: change for reason in sorted(counts.keys() | previous.keys())
+                if (change := counts.get(reason, 0) - previous.get(reason, 0)) != 0}  # fmt: skip
+
+    derived = []
+    for text in lines:
+        prefix, marker, suffix = text.rpartition(" waits ")
+        if not marker:
+            derived.append(text)
+            continue
+        counts = {reason: int(count) for reason, count in (part.split("=") for part in suffix.split())}
+        derived.append(
+            prefix + marker + " ".join(f"{reason}={count}" for reason, count in delta(counts).items())
+        )
+    return {"waits": delta(cumulative), "wait_lines": derived, "wait_lines_raw": list(lines),
+            "waits_cumulative": dict(cumulative), "waits_previous": dict(previous),
+            "wait_lines_scope": "derived per-loop counter suffixes; original cumulative lines in wait_lines_raw"}  # fmt: skip
+
+
 class Child:
     """One `python -m measure.c5_proc <module>` process; stdout and stderr kept, its C5PROC lines parsed."""
 
@@ -496,15 +522,13 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                 ends.append(await watch.barrier(worker, [shop.tasks, customers.tasks]))
                 calm = all(e["status"] == "SETTLED" for e in ends)
                 cumulative_waits = (await worker.snapshot()).get("waits", {}).get(run, {})
-                snapshot = {
-                    reason: count - previous_waits.get(reason, 0)
-                    for reason, count in cumulative_waits.items()
-                }
+                wait_report = loop_waits(worker.wait_lines[wait_start:], cumulative_waits, previous_waits)
+                snapshot = wait_report["waits"]
                 previous_waits = dict(cumulative_waits)
                 loop_rows.append({"k": k, "t0_ms": t0, "end_ms": now_ms(), "settled": calm, "barrier": ends,
                                   "worker_progress": worker.progress,
                                   "worker_progress_scope": "cumulative session",
-                                  "wait_lines": worker.wait_lines[wait_start:], "waits": snapshot,
+                                  **wait_report,
                                   "waits_line": True, "retired": len(retired),
                                   "runner_failures": worker.failures - failures_start, "comments_late_max_ms": late_ms,
                                   "media": {"rc": media_rc, "stopped": media_stopped, "summary": media.summary},

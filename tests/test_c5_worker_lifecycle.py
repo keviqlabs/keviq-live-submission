@@ -47,12 +47,14 @@ async def test_all_requested_streams_use_their_exact_existing_gold(offline):
 
 
 @pytest.mark.parametrize("failure", [None, "second_media", "snapshot"])
+@pytest.mark.parametrize("wait_pattern", ["one_each", "none_later", "mixed"])
 async def test_orchestrator_keeps_real_prefix_once_and_cleans_up(
     world,  # noqa: F811
     offline,
     monkeypatch,
     tmp_path,
     failure,
+    wait_pattern,
 ):
     """Only transport/process/clock plumbing is replaced; producer admission and coverage are real."""
     from app import settings
@@ -63,6 +65,12 @@ async def test_orchestrator_keeps_real_prefix_once_and_cleans_up(
     w = world
     workers, media, outcomes, cards, observations, saved = [], [], [], [], [], []
     finished = []
+    reasons = {
+        "one_each": [["many"], ["many"]],
+        "none_later": [["many"], []],
+        "mixed": [["many", "none", "many"], ["none", "new"]],
+    }[wait_pattern]
+    expected_waits, cumulative, raw_waits = [], {}, []
     watch_ref = []
     monkeypatch.setattr(cardbrain, "SESSIONS", {})
     monkeypatch.setattr(
@@ -189,7 +197,20 @@ async def test_orchestrator_keeps_real_prefix_once_and_cleans_up(
         async def snapshot(self):
             if failure == "snapshot":
                 raise RuntimeError("snapshot failed")
-            self.said["waits"] = {"waits": {w.sid: {"many": len(media)}}}
+            from collections import Counter
+
+            current = reasons[len(media) - 1]
+            expected_waits.append(dict(Counter(current)))
+            raw_loop = []
+            for n, reason in enumerate(current):
+                cumulative[reason] = cumulative.get(reason, 0) + 1
+                suffix = " ".join(f"{key}={value}" for key, value in cumulative.items())
+                line = f"price wait: speech-{len(media)}-{n} reason {reason} candidates 2; session {w.sid} waits {suffix}"
+                self.wait_lines.append(line)
+                self.lines.append(line)
+                raw_loop.append(line)
+            raw_waits.append(raw_loop)
+            self.said["waits"] = {"waits": {w.sid: dict(cumulative)}}
             return self.said["waits"]
 
         async def term(self):
@@ -313,7 +334,17 @@ async def test_orchestrator_keeps_real_prefix_once_and_cleans_up(
             latest = {e["card_id"]: e for e in events if e["type"] == "card"}
             assert len(latest) == 2 and all(e["status"] == "retired" for e in latest.values())
             assert all(e["status"] == "retired" for e in cardbrain.SESSIONS[w.sid].cards.values())
-            assert [row["waits"] for row in finished[0]["loops"]] == [{"many": 1}, {"many": 1}]
+            from measure.c5_score import waits
+
+            reported = finished[0]["loops"]
+            assert [row["waits"] for row in reported] == expected_waits
+            assert waits(reported)["all_agree"], waits(reported)
+            assert [row["wait_lines_raw"] for row in reported] == raw_waits
+            assert all(row["wait_lines_scope"].startswith("derived") for row in reported)
+            assert (
+                workers[0].wait_lines == workers[0].lines == [line for lines in raw_waits for line in lines]
+            )
+            assert reported[-1]["waits_cumulative"] == cumulative
             assert not any(e["type"] == "model_call" for e in events)
             assert workers[0].env["C5_OFFLINE"] == "1" and workers[0].env["C5_OFFLINE_LOOPS"] == "2"
         assert len(workers) == 1 and workers[0].term_calls == 1
@@ -356,3 +387,15 @@ async def test_child_snapshot_requires_a_new_report_and_keeps_the_process(tmp_pa
     finally:
         output.feed_eof()
         await child.reader
+
+
+@pytest.mark.parametrize("previous,cumulative", [({}, {"many": 2}), ({"many": 2}, {"many": 1})])
+def test_wait_report_does_not_hide_inconsistent_or_reset_counters(previous, cumulative):
+    from measure.c5_score import waits
+
+    lines = [f"price wait: event-1 reason many candidates 2; session s waits many={cumulative['many']}"]
+    original = list(lines)
+    report = c5_live.loop_waits(lines, cumulative, previous)
+    assert report["wait_lines_raw"] == lines == original
+    assert report["waits_cumulative"] == cumulative and report["waits_previous"] == previous
+    assert not waits([{"k": 1, **report}])["all_agree"]

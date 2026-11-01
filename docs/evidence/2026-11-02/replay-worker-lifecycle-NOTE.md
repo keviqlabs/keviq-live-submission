@@ -50,3 +50,24 @@ the number of real orders recovered, model quality or latency, receipt images,
 human workload savings, live-platform behavior, or acceptance of the product.
 Earlier failed results remain unchanged. Full-suite output is recorded separately
 at the exact submitted head.
+
+## Per-loop wait report correction
+
+The first implementation subtracted the prior snapshot but retained cumulative
+suffixes in each loop's wait lines. The unchanged scorer therefore detected a
+disagreement in later loops. A loop with no new waits also retained zero-valued
+reasons in its snapshot while its line counts were empty.
+
+The report now keeps `wait_lines_raw`, `waits_cumulative` and `waits_previous`
+unchanged as audit inputs. The existing `wait_lines` field is explicitly marked as
+a derived per-loop representation: only each counter suffix subtracts the previous
+snapshot. Event IDs and reasons remain the same. The snapshot uses the same
+counter delta and omits zero entries. Original process logs and actual worker
+counters are never rewritten or reset. Unexpected negative or inconsistent counts
+remain visible and continue to fail the unchanged scorer's agreement check.
+
+Direct report-and-scorer regressions cover one wait in each loop, no new wait in
+the second loop, and multiple reasons accumulated across loops. The new cases
+failed at the first implementation (three failures, nine passes before the
+correction). These tests retain the real in-memory lifecycle and retirement path.
+This correction does not include a new multi-loop runtime measurement.
