@@ -1,0 +1,79 @@
+# Hosted demo vhost for the host's existing nginx. Runbook: deploy/demo/README.md.
+# Placeholders: DEMO_HOST (the demo hostname) and DEMO_APP_PORT (the loopback port in deploy/demo/.env). Render with
+#   sed -e 's/DEMO_HOST/demo.example.org/g' -e 's/DEMO_APP_PORT/18780/g' nginx-demo.conf.template
+# Install as a NEW file in sites-available plus a symlink in sites-enabled; never edit another vhost. Neither block is
+# a default_server, so requests for other hostnames keep reaching their own vhosts. IPv4 only, like an A record;
+# add `listen [::]:80;` / `listen [::]:443 ssl;` only if the other vhosts on the host listen on IPv6 too.
+# Two stages: before the certificate exists, install everything ABOVE the "BEGIN 443" marker (port 80 only), run
+# certbot, then install the whole file. No `http2` here: nginx 1.24 and 1.25+ spell it differently.
+
+server {
+    listen 80;
+    server_name DEMO_HOST;
+
+    # certbot --webroot answers the HTTP-01 challenge from here
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# ----- BEGIN 443 (enable after certbot has issued the certificate) -----
+server {
+    listen 443 ssl;
+    server_name DEMO_HOST;
+
+    ssl_certificate /etc/letsencrypt/live/DEMO_HOST/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/DEMO_HOST/privkey.pem;
+
+    # One shared login for the judges. The file lives on the host only, never in the repository.
+    auth_basic "Keviq demo";
+    auth_basic_user_file /etc/nginx/keviq-demo.htpasswd;
+
+    # Headers are set here only: a location that sets its own add_header or proxy_set_header drops all of these.
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "no-referrer" always;
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    # The browser repeats the basic-auth login on every request; the app treats any Authorization header as a
+    # credential and refuses seller actions that carry one, so it never reaches the app.
+    proxy_set_header Authorization "";
+
+    # Server-sent events: keep the upstream connection open and pass each event through as it is written.
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 1h;
+    proxy_send_timeout 1h;
+
+    client_max_body_size 1m;
+
+    # Health probe without the login (returns only {"ok", "store", "head_seq"}).
+    location = /healthz {
+        auth_basic off;
+        proxy_pass http://127.0.0.1:DEMO_APP_PORT;
+    }
+
+    # The raw event intake is for the replay run on the host; through the public URL it is read-only (the SSE feed).
+    location ~ ^/api/sessions/[^/]+/events$ {
+        limit_except GET {
+            deny all;
+        }
+        proxy_pass http://127.0.0.1:DEMO_APP_PORT;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:DEMO_APP_PORT;
+    }
+}
+# ----- END 443 -----
