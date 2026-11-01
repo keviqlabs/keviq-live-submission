@@ -26,7 +26,9 @@ from orders.variants import same, variant_of
 LIVE = {"live", "edited"}
 HOLDS_STOCK = {"CONFIRM_SENT", "CONFIRMED", "CLOSED"}
 TERMINAL = set(machine()["terminal"])
-TRIGGER_LABELS = {"order", "other"}  # comment labels the orders stream reads; scam and spam never reach it
+# Comment labels the orders stream reads; scam and spam never reach it. Only order drafts: complaint is read for a
+# cancel request alone, since the model may call a plain cancel comment a complaint.
+TRIGGER_LABELS = {"order", "other", "complaint"}
 MAX_ASK = 12  # Meta allows 13 quick replies; the last one is "Giữ tất cả"
 MAX_VARIANT_ASKS = 3  # ask_variant per order, first question included; after that the customer is left alone
 PAYMENT_METHOD = "cod"  # what the confirmation states; no code path here takes money (AGENTS.md rule 6)
@@ -288,9 +290,9 @@ async def ask_cancel(
 
 async def on_labeled(trigger: dict, view: View, messenger, now: int) -> list[dict]:
     """comment_labeled(order) -> DRAFT priced from the card version current at the comment, then the rules.
-    A cancel request in the comment (label order or other) never drafts: it may only lead to ask_cancel. Negated
-    or unclear cancel words ("chốt 1 đôi, ko huỷ nha") are not a cancel: label order drafts, label other sends
-    nothing."""
+    A cancel request in the comment (label order, other or complaint) never drafts: it may only lead to
+    ask_cancel. Negated or unclear cancel words ("chốt 1 đôi, ko huỷ nha") are not a cancel: label order drafts,
+    label other or complaint sends nothing."""
     comment = (view.comments.get(trigger["comment_id"]) or {}).get("comment")
     if trigger.get("label") not in TRIGGER_LABELS or is_fixture(trigger["event_id"]) or comment is None:
         return []
