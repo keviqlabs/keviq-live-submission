@@ -19,7 +19,8 @@ clock, with synthetic comments, both stated on screen, and the numbers in the en
 run named in the README. An optional short scene shows real comments from testers on the chosen Page entering the
 console read-only (`make live-ingest`); it is labelled as such and carries no numbers. C4 is now checked by hand on
 the replay, because the cards in the video come from the recording. The judges' path (replay and simulators, no Meta
-account) and the stable URL in C9 are unchanged, and the "before" comparison remains the cited baseline of C5. No
+account) and the stable URL in C9 are unchanged. The citation for the C5 staffing baseline remains unresolved; this
+decision does not validate that baseline or establish it as "before" comparison evidence. No
 event, schema or version change; acceptance stays v1. No order rule, price authority, customer-confirmation rule or
 level-2 permission changes. The "RTMP input" named in C11 is not built either; that sentence is left for a separate
 contracts change. Product-owner review/merge is required.
