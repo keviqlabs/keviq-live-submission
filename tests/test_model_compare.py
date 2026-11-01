@@ -180,6 +180,15 @@ def test_score_counts_behaviour_and_pairs_arms_on_shared_frames():
     assert out["paired"]["B"]["frames"] == 1 and out["paired"]["B"]["arms"]["x/B"]["n"] == 1
     assert out["best"] == "x/B"  # y/B did not read every frame, so it cannot be best
     assert x["usd"]["per_350_frames"] == pytest.approx(0.35)
+    frames[0]["comments"] = ["c-9"]
+    c = {
+        "comment_id": "c-9",
+        "ts_ms": 1000,
+        "order": {"product": "SP01", "size": "40", "qty": 1, "reference_kind": "current_card"},
+    }
+    link = sc.comment_links(out["rows"], "x/B", frames, [c], CAT, [])[0]
+    assert link["valid_sku_card"] and link["valid_sku_card_gated"] and link["still_blocks"] == []
+    assert link["read"]["sku"] == "SP01" and link["item_frames_correct"] == "1/1"
 
 
 # --- cap, ledger, Wonder ---------------------------------------------------------------------------------------
@@ -273,6 +282,20 @@ async def test_a_resumed_run_skips_done_calls_and_counts_their_spend(tmp_path):
     summary = await again.run(m.plan_for("spark", [FRAME])[:1], log=lambda s: None)
     assert summary["already_done"] == 1 and summary["called"] == 0 and t.requests == []
     assert again.budget.spent == pytest.approx(r.budget.spent) and again.seen["spark-minimal"]["in"] == 1000
+
+
+def test_spend_is_split_by_configuration_from_the_ledger():
+    ledger = [
+        {"event_id": "a", "cost_usd": 0.5},
+        {"event_id": "b", "cost_usd": 0.25},
+        {"event_id": "c", "cost_usd": 1},
+    ]
+    rows = [{"config": "spark-minimal", "event_ids": ["a"]}, {"config": "spark-high", "event_ids": ["b"]}]
+    assert m.ledger_by_config(ledger, rows) == {
+        "spark-high": {"model_calls": 1, "usd": 0.25},
+        "spark-minimal": {"model_calls": 1, "usd": 0.5},
+        "unattributed": {"model_calls": 1, "usd": 1.0},
+    }
 
 
 def test_http_error_reply_is_not_a_no_reply():
