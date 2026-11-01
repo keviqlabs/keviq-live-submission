@@ -1,20 +1,39 @@
-# Build context is the repository root. Never ship credentials, history or local media in the demo image.
-.git
-.github
-.githooks
-.venv
-.scratch
+# Build context is the repository root, which on a developer machine can also hold nested worktrees, local media,
+# review notes and .env files. Allowlist: exclude everything, then re-include only what the image runs. BuildKit reads
+# this file; the legacy builder does not, so deploy/demo/demo.sh refuses to build without BuildKit.
+*
+
+# The lock files for the Dockerfile's first COPY, then the code and data the app, the worker, the migrations and
+# the replay import or read at run time.
+!pyproject.toml
+!uv.lock
+!.python-version
+!app
+!connectors
+!contracts
+!data/catalog.json
+!data/comments
+!data/sessions
+!deploy/demo
+!measure
+!meta
+!migrations
+!orders
+!worker
+
+# Excluded again even inside the allowed folders. Keep these after the allowlist: the last matching line wins.
 **/.env
 **/.env.*
+**/*.htpasswd
 **/*.pem
 **/*.key
 **/__pycache__
-.pytest_cache
-.ruff_cache
-data/local
-docs/evidence
+**/*.py[cod]
+**/.DS_Store
 **/*.mp4
 **/*.mov
 **/*.wav
 **/*.m4a
-**/.DS_Store
+**/*.jpg
+**/*.jpeg
+**/*.png

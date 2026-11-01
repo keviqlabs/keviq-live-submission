@@ -1,15 +1,23 @@
 # Hosted demo vhost for the host's existing nginx. Runbook: deploy/demo/README.md.
 # Placeholders: DEMO_HOST (the demo hostname) and DEMO_APP_PORT (the loopback port in deploy/demo/.env). Render with
 #   sed -e 's/DEMO_HOST/demo.example.org/g' -e 's/DEMO_APP_PORT/18780/g' nginx-demo.conf.template
-# Install as a NEW file in sites-available plus a symlink in sites-enabled; never edit another vhost. Neither block is
-# a default_server, so requests for other hostnames keep reaching their own vhosts. IPv4 only, like an A record;
-# add `listen [::]:80;` / `listen [::]:443 ssl;` only if the other vhosts on the host listen on IPv6 too.
+# nginx includes this file inside the host's http {} block. Install it as a NEW file named zz-keviq-demo.conf in the
+# folder that holds the host's other vhosts; never edit another vhost or nginx.conf. Neither server block says
+# default_server, but on a port where no server says it, nginx makes the first server it loads the default for
+# unknown names; the zz- name loads this file after the other files in that folder. The default-server probes in
+# README steps 1 and 5 show whether that held. IPv4 only, like an A record; add `listen [::]:80;` and
+# `listen [::]:443 ssl;` only if the other vhosts on the host listen on IPv6 too.
 # Two stages: before the certificate exists, install everything ABOVE the "BEGIN 443" marker (port 80 only), run
 # certbot, then install the whole file. No `http2` here: nginx 1.24 and 1.25+ spell it differently.
+
+# Request rate per client address for the demo: 10 per second, bursts up to 40 above that, then 429. The zone name
+# must not exist on the host yet (README step 1).
+limit_req_zone $binary_remote_addr zone=keviq_demo:1m rate=10r/s;
 
 server {
     listen 80;
     server_name DEMO_HOST;
+    server_tokens off;
 
     # certbot --webroot answers the HTTP-01 challenge from here
     location ^~ /.well-known/acme-challenge/ {
@@ -29,6 +37,14 @@ server {
 
     ssl_certificate /etc/letsencrypt/live/DEMO_HOST/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/DEMO_HOST/privkey.pem;
+    # On a port 443 that other vhosts share, the default server's ssl_protocols applies, not this line (measured on
+    # nginx 1.24 and 1.27); it applies only if this server is the default. README step 1 records the host's setting.
+    ssl_protocols TLSv1.2 TLSv1.3;
+    server_tokens off;
+
+    # Applies before the login check (nginx runs the rate limit in an earlier phase), so password guessing is slowed.
+    limit_req zone=keviq_demo burst=40 nodelay;
+    limit_req_status 429;
 
     # One shared login for the judges. The file lives on the host only, never in the repository.
     auth_basic "Keviq demo";

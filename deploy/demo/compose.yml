@@ -1,7 +1,9 @@
 # Hosted demo: PostgreSQL + app + worker on replayed synthetic sessions. Runbook: deploy/demo/README.md.
 # The app is published on 127.0.0.1 only; the host's nginx (nginx-demo.conf.template) puts TLS and basic auth
 # in front of it. Nothing here binds port 80 or 443, and PostgreSQL is not published at all.
-#   docker compose -p keviq-demo -f deploy/demo/compose.yml --env-file deploy/demo/.env up -d --build --wait
+# Build and start it with deploy/demo/demo.sh, not with a bare `docker compose up --build`: demo.sh refuses to build
+# without BuildKit, and only BuildKit reads Dockerfile.dockerignore (the legacy builder would copy .env files and
+# local media into the image).
 name: keviq-demo
 
 x-logging: &logging
@@ -17,6 +19,9 @@ x-python: &python
   image: keviq-demo:local
   restart: unless-stopped
   logging: *logging
+  # The code runs as an unprivileged user and needs no Linux capability.
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
   depends_on:
     postgres:
       condition: service_healthy
@@ -48,6 +53,9 @@ services:
       # Passed through so the start guard sees them: any non-empty value stops the container.
       MODEL_API_KEY: ${MODEL_API_KEY:-}
       FACEBOOK_PAGE_TOKEN: ${FACEBOOK_PAGE_TOKEN:-}
+      # The app only reports these (the cost panel); the worker below enforces them.
+      MODEL_DAILY_CAP_USD: "0"
+      MODEL_TOTAL_CAP_USD: "0"
     command: ["sh", "-c", "python -m app.migrate && exec uvicorn app.main:app --host 0.0.0.0 --port 8080"]
     networks: [internal, published]
     mem_limit: 512m

@@ -1,5 +1,6 @@
 # Hosted demo image: the app, the worker and the replay connector, with locked dependencies. Built by compose.yml
-# from the repository root; Dockerfile.dockerignore keeps .env files, .git and local media out of the image.
+# from the repository root through deploy/demo/demo.sh, which requires BuildKit. Dockerfile.dockerignore is an
+# allowlist (only the code and synthetic data the stack runs); the legacy builder would ignore it.
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

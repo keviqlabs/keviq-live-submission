@@ -11,7 +11,8 @@
 #   deploy/demo/demo.sh uninstall       stop the stack, delete its data volume and its image
 #
 # A shell variable overrides the same name in .env (as for docker compose). The script never sources .env, so a
-# credential set in the shell still reaches the start guard and stops the stack.
+# credential set in the shell still reaches the start guard and stops the stack. Builds need BuildKit (docker buildx):
+# the legacy builder ignores Dockerfile.dockerignore and would copy .env files and local media into the image.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -23,10 +24,15 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 2
 fi
 
-# DEMO_COMPOSE_OVERRIDE: an extra compose file, e.g. explicit subnets when Docker's default address pools are used up
+# DEMO_COMPOSE_OVERRIDE (shell or .env): an extra compose file, e.g. explicit subnets when Docker's default address
+# pools are used up. Use an absolute path: systemd and cron run this script from another directory.
 compose() {
-  docker compose -p "$PROJECT" -f "$HERE/compose.yml" ${DEMO_COMPOSE_OVERRIDE:+-f "$DEMO_COMPOSE_OVERRIDE"} \
-    --env-file "$ENV_FILE" "$@"
+  local files=(-f "$HERE/compose.yml") override
+  override="$(setting DEMO_COMPOSE_OVERRIDE '')"
+  if [ -n "$override" ]; then
+    files+=(-f "$override")
+  fi
+  docker compose -p "$PROJECT" "${files[@]}" --env-file "$ENV_FILE" "$@"
 }
 
 # setting NAME DEFAULT: the shell value, else the last NAME= line in .env, else DEFAULT
@@ -39,11 +45,33 @@ setting() {
   printf '%s' "${value#\"}" | grep . || printf '%s' "$2"
 }
 
+# Refuse to build with the legacy builder: it ignores Dockerfile.dockerignore (an allowlist read by BuildKit only).
+require_buildkit() {
+  local buildkit
+  buildkit="$(setting DOCKER_BUILDKIT 1)"
+  case "$buildkit" in
+    1 | true | TRUE | True) ;;
+    *)
+      echo "demo: DOCKER_BUILDKIT=$buildkit selects the legacy builder, which ignores Dockerfile.dockerignore;" \
+        "unset it" >&2
+      exit 1
+      ;;
+  esac
+  if ! docker buildx version >/dev/null 2>&1; then
+    echo "demo: docker buildx is missing; without it compose builds with the legacy builder, which ignores" \
+      "Dockerfile.dockerignore. Install the buildx plugin." >&2
+    exit 1
+  fi
+  export DOCKER_BUILDKIT=1
+}
+
 up() {
+  require_buildkit
   compose build
   # The same entrypoint and environment as the services, minus the database: refuses when a credential is set.
   if ! compose run --rm --no-deps -T app true; then
-    echo "demo: the start check failed (the guard refused, or see the error above); nothing was started" >&2
+    echo "demo: the start check failed (the guard refused, or see the error above); no container was started" \
+      "(compose may have created the project's networks and volume; demo.sh uninstall removes them)" >&2
     exit 1
   fi
   compose up -d --wait --wait-timeout 180
@@ -91,7 +119,7 @@ case "$cmd" in
   down) compose down ;;
   uninstall) compose down -v --rmi local --remove-orphans ;;
   *)
-    sed -n '2,13p' "$0" >&2
+    sed -n '2,15p' "$0" >&2
     exit 2
     ;;
 esac
