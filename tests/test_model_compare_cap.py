@@ -124,3 +124,100 @@ async def test_queued_calls_do_not_run_once_the_run_has_stopped(tmp_path):
     summary = await r.run(plan, concurrency=1, log=lambda s: None)
     assert summary["called"] == m.STOP_AFTER_ERRORS == len(t.requests)
     assert summary["stopped"].startswith(f"{m.STOP_AFTER_ERRORS} failed calls in a row")
+
+
+@pytest.mark.parametrize("failure", ["write", "validation"])
+@pytest.mark.parametrize("reply", ["billed", "unknown"])
+async def test_ledger_failure_stops_calls_and_keeps_attempted_cost(tmp_path, monkeypatch, failure, reply):
+    previous = 5.0 - 2 * W_MIN
+    (tmp_path / m.LEDGER).write_text(
+        json.dumps({"event_id": "past", "model": m.SPARK, "cost_usd": previous, "error": None}) + "\n"
+    )
+
+    class NoReply(FakeTransport):
+        async def post(self, path, body):
+            self.requests.append((path, body))
+            raise ConnectionError("synthetic no reply")
+
+    t = (
+        FakeTransport([responses_reply(json.dumps(b()), 1000, 1000)] * 7)
+        if reply == "billed"
+        else NoReply([])
+    )
+    r = m.Runner(t, tmp_path, lambda f: b"x", 5.0)
+    if failure == "write":
+        r.client.emit.path = tmp_path  # IsADirectoryError on the ledger destination only.
+    else:
+
+        def reject_event(*args, **kwargs):
+            raise ValueError("synthetic validation failure")
+
+        monkeypatch.setattr(m, "make_event", reject_event)
+    plan = [({"t": i, "frame": f"f_{i:05d}.jpg"}, "spark-minimal", "B") for i in range(1, 8)]
+    summary = await r.run(plan, concurrency=1, log=lambda s: None)
+    assert len(t.requests) == 1, "an accounting failure must prevent the next POST"
+    assert summary["stopped"].startswith("accounting_failure")
+    assert m.read_jsonl(tmp_path / m.ROWS)[0]["error"] == "accounting_failure"
+    assert r.budget.spent == pytest.approx(previous + (0.0055 if reply == "billed" else 0))
+    assert r.budget.unknown == pytest.approx(W_MIN if reply == "unknown" else 0)
+    assert r.budget.held == pytest.approx(0)
+    assert await r.one({"t": 9}, "spark-minimal", "B") is None
+    assert len(t.requests) == 1
+    with pytest.raises(m.AccountingError, match="reconcile"):
+        m.Runner(FakeTransport([]), tmp_path, lambda f: b"x", 5.0)
+
+
+async def test_ledger_failure_prevents_an_inflight_calls_retry(tmp_path):
+    transport = Gated("not json")
+    r = m.Runner(transport, tmp_path, lambda f: b"x", 5.0)
+    r.client.emit.path = tmp_path
+    task = asyncio.create_task(
+        r.run([({"t": i}, "spark-minimal", "B") for i in range(4)], concurrency=2, log=lambda s: None)
+    )
+    try:
+        await settle()
+        assert len(transport.requests) == 2
+        transport.gates[0].set()
+        await settle()
+        assert len(transport.requests) == 2, "a failed ledger must stop queued calls immediately"
+        transport.gates[1].set()
+        summary = await task
+        assert len(transport.requests) == 2
+        assert summary["stopped"].startswith("accounting_failure")
+        cost = (1000 * 1.25 + 50 * 4.25) / 1e6
+        assert r.budget.spent == pytest.approx(2 * cost)
+        assert r.budget.held == pytest.approx(0)
+    finally:
+        # A failing old implementation may schedule remaining calls; release all fake gates before exit.
+        for _ in range(4):
+            for gate in transport.gates:
+                gate.set()
+            await settle()
+        await task
+
+
+async def test_checkpoint_failure_prevents_even_the_first_post(tmp_path, monkeypatch):
+    r, transport = runner(tmp_path, [responses_reply(json.dumps(b()))])
+    from pathlib import Path
+
+    original = Path.open
+
+    def no_checkpoint(path, mode="r", *args, **kwargs):
+        if path.name == "model-compare-accounting-pending.json":
+            raise OSError("synthetic checkpoint failure")
+        return original(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", no_checkpoint)
+    summary = await r.run([(FRAME, "spark-minimal", "B")], log=lambda s: None)
+    assert transport.requests == []
+    assert summary["stopped"].startswith("accounting_failure")
+    assert r.budget.spent == r.budget.unknown == r.budget.held == 0
+
+
+def test_command_reports_accounting_failure_with_nonzero_exit(tmp_path, monkeypatch):
+    async def failed(*args):
+        return {"stopped": "accounting_failure: synthetic"}
+
+    monkeypatch.setattr(m, "OUT", tmp_path)
+    monkeypatch.setattr(m, "run_phase", failed)
+    assert m.main(["run", "--phase", "spark", "--gold", str(tmp_path)]) == 1
