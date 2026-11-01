@@ -1,6 +1,7 @@
 """measure.model_compare: what each schema's answer picks, the scores, the frozen frame list, and the cap.
 No network: the Model API is a FakeTransport."""
 
+import asyncio
 import json
 
 import pytest
@@ -298,6 +299,49 @@ def test_spend_is_split_by_configuration_from_the_ledger():
     }
 
 
-def test_http_error_reply_is_not_a_no_reply():
+async def test_http_error_reply_is_not_a_no_reply(tmp_path):
     assert not m.no_reply({"error": "http_429"}) and m.no_reply({"error": "transport_ReadTimeout"})
-    assert Reply(200, {}).status == 200
+    r, t = runner(tmp_path, [Reply(400, {"error": "bad request"})])  # 400 is not retried
+    out = await r.one(FRAME, "spark-minimal", "B")
+    assert out["error"].startswith("muse-spark-1.3 /responses -> HTTP 400") and out["posts"] == 1
+    assert out["unknown_cost_posts"] == 0 and r.budget.unknown == 0 and r.budget.held == 0
+    assert len(t.requests) == 1
+
+
+class Held:
+    """Keeps every POST in flight until `free` is set."""
+
+    def __init__(self, text: str):
+        self.text, self.requests, self.free = text, [], asyncio.Event()
+
+    async def post(self, path, body):
+        self.requests.append((path, body))
+        await self.free.wait()
+        return responses_reply(self.text, 1000, 50)
+
+
+async def test_calls_in_flight_count_against_the_cap(tmp_path):
+    w = m.Runner(Held(""), tmp_path, lambda f: b"x", 5.0).w_post("spark-minimal")
+    transport = Held(json.dumps(b()))
+    r = m.Runner(transport, tmp_path, lambda f: b"x", 5 * w)  # two calls hold 2 x 2w; a third does not fit
+    plan = [({"t": t, "frame": f"f_{t:05d}.jpg"}, "spark-minimal", "B") for t in (1, 2, 3)]
+    task = asyncio.create_task(r.run(plan, concurrency=3, log=lambda s: None))
+    try:
+        for _ in range(100):
+            await asyncio.sleep(0)
+        assert len(transport.requests) == 2 and r.budget.held == pytest.approx(4 * w)
+        assert r.stopped and r.stopped.startswith("cap:")  # the third call was refused, not sent
+    finally:
+        transport.free.set()
+        summary = await task
+    assert summary["called"] == 2 and len(transport.requests) == 2
+    assert r.budget.held == pytest.approx(0, abs=1e-12)
+
+
+async def test_a_phase_cap_above_the_total_cap_is_held_to_it(tmp_path):
+    spent = {"event_id": "e", "model": m.SPARK, "cost_usd": 4.999, "error": None}
+    (tmp_path / m.LEDGER).write_text(json.dumps(spent) + "\n")
+    r, t = runner(tmp_path, [responses_reply(json.dumps(b()))], cap=10.0)
+    assert m.TOTAL_CAP == 5.00 and r.budget.cap == 5.00
+    assert await r.one(FRAME, "spark-minimal", "B") is None  # 4.999 + the call's worst case > 5.00
+    assert t.requests == [] and r.stopped.startswith("cap:")
