@@ -112,6 +112,18 @@ async def test_question_right_after_the_item_changed_stays_silent():
     assert len(partials) == 1
 
 
+async def test_item_changed_before_the_reply_stays_silent():
+    first, second = card(), card("card-2", frame=T0 + 10_500, name="SP02 áo trắng")
+    assert await ask("size 39 còn không", [first, second], ts=T0 + 10_000, now=T0 + 11_000) == (
+        [],
+        "item_changed",
+    )
+    # a new card shown only after the reply was built does not stop it
+    later = card("card-2", frame=T0 + 12_000, name="SP02 áo trắng")
+    partials, _ = await ask("size 39 còn không", [first, later], ts=T0 + 10_000, now=T0 + 11_000)
+    assert partials[0]["payload"]["card_id"] == "card-1"
+
+
 @pytest.mark.parametrize(
     ("cards", "text", "label", "reason"),
     [
