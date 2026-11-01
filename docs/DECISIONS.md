@@ -2,6 +2,33 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-01 — optional catalog kind evidence
+
+**D-035 Prepared candidate: use explicit catalog kinds only to refine a new `other` card.**
+This is a narrow extension of the product-identity work, authorized for local implementation through
+project coordination. It does not claim release approval; independent review, final integrated checks
+and the Founder's Ready/merge decision remain pending. D-026 remains as the historical decision; this
+entry supersedes only its restriction on optional vision kind vocabulary and string attributes below.
+
+When the active seller-approved catalog contains explicit `kind` values for `other` items, the existing
+image call receives their kinds and colors, without SKU, price, stock or expected answers. The coarse
+category and minimal reasoning effort stay unchanged. `product_seen.attributes.kind` and
+`attributes.identity_state` carry optional string/null evidence already allowed by v1. No schema,
+API, event type, acceptance metric, threshold, order permission or confirmation rule changes.
+
+Code assigns SKU only while creating a new card and only when a clear observation above the existing
+confidence threshold matches exactly one catalog item by kind and observed color. Missing/unknown kind,
+missing/mismatched color, unclear/low-confidence evidence and multiple matches stay unresolved. There
+is no first-item, price, previous-SKU or previous-price fallback. A later clear observation creates a
+fresh unpriced card rather than changing an unresolved card's SKU. Repeats and item switches include
+kind/state in continuity checks; unresolved cards still occupy the normal current/previous position.
+
+Speech prompt, transcriber keywords, coarse categories, catalog data and all non-`other` behavior stay
+as before. With no explicit `other` kinds, the vision prompt/schema stay unchanged. No model price or
+SKU is accepted. The new combined prompt has not been measured: the saved-output replay in
+`docs/evidence/2026-11-01/catalog-kind-component-NOTE.md` is component evidence only, not a C5 run,
+latency result or proof of extra orders. No paid authority is granted here.
+
 ## 2026-10-28 — attachment reference eligibility
 
 **D-030 Clarify that frame coverage and reference resolution are separate prerequisites for ready.**
