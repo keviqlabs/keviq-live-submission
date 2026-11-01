@@ -4,7 +4,7 @@ Newest on top. Contract changes must have an entry here.
 
 ## 2026-11-01 — C5 receipt wording and manual comparison
 
-**D-033 C5 refers to the card version quoted to and confirmed by the customer; the separate manual comparison is not a staffing estimate.**
+**D-034 C5 refers to the card version quoted to and confirmed by the customer; the separate manual comparison is not a staffing estimate.**
 The project owner approved both wording replacements on 1 November 2026. Independent review by the contracts
 owner is still required before merge; this entry does not record that review as complete.
 
