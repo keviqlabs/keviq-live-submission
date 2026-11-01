@@ -4,7 +4,7 @@ return is stored output of session test1, replayed, never a model result.
 
 - model client: Runner.client_for returns NoModel, whose every call raises RuntimeError as a missing key does, so
   the worker takes its no-key paths (the rule price reader, no product_seen from vision) and no MetaClient exists;
-- labels: the labels brain's client is c5_dry.GoldClient over loop k's gold rows; the brain, its prompt context and
+- labels: the labels brain's client is c5_dry.GoldClient over the requested existing streams; the brain, its prompt context and
   its order drafts run for real, the labels are the gold ones;
 - cut-out: sam.cut_out returns a stored SAM cut-out of session test1 (data/local/test1/probe/sam.json, mask
   decoded, file on this machine) only when it is the output of the same call: the same source frame (the frame's
@@ -140,14 +140,16 @@ class Cutouts:
                      "png_sha256": hashlib.sha256(png.read_bytes()).hexdigest()}  # fmt: skip
 
 
-def install(k: int, say) -> dict:
-    """Patches the worker modules for loop k; returns what it installed (counts and sources, no text)."""
+def install(k: int, say, *, loops: int = 1) -> dict:
+    """Install the existing gold streams for a session worker; single-stream callers keep their default."""
     from measure.c5_dry import GoldClient
     from worker import runner
     from worker.brain import labels
     from worker.vision import frames, sam
 
-    rows = c5.streams(k)[0]
+    if k < 1 or loops < 1:
+        raise ValueError("offline stream range must be positive")
+    rows = [row for n in range(k, k + loops) for row in c5.streams(n)[0]]
     no_model = NoModel()
     runner.Runner.client_for = lambda self, event: no_model
     install_frame_replay(runner.Runner, say)
@@ -174,7 +176,7 @@ def install(k: int, say) -> dict:
 
     frames.load = noting_load
     sam.cut_out = stored_cut_out
-    return {"loop": k, "gold_rows": len(rows), "cutout_frames": sorted(cuts.stored),
+    return {"loop": k, "loops": loops, "gold_rows": len(rows), "cutout_frames": sorted(cuts.stored),
             "model_client": "none: every call raises RuntimeError, as with no key",
             "frame_evidence": "admitted stored products reposted idempotently; failed reads remain failed",
             "labels": "gold labels through the labels brain (GoldClient), stored gold of test1, replayed",
