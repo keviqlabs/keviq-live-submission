@@ -602,8 +602,9 @@ def answers_cancel_question(view: View, trigger: dict) -> bool:
     """Before the trigger in its thread, the shop's last message is the ask_cancel question or the customer's last
     plain "huỷ" / "không" came after it (that gets ask_cancel too while an order is open), and no reply naming an
     order (a CONFIRM, CANCEL, KEEP or PICK button) came after either. Other plain text in between ("sao vậy shop",
-    or a first "có" whose question asked again is stored after this one) leaves the question open; a message whose
-    text or quick reply is not a string (the event schema allows it) answers nothing."""
+    or a first "có" whose question asked again is stored after this one) leaves the question open. A text or quick
+    reply that is not a string (the event schema allows it) is read as empty; the message's template, its other
+    field and its order_id still count."""
     open_question = False
     for m in view.messages:
         if m["event_id"] == trigger["event_id"]:
@@ -614,9 +615,8 @@ def answers_cancel_question(view: View, trigger: dict) -> bool:
             open_question = m.get("template") == "ask_cancel"
             continue
         payload = m.get("payload") or {}
-        if not all(isinstance(payload.get(k) or "", str) for k in ("text", "quick_reply")):
-            continue
-        kind, order_id = customer_reply(m.get("template"), payload)
+        odd = {k: "" for k in ("text", "quick_reply") if not isinstance(payload.get(k), str)}
+        kind, order_id = customer_reply(m.get("template"), {**payload, **odd})
         if order_id:
             open_question = False
         elif kind == "no":
