@@ -1,7 +1,7 @@
 """A cancel comment carrying a phone number gets two labels from the real labeler: the shield's interim `other` at
 once, then the batch label. The customer is still asked once per comment, in a session without and with an
 attachment binding, and a plain yes to the question is asked again instead of confirming the order, also when two
-arrive before the session is reconciled.
+arrive before the session is reconciled or when a plain text carrying the order's id came first.
 
 The fake model answers from the comment text (no model call)."""
 
@@ -133,7 +133,7 @@ async def test_bound_two_labels_of_one_cancel_comment_ask_once(world, monkeypatc
     assert [quick_replies(a) for a in asks(events)] == [[f"CANCEL:{oid}", f"KEEP:{oid}"]]
 
 
-def said(w, text: str) -> dict:
+def said(w, text: str, **fields) -> dict:
     w.now += 50
     return make_event(
         "message_in",
@@ -142,7 +142,7 @@ def said(w, text: str) -> dict:
         "sim",
         thread_ref="th-synthetic-buyer",
         template=None,
-        payload={"text": text},
+        payload={"text": text, **fields},
     )
 
 
@@ -173,4 +173,20 @@ async def test_bound_two_plain_yeses_in_one_pass_confirm_nothing(world, monkeypa
     assert [e["state"] for e in events if e["type"] == "order"] == ["DRAFT", "CONFIRM_SENT"]
     first, *again = asks(events)
     assert [yes["event_id"] in a["caused_by"] for a, yes in zip(again, yeses, strict=True)] == [True, True]
+    assert "receipt" not in [e["template"] for e in events if e["type"] == "message_out"]
+
+
+async def test_bound_plain_text_naming_the_order_then_a_plain_yes_is_asked_again(world, monkeypatch):  # noqa: F811
+    w = world
+    await bound_order_then_cancel(w, monkeypatch, "complaint")
+    oid = next(e["order_id"] for e in await w.events() if e["type"] == "order")
+    named, yes = said(w, "sao vậy", order_id=oid), said(w, "có")
+    for message in (named, yes):
+        await w.ingest(message)
+        await w.service.expire_due(w.sid)
+        await w.service.expire_due(w.sid)
+    events = await w.events()
+    assert [e["state"] for e in events if e["type"] == "order"] == ["DRAFT", "CONFIRM_SENT"]
+    first, again = asks(events)
+    assert quick_replies(again) == quick_replies(first) and yes["event_id"] in again["caused_by"]
     assert "receipt" not in [e["template"] for e in events if e["type"] == "message_out"]
