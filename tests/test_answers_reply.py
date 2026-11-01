@@ -36,7 +36,9 @@ def test_facts():
     assert NO_SKU.approved and NO_SKU.stock is None
     two_colours = facts_from_card(card(variants=[{"size": "40", "color": "đen", "stock": 2},
                                                  {"size": "40", "color": "trắng", "stock": 1}]))  # fmt: skip
-    assert two_colours.stock == (("40", 3),)
+    assert two_colours.stock is None
+    assert two_colours.for_color("đen").stock == (("40", 2),)
+    assert two_colours.for_color("trắng").stock == (("40", 1),)
     assert not facts_from_card(card(price=0)).approved
     assert not facts_from_card(card(status="retired")).approved
 

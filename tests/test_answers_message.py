@@ -48,7 +48,11 @@ async def test_stock_question_gets_one_private_reply_with_its_comment_id():
     assert out["payload"]["text"] == "Giày đen size 39 còn 3 ạ."
     assert (out["payload"]["card_id"], out["payload"]["card_version"]) == ("card-1", 2)
     assert out["thread_ref"] == "th-u-1" and out["ts_ms"] == T0 + 11_000
-    assert out["event_id"] == answer_id("cm-1") and out["caused_by"] == ["lb.cm-1", "ev.cm-1", "card-1.v2"]
+    assert out["event_id"] == answer_id(SID, "cm-1") and out["caused_by"] == [
+        "lb.cm-1",
+        "ev.cm-1",
+        "card-1.v2",
+    ]
 
 
 async def test_reply_is_a_valid_contract_event():
@@ -56,7 +60,7 @@ async def test_reply_is_a_valid_contract_event():
     fields = {k: v for k, v in out.items() if k not in ("type", "ts_ms")}
     event = make_event("message_out", SID, out["ts_ms"], "replay", **fields)
     assert event["payload"]["comment_id"] == "cm-1"
-    long_id = answer_id("x" * 200)
+    long_id = answer_id(SID, "x" * 200)
     assert len(long_id) <= 96 and long_id.startswith("ans.h")
 
 
