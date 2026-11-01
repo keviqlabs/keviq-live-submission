@@ -37,6 +37,8 @@ def test_image_guard_passive_reports_without_stopping(monkeypatch, capsys, passi
 
     class Client:
         def get(self, *args, **kwargs):
+            if passive:
+                pytest.fail("passive failure must return before any diagnostic request")
             return self
 
         def json(self):
