@@ -4,8 +4,9 @@ on_question() turns one price_question or stock_question label into at most one 
 question's comment_id; the first reply to a commenter goes by comment_id (a private reply). The item is the card
 on screen when the comment was written (app/current.py) and its facts come from that card's latest version, read
 only. The sentence comes from answers/reply.py: an approved price, an approved stock count, or "the seller will
-confirm" when a fact is missing; nothing is guessed. Right before the message is built, check() re-reads the
-sentence against the card's latest version found again in the events, and a mismatch drops it.
+confirm" when a fact is missing; nothing is guessed. Right before the message is built the item must still be
+on screen (the latest appearance stored) and check() re-reads the sentence against the card's latest version found
+again in the events; any mismatch drops it.
 
 Silent cases: no card on screen or a retired one, a question in the first GUARD_MS after the item changed (it may
 be about the item before), a size question about an order (the order flow asks for a size, not this module), the
@@ -89,6 +90,9 @@ async def on_question(label: dict, events: list[dict], messenger, now: int) -> t
     answer = compose(q, facts_from_card(current))
     if answer.action not in SPOKEN:
         return [], answer.reason
+    screen, _ = current_at(cards, max(now, ts))
+    if screen is None or screen["card_id"] != current["card_id"]:
+        return [], "item_changed"
     again = latest_card(events, current["card_id"])
     if again is None or again.get("status") == "retired":
         return [], "no_card"
