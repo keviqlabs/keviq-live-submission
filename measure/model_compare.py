@@ -175,8 +175,10 @@ CURRENT: ContextVar[Call | None] = ContextVar("model_compare_call", default=None
 
 
 class Budget:
-    """spent (logged costs) + unknown (worst case of POSTs that got no reply) + held (worst case of the POSTs
-    in flight or about to be sent) never goes over the cap."""
+    """A hold is refused when spent (logged costs) + unknown (worst case of POSTs that got no reply) + held
+    (worst case of the POSTs in flight or about to be sent) would go over the cap. The total stays within the
+    cap only while each POST costs no more than its estimated worst case: the client sends no output-token
+    limit, so a POST can cost more, and its logged cost is added to spent whatever it is."""
 
     def __init__(self, cap: float, spent: float = 0.0, unknown: float = 0.0):
         self.cap, self.spent, self.unknown, self.held = cap, spent, unknown, 0.0
