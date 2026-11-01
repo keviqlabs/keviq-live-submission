@@ -20,6 +20,8 @@ Modes 1 and 2 need no `.env`. Without one, the Makefile uses the database and ap
 make infra-up
 ```
 
+On a new machine Docker first pulls the PostgreSQL image and prints the volume and container lines (`Volume … Created`, `Container … Started`). The output ends with:
+
 ```
 docker compose -f deploy/compose.yml up -d --wait postgres
  Container keviq-live-postgres-1 Healthy
@@ -82,7 +84,7 @@ Needs ffmpeg and ffprobe. With `make app` running:
 make worker                   # terminal 2; keep it open
 ```
 
-It logs `worker: consuming /api/events from seq 0 (7 event types handled)`. It reads every stored event from the start, the mode 1 replay included; the replay's recorded stand-ins make it add nothing.
+It logs `worker: consuming /api/events from seq N (7 event types handled)`, where N is the number of events already stored (69 after one mode 1 replay): it handles only events posted after it starts, so it leaves the replay alone.
 
 ```bash
 make judge-video
