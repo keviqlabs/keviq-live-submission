@@ -362,7 +362,7 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
     if bind is not None and bind["session"] != run:
         raise SystemExit(f"C5_BIND_SESSION {bind['session']!r} is not the run {run!r}")
     bearer = c5_bind.header(bind) if bind else None  # generic event posts only: console routes refuse it
-    sha = c5.git_sha()
+    sha, tree = c5.git_sha(), c5.git_state()  # at the start: the tree the run ran on
     want = {"catalog_sha256": c5.sha256(catalog), "labels_catalog_same": True, "session_cap_usd": cap,
             "session_warn_usd": warn, "sha": sha, "spark_effort": "minimal", "model_key_set": paid}  # fmt: skip
     gold = Gold.load(c5.C5, c5.LABELS)
@@ -489,7 +489,7 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
         events = await read_all(http, run)
         cost_api = (await http.get("/api/cost", params={"session": run})).json()
     run_file = {
-        "run": run, "session_id": run, "sha": sha, "loops": loop_rows,
+        "run": run, "session_id": run, "sha": sha, "git": tree, "loops": loop_rows,
         "config": {"mode": "live", "base_url_port": urlsplit(base_url).port, "healthz": health,
                    "attachment": c5_bind.public(bind) if bind else None,
                    "catalog_path": c5.repo_path(catalog), "catalog_sha256": want["catalog_sha256"],

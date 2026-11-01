@@ -425,7 +425,46 @@ def receipts(run: Run) -> dict:
     ok = sum(r["version_ok"] for r in rows)
     return {"n": len(rows), "version_ok": ok, "rate": ok / len(rows) if rows else None,
             "with_image": sum(r["image"] for r in rows),
+            "version_and_image": sum(r["version_ok"] and r["image"] for r in rows),
             "image_path_run": sum(r["image_source"]["image_path"] == "RUN" for r in rows), "rows": rows}  # fmt: skip
+
+
+FUNNEL = ("intent", "right_item", "order", "confirmed", "receipt")
+
+
+def funnel(run: Run, order_rows: list[dict], receipt_rows: list[dict]) -> dict:
+    """The five C5 tiers per posted gold order comment, each counted on its own over the same n (not chained):
+    intent = the system labelled it an order; right_item = the card the system put on the order when it drafted it
+    (the label's card when there is no order) is the gold item, and false when the draft left the seller to pick one
+    of several frozen candidates (`seller_pick`: a card chosen later by the seller is not the system's); order = an
+    order exists; confirmed = the order reached CONFIRMED; receipt = a CONFIRMED receipt at the confirmed version's
+    price and version, with an image. `chain` counts the comments that pass every tier up to and including that one."""
+    good = {r["order_id"] for r in receipt_rows if r["version_ok"] and r["image"]}
+    rows = []
+    for r in order_rows:
+        cid = r["comment_id"]
+        oid = order_id_for(cid)
+        evs = run.orders.get(oid, [])
+        first = evs[0]["lines"][0] if evs else {}
+        pick = len(first.get("candidates") or []) > 1
+        card = None if pick else first.get("card_id") or r["label_card"]
+        rows.append({
+            "comment_id": cid, "order_id": oid if evs else None,
+            "intent": r["label"] == "order",
+            "right_item": card is not None and r["gold_item"] is not None and run.item.get(card) == r["gold_item"],
+            "order": bool(evs),
+            "confirmed": any(e["state"] == "CONFIRMED" for e in evs),
+            "receipt": oid in good,
+            "seller_pick": pick,
+            "state": evs[-1]["state"] if evs else None,
+        })  # fmt: skip
+    chain, alive = {}, list(rows)
+    for tier in FUNNEL:
+        alive = [x for x in alive if x[tier]]
+        chain[tier] = len(alive)
+    return {"n": len(rows), "tiers": {t: sum(x[t] for x in rows) for t in FUNNEL}, "chain": chain,
+            "seller_pick": sum(x["seller_pick"] for x in rows),
+            "states": dict(Counter(x["state"] for x in rows)), "rows": rows}  # fmt: skip
 
 
 def first_cause(event: dict | None) -> str | None:

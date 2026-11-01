@@ -6,7 +6,11 @@ Shop, one tap each, `delay_s` after it sees the event:
   at the end of the line when it is the card's item but the heard price is not right and the card does not hold
   that price; otherwise drop it (no call). A 409 rereads the card and tries once more.
 - order in NEEDS_SELLER: reject it when the reason is stock; otherwise approve it at the live card price (the
-  order's card version when the live one has no price), or at the gold price when neither has one.
+  order's card version when the live one has no price), or at the gold price when neither has one. When the order
+  carries frozen attachment candidates, approve the one candidate whose item the host held when the customer wrote
+  (windows.json); reject it when no single candidate is that item, or when the app refuses that approval with
+  409 "variant is not unique on the selected card" (the decision request has no variant field). The gold pick makes
+  this seller an oracle for which candidate is right; see measure/README.md.
 Customer: each messenger-k line goes out at t0 + not_before_ms, once the message it answers (`after`) was sent for
 its order: a quick reply ("CONFIRM:<order>") or the text.
 """
@@ -33,6 +37,11 @@ REASONS = (  # NEEDS_SELLER reason -> cause, first match wins
     ("color", "variant"),
     ("variant", "variant"),
 )
+
+
+# The app refuses a candidate approval when the order's variant is not exactly one variant of the picked card.
+VARIANT_409 = "variant is not unique on the selected card"
+REJECT_AFTER_409 = "approval refused (409 variant not unique) and the decision has no variant field"
 
 
 def cause(reason: str | None) -> str:
@@ -236,11 +245,39 @@ class Shop:
         frame = first["provenance"]["frame_ts_ms"] if first else None
         return self.loops.offset(frame) if frame is not None else None
 
+    def pick(self, o: dict, candidates: list[str]) -> str | None:
+        """The one frozen candidate whose item the host held when the customer wrote, else None."""
+        comment = next(
+            (
+                e
+                for e in self.feed.events
+                if e["type"] == "comment" and order_id_for(e["comment_id"]) == o["order_id"]
+            ),
+            None,
+        )
+        off = self.loops.offset(comment["ts_ms"]) if comment else None
+        held = self.gold.held_at(off) if off is not None else None
+        hits = [
+            c for c in candidates if (k := self.card_off(c)) is not None and self.gold.card_item(k) == held
+        ]
+        return hits[0] if held and len(hits) == 1 else None
+
     async def order(self, o: dict) -> None:
         await asyncio.sleep(self.delay_s)
         line = o["lines"][0]
         why = cause(o.get("reason"))
         body: dict = {"decision": "reject" if why == "over_stock" else "approve"}
+        if line.get("candidates") and body["decision"] == "approve":
+            picked = self.pick(o, line["candidates"])
+            if picked is None:
+                body = {"decision": "reject"}
+            else:
+                body["card_id"] = picked
+                line = {
+                    **line,
+                    "card_id": picked,
+                    "card_version": (self.feed.latest(picked) or {}).get("version"),
+                }
         own = (self.feed.version(line["card_id"], line["card_version"]) or {}).get("price")
         live = (self.feed.latest(line["card_id"]) or {}).get("price")
         if body["decision"] == "approve" and live is not None and live != own:
@@ -249,11 +286,25 @@ class Shop:
             off = self.card_off(line["card_id"])
             item = self.gold.card_item(off) if off is not None else None
             body["unit_price"] = self.gold.price_at(item, off) if item else None
-        r = await self.http.post(f"/api/sessions/{self.sid}/orders/{o['order_id']}/decision", json=body)
+        path = f"/api/sessions/{self.sid}/orders/{o['order_id']}/decision"
+        r = await self.http.post(path, json=body)
+        refused = None
+        if body.get("card_id") and r.status_code == 409 and VARIANT_409 in r.text:
+            # The decision request has no variant field, so the seller cannot resolve it here: reject instead.
+            refused = {
+                "decision": "approve",
+                "card_id": body["card_id"],
+                "status": 409,
+                "response": r.text[:200],
+            }
+            body = {"decision": "reject"}
+            r = await self.http.post(path, json=body)
         self.log.append(
             {"kind": "order", "event_id": o["event_id"], "order_id": o["order_id"], "cause": why,
-             "decision": body["decision"], "unit_price": body.get("unit_price"), "status": r.status_code,
-             "response": None if r.status_code == 200 else r.text[:200], "seen_ms": o["ts_ms"], "done_ms": now_ms()}
+             "decision": body["decision"], "card_id": body.get("card_id"), "unit_price": body.get("unit_price"),
+             "status": r.status_code, "response": None if r.status_code == 200 else r.text[:200],
+             "refused": refused, "reason": REJECT_AFTER_409 if refused else None,
+             "seen_ms": o["ts_ms"], "done_ms": now_ms()}
         )  # fmt: skip
 
 
