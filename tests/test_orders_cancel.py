@@ -480,7 +480,7 @@ async def test_another_shop_message_after_the_cancel_question_lets_a_plain_yes_a
     assert (confirmed["order_id"], confirmed["state"], receipt["template"]) == ("o-2", "CONFIRMED", "receipt")
 
 
-@pytest.mark.parametrize("odd", [{"text": 5}, {"quick_reply": 7}, {"text": ["có"]}])
+@pytest.mark.parametrize("odd", [{"text": 5}, {"quick_reply": 7}, {"text": ["có"]}, {"text": ["không"]}])
 async def test_an_odd_earlier_message_does_not_stop_a_plain_yes_from_confirming(odd):
     # the event schema lets a message payload hold any value; one that is not text answers no question
     mi, view = message_scene(odd, [order("o-1", "CONFIRM_SENT")])
@@ -490,7 +490,7 @@ async def test_an_odd_earlier_message_does_not_stop_a_plain_yes_from_confirming(
     assert (confirmed["order_id"], confirmed["state"], receipt["template"]) == ("o-1", "CONFIRMED", "receipt")
 
 
-@pytest.mark.parametrize("odd", [{"text": 5}, {"quick_reply": 5}])
+@pytest.mark.parametrize("odd", [{"text": 5}, {"quick_reply": 5}, {"text": 5, "quick_reply": 5}])
 async def test_a_no_button_with_an_odd_field_still_opens_the_cancel_question(odd):
     # the template says no even when the text or quick reply beside it is not a string
     mi, view = message_scene(odd, [order("o-1", "CONFIRM_SENT")], template="confirm_no")
@@ -513,6 +513,88 @@ async def test_a_plain_cancel_beside_an_odd_or_empty_quick_reply_still_opens_the
     view.messages.append(yes)
     [again] = await flow.on_reply(yes, view, Recorder(), now=5002)
     assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+NOT_A_BUTTON = [
+    {"text": 7, "order_id": "o-1"},
+    {"quick_reply": 7, "order_id": "o-1"},
+    {"text": "sao vậy shop", "order_id": "o-1"},
+    {"text": "sao vậy shop", "order_id": "o-zz"},
+]
+
+
+@pytest.mark.parametrize("between", NOT_A_BUTTON)
+async def test_plain_text_with_an_order_id_leaves_the_cancel_question_open(between):
+    # only a button names an order; an order_id in a plain text's payload does not answer "huỷ đơn ...?"
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    text = {**said("mi-1", "", 7000), "payload": between}
+    yes = said("mi-2", "có", 7001)
+    view.messages += [ask, text, yes]
+    [again] = await flow.on_reply(yes, view, Recorder(), now=7001)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize("between", NOT_A_BUTTON)
+async def test_plain_text_with_an_order_id_after_a_plain_cancel_leaves_it_open(between):
+    mi, view = message_scene({"text": "không"}, [order("o-1", "CONFIRM_SENT")])
+    text = {**said("mi-1", "", 5001), "payload": between}
+    yes = said("mi-2", "có", 5002)
+    view.messages += [text, yes]
+    [again] = await flow.on_reply(yes, view, Recorder(), now=5003)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize("template", [None, "unknown"])
+async def test_a_plain_yes_with_an_order_id_in_its_payload_is_asked_again(template):
+    # "có" is text, not the CONFIRM:o-1 button, even when its payload names the order
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    yes = {**said("mi-1", "có", 7000), "template": template, "payload": {"text": "có", "order_id": "o-1"}}
+    view.messages += [ask, yes]
+    [again] = await flow.on_reply(yes, view, Recorder(), now=7000)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+async def test_a_no_button_whose_order_id_is_not_a_string_still_opens_the_cancel_question():
+    mi, view = message_scene({"order_id": 5}, [order("o-1", "CONFIRM_SENT")], template="confirm_no")
+    yes = said("mi-2", "có", 5001)
+    view.messages.append(yes)
+    [again] = await flow.on_reply(yes, view, Recorder(), now=5002)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"text": 5, "order_id": "o-1", "quick_reply": "KEEP:o-1"},
+        {"text": "Giữ đơn", "order_id": "o-1", "quick_reply": 5},
+    ],
+)
+async def test_a_keep_button_with_an_odd_field_answers_the_cancel_question(payload):
+    # the keep_order template names the order even when the text or quick reply beside it is not a string
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    keep = {**said("mi-1", "", 7000), "template": "keep_order", "payload": payload}
+    yes = said("mi-2", "có", 7001)
+    view.messages += [ask, keep, yes]
+    assert await flow.on_reply(keep, view, Recorder(), now=7000) == []
+    confirmed, receipt = await flow.on_reply(yes, view, Recorder(), now=7001)
+    assert (confirmed["order_id"], confirmed["state"], receipt["template"]) == ("o-1", "CONFIRMED", "receipt")
+
+
+@pytest.mark.parametrize("template", ["keep_order", None])
+async def test_keep_all_answers_the_cancel_question_for_two_orders(template):
+    # "Giữ tất cả" names no single order (KEEP:all), yet it is a button and answers the question
+    mine = [order("o-1", "CONFIRM_SENT", ts=1000), order("o-2", "CONFIRM_SENT", ts=2000)]
+    label, view = comment_scene("huỷ đơn nha shop", mine, label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    assert quick_replies(ask) == ["CANCEL:o-1", "CANCEL:o-2", "KEEP:all"]
+    payload = {"text": "Giữ tất cả", "quick_reply": "KEEP:all"} | ({"order_id": "all"} if template else {})
+    keep = {**said("mi-1", "", 7000), "template": template, "payload": payload}
+    yes = said("mi-2", "có", 7001)
+    view.messages += [ask, keep, yes]
+    assert flow.answers_cancel_question(view, yes) is False
 
 
 async def test_a_plain_yes_to_the_cancel_question_for_a_confirmed_order_is_asked_again():
