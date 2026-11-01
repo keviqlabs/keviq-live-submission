@@ -360,8 +360,9 @@ def _rescore_cards(k: int, sku_items: set[str]) -> list[dict]:
     return rows
 
 
-def rescore(loops: dict[int, list[dict]], evidence: Path = RESCORE) -> dict:
-    """Loop 1 with the run's labels, against the cards of mode a (the run) and mode b (all with stock)."""
+def rescore(loops: dict[int, list[dict]], evidence: Path = RESCORE, runner=None) -> dict:
+    """Loop 1 with the run's labels, against the cards of mode a (the run) and mode b (all with stock); `runner`
+    replaces run_loop (measure/answers_messages.py passes the private-reply path)."""
     run = json.loads(evidence.with_suffix(".json").read_text())["score"]
     labels = {
         r["comment_id"]: r["label"]
@@ -378,7 +379,7 @@ def rescore(loops: dict[int, list[dict]], evidence: Path = RESCORE) -> dict:
     out = {"run_cards_with_sku": sorted(with_sku), "size_ids": size_ids, "stock_ids": stock_ids}
     for mode, items in (("a", with_sku), ("b", {f"SP{i:02d}" for i in range(1, 11)})):
         rows = sorted(_rescore_cards(1, items) + comments, key=lambda r: (r["t_ms"], r["type"] != "show"))
-        _, res = run_loop(rows, labels=True)
+        _, res = (runner or run_loop)(rows, labels=True)
         by = {r["comment_id"]: r for r in res}
         out[mode] = {
             "size": {c: (by[c]["outcome"], by[c]["detail"], by[c]["said"]) for c in size_ids},
