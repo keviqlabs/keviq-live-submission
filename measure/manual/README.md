@@ -28,6 +28,11 @@ protocol and needs a new run.
   - **Hide**: hide the comment (final; a wrong hide stays wrong).
   - **Reply**: one click, standing for a short public reply.
 - A later order or ask on the same comment replaces the earlier one.
+- An action is timed at the click but shows as done (its tag, the counts, the confirmation line) only once the
+  local server has stored it. If a line cannot be stored, because the server is down or refuses it, the page
+  stops the run there and says so: it sends nothing more, so the log has no lock and `score` reports the run as
+  incomplete, even if the server comes back before the end. If the start line itself is not stored, the run was
+  never recorded (no `run.json`) and there is nothing to score.
 - After the video ends there is a 30 s tail, the same tail the assistant run had (`tail_ms` 30000), then the page
   locks and refuses further actions. The whole run lasts about 6 min 22 s.
 
@@ -110,5 +115,5 @@ uv run python -m measure.manual score --run NAME --assistant SCORE.json
 ```
 
 Logs go to `.scratch/manual-baseline/NAME/` (`NAME-practice/` for practice, so a run name may not end in
-`-practice`) until they are committed as evidence. A fixed `--port` lets a server restarted mid-run come back
-where the open page posts.
+`-practice`) until they are committed as evidence. A fixed `--port` lets a restarted server come back where the
+page posts, but a line posted while it was down has already stopped the run.
