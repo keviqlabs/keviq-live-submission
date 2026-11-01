@@ -16,15 +16,23 @@ Answer at the level measured (0 USD, offline, brain level, no paid run):
 | | commit | tree |
 |---|---|---|
 | before | `635d8f4674597f8f1e94f5b68039d55aa09e5d00` (main at the start of this work) | `ca478dfc60fab7b5daa4e2c037826590b050b7ec` |
-| after | `b3c263d42b90ffc6f11d3865c00d8c045740cb7d` (fix/product-identity: code + test) | `6a756d96e0c29be2af5f6a043e2b5891fc121f37` |
+| after | `269018cac232d91187922b94c16d60e2ca283711` (fix/product-identity: code + tests) | `3b0718b630bd4c598accbd5bb41b5c6d79dace01` |
+| first after (replaced) | `b3c263d42b90ffc6f11d3865c00d8c045740cb7d` (the code of 8cef645) | `6a756d96e0c29be2af5f6a043e2b5891fc121f37` |
 
-Both trees are printed by the replay wrapper (`git: <commit> tree <tree> status-lines 0`, a clean worktree), see
-`identity-before-1101-1900-wrapper.log` and `identity-after-1101-1909-wrapper.log`.
+Each tree is printed by the replay wrapper (`git: <commit> tree <tree> status-lines 0`, a clean worktree), see
+`identity-before-1101-1900-wrapper.log` and `identity-after-1101-2008-wrapper.log`. The first after tree emitted no
+event for a repeated reading (see "C1" below); its replay `identity-after-1101-1909-*` is kept only in git history
+(`git show 8cef645:docs/evidence/2026-11-01/identity-after-1101-1909-events.jsonl`) and is used here only for the
+C1 row.
 
 ## The change
 
 One rule in `worker/brain/card.py` (`on_product_seen`): when vision reports the same category and colour again
-while the current card has no SKU and is not retired, that is the same item. No new card, no retired card.
+while the current card has no SKU and is not retired, that is the same item. No new card, no retired card. The kept
+card gets one new version that only moves `provenance.frame_ts_ms` to the repeated frame, with the repeated
+product_seen first in `caused_by`, so every product_seen still has a consequence within the cycle (D-009,
+`contracts/acceptance.md:9`). The version uses the existing `card` event and fields; SKU, name, price, status,
+variants, stock and the current/previous item stay as they are.
 
 Why it matters: parallel frame reads report one item several times as new. Before, each repeated report of an item
 the catalog cannot name opened a new SKU-less draft and retired the one before. In the sandal segment of these
@@ -37,8 +45,39 @@ After the change there is one sandal card and the previous card is the SP02 card
 | before | 45 | 31 | 26 |
 | after | 45 | 18 | 13 |
 
-Test: `tests/test_identity_continuity.py::test_repeated_reading_of_the_current_unidentified_item_keeps_one_card`,
-red on 635d8f4 (`assert 3 == 1`, three cards for one item), green after.
+The first after tree had the same 18 / 13. The after run has 77 card versions: the 64 of the first after tree plus
+one frame-only version for each of the 13 repeats. 635d8f4 already writes the same kind of version when an
+identified item is read again (10 frame-only versions in the before run, 90 card versions in all).
+
+Tests in `tests/test_identity_continuity.py`:
+
+- `test_repeated_reading_of_the_current_unidentified_item_keeps_one_card`: red on 635d8f4 (`assert 3 == 1`, three
+  cards for one item), green after.
+- `test_each_repeated_reading_is_a_version_of_the_kept_card`: each repeat gives exactly one version of the kept card,
+  caused by the repeat, that moves only the frame, and `measure.core.c1` has no missing trigger. Red on the card
+  brain of 8cef645 (no event for the repeat), green after.
+- `test_a_second_reading_of_a_priced_item_without_sku_sets_nothing_and_confirms_nothing`: a seller-priced (550000)
+  'other trắng' card without SKU is current, the same item is read again, then an order comment for the current
+  item. The repeat stays on the same card, no version sets a SKU or changes the price, the order ends NEEDS_SELLER
+  and no confirmation goes out. Red when the guard is changed to fire only for draft cards (the repeat then opens a
+  second card), green after.
+
+## C1 (D-009)
+
+`measure.core.c1` over the committed replay events (5000 ms cycle; triggers are every product_seen and every
+actionable comment_labeled), and, for product_seen only, whether any event names it in `caused_by` at any time:
+
+| tree | C1 in cycle | product_seen with a consequence (any time) |
+|---|---|---|
+| before (635d8f4) | 70/109 | 41/45 |
+| first after (b3c263d) | 57/109 | 28/45 |
+| after (269018c) | 70/109 | 41/45 |
+
+On the first after tree the 13 repeats that kept one card (ps-1-07, 08, 20, 21, 25, 26, 31, 35, 36, 39, 40, 41,
+43) produced no event. On 269018c each of them has a version of the kept card caused by it, 8 to 42 ms after the
+repeat was ingested. The same 4 product_seen have no consequence on every tree (ps-1-10, 24, 27, 33): each arrived
+after a later frame of the same item had been taken, and the card brain ignores an older frame
+(`worker/brain/card.py:213`), as on 635d8f4; that is not changed here.
 
 What did not change: a repeated reading never sets a SKU. A card gets a SKU only as before (label + colour giving
 exactly one catalog item, refused when it disagrees with the stored observation of that item). Seller routing,
@@ -51,7 +90,8 @@ contracts, event schemas and order rules are untouched.
    0 wrong, 14 no card) is in the paid test database, and its stored vision observations were read with SELECT only.
    It is the closest input available, and it is used as a proxy for 1615. Each tree replayed those observations
    through the full stack (`measure.c5 --observations`, 1 loop, 0 model calls, 0 USD) on its own fresh database.
-   Both runs: runner rc 0, `SETTLED/SETTLED behind 0, retired 12, waits {'many': 2}, failures 0`.
+   Every run (before, after, and the first after): runner rc 0, `SETTLED/SETTLED behind 0, retired 12,
+   waits {'many': 2}, failures 0`, 0 model_call events.
 2. **Why an offline attachment step.** A frozen replay has no worker frame reads, so every comment attachment
    expires at its 4 s deadline (known limit, `docs/evidence/2026-10-29/rescore-bind-1029-2218-NOTE.md:109-130`).
    The replay records therefore show almost no cards on either tree (raw score below). The calculator in this note
@@ -68,7 +108,7 @@ contracts, event schemas and order rules are untouched.
 
 ## The 13 comments (gold item from the 1615 record; "at deadline" view)
 
-| comment | gold | refers to | before (635d8f4) | after (b3c263d) | status |
+| comment | gold | refers to | before (635d8f4) | after (269018c) | status |
 |---|---|---|---|---|---|
 | c5-1-029 | SP03 | current | no card: current "Sandal trắng", no SKU, 280000 live | no card: same card | blocked, G1 |
 | c5-1-031 | SP02 | previous | no card: previous is a retired duplicate sandal card | **SP02**: previous is "SP02 giày trắng" 320000 live | **rescued** |
@@ -113,14 +153,17 @@ After: the same 14 plus 031 (15). Wrong item: 0 before, 0 after, in every view.
 
 ### c5-1-041
 
-Right in the 1615 record, no card on both trees here. In the 0742 observations the comment comes at 132.7 s while
-the shirt (SP04) is first read at 138.0 s, so the current card at the comment is still the sandal card. In 1615
-vision read the shirt earlier. This is a difference between the two paid runs' vision readings, not a change of
-this branch.
+Right in the 1615 record, no card on both trees here. In the 0742 observations the SP04 shirt frame is at 129.5 s,
+before the comment at 132.7 s. The SP04 card (and the product_seen it comes from) was ingested at 138.0 s, 8.5 s
+after its frame and past the comment's attachment deadline at 136.7 s, so the card versions available at the
+deadline do not contain it and the current card at the comment is still the sandal card. The timing is the same on
+both trees (frame 129.5 s, ingested 138.0 s), so the 'no card' comes from that delay in the 0742 observations, not
+from a change of this branch. The 1615 record has c5-1-041 right, so its SP04 card was available in time; its event
+timing is not in any file here.
 
 ## Raw replay records (attachments expired)
 
-`identity-before-1101-1900-comments.jsonl` and `identity-after-1101-1909-comments.jsonl`, scored the same way:
+`identity-before-1101-1900-comments.jsonl` and `identity-after-1101-2008-comments.jsonl`, scored the same way:
 28 order comments, 5 right / 2 on another card / 21 no card, identical on both trees. The 2 (c5-1-018 gold SP01,
 c5-1-055 gold SP04) are "previous item" comments whose attachment expired; the order stops at NEEDS_SELLER
 (waiting for the shop, no confirmation sent) and the record carries the current card (SP02, SP05). This is not
@@ -129,8 +172,8 @@ expires was not checked here; it sits in `orders/` and `app/`, outside this work
 
 ## Files
 
-- `identity-before-1101-1900-*`, `identity-after-1101-1909-*`: replay wrapper logs and comment records.
-- `identity-before-1101-1900-events.jsonl`, `identity-after-1101-1909-events.jsonl`: the replay events of types
+- `identity-before-1101-1900-*`, `identity-after-1101-2008-*`: replay wrapper logs and comment records.
+- `identity-before-1101-1900-events.jsonl`, `identity-after-1101-2008-events.jsonl`: the replay events of types
   card, comment, comment_labeled, comment_attachment and product_seen (calculator input).
 - `identity-1101-paid-0742-events.jsonl`, `identity-1101-paid-2248-events.jsonl`: the same event types read with
   SELECT from the paid test database for sessions `rescore-paid-1031-0742` and `rescore-paid-1030-2248`.
@@ -143,7 +186,22 @@ Reproduce from the repository root:
 ```
 sed -n '/^```python$/,/^```$/p' docs/evidence/2026-11-01/identity-1101-NOTE.md | sed '1d;$d' > /tmp/attach.py
 uv run python /tmp/attach.py docs/evidence/2026-11-01/identity-1101-paid-0742-events.jsonl --at actual
-uv run python /tmp/attach.py docs/evidence/2026-11-01/identity-after-1101-1909-events.jsonl --at deadline
+uv run python /tmp/attach.py docs/evidence/2026-11-01/identity-after-1101-2008-events.jsonl --at deadline
+```
+
+C1 row (any events file above):
+
+```
+uv run python -c "
+import json, sys
+sys.path.insert(0, '.')
+from measure.core import c1
+ev = sorted(({**r['body'], 'seq': r['seq'], 'ingested_ms': r['ingested_ms'], 'type': r['type'], 'ts_ms': r['ts_ms']}
+             for r in map(json.loads, open(sys.argv[1]))), key=lambda r: r['seq'])
+r = c1(ev); used = {c for e in ev for c in e.get('caused_by') or []}
+ps = [e['event_id'] for e in ev if e['type'] == 'product_seen']
+print('c1', r['covered'], '/', r['n'], 'product_seen any time', sum(p in used for p in ps), '/', len(ps))
+" docs/evidence/2026-11-01/identity-after-1101-2008-events.jsonl
 ```
 
 ```python

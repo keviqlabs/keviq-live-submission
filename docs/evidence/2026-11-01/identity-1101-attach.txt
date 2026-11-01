@@ -1,5 +1,5 @@
 Offline attachment calculator output, 1 November. Code: the python block in identity-1101-NOTE.md (attach.py below),
-run from the repository root at commit b3c263d; app/current.py is the same on 635d8f4 and b3c263d.
+run from the repository root at commit 269018c; app/current.py is the same on 635d8f4 and 269018c.
 Each line: comment, gold item, verdict (right / none / WRONG), item carried, label reference kind, current and previous card
 (last 6 characters of the card id : SKU : price : status) at the view's time.
 
@@ -102,9 +102,9 @@ identity-before-1101-1900-events.jsonl deadline {'right': 14, 'none': 14}
   c5-1-098 gold=SP01 none None kind=current_card cur=d-1-43:None:None:draft prev=d-1-42:None:None:retired
 rc=0
 
-### after: replay on b3c263d, at comment + 4 s
-$ uv run python attach.py identity-after-1101-1909-events.jsonl --at deadline
-identity-after-1101-1909-events.jsonl deadline {'right': 15, 'none': 13}
+### after: replay on 269018c, at comment + 4 s
+$ uv run python attach.py identity-after-1101-2008-events.jsonl --at deadline
+identity-after-1101-2008-events.jsonl deadline {'right': 15, 'none': 13}
   c5-1-006 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
   c5-1-010 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
   c5-1-016 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited
@@ -168,9 +168,9 @@ identity-before-1101-1900-events.jsonl label {'right': 14, 'none': 14}
   c5-1-098 gold=SP01 none None kind=current_card cur=d-1-43:None:None:draft prev=d-1-42:None:None:retired
 rc=0
 
-### after: replay on b3c263d, at label time
-$ uv run python attach.py identity-after-1101-1909-events.jsonl --at label
-identity-after-1101-1909-events.jsonl label {'right': 15, 'none': 13}
+### after: replay on 269018c, at label time
+$ uv run python attach.py identity-after-1101-2008-events.jsonl --at label
+identity-after-1101-2008-events.jsonl label {'right': 15, 'none': 13}
   c5-1-006 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
   c5-1-010 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
   c5-1-016 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited
@@ -234,9 +234,9 @@ identity-before-1101-1900-events.jsonl deadline {'right': 14, 'none': 14}
   c5-1-098 gold=SP01 none None kind=current_card cur=d-1-43:None:None:draft prev=d-1-42:None:None:retired
 rc=0
 
-### after: replay on b3c263d, labels of the paid record 0742, at comment + 4 s
-$ uv run python attach.py identity-after-1101-1909-events.jsonl --labels identity-1101-paid-0742-events.jsonl --at deadline
-identity-after-1101-1909-events.jsonl deadline {'right': 15, 'none': 13}
+### after: replay on 269018c, labels of the paid record 0742, at comment + 4 s
+$ uv run python attach.py identity-after-1101-2008-events.jsonl --labels identity-1101-paid-0742-events.jsonl --at deadline
+identity-after-1101-2008-events.jsonl deadline {'right': 15, 'none': 13}
   c5-1-006 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
   c5-1-010 gold=SP01 right SP01 kind=current_card cur=d-1-00:SP01:250000:live prev=None
   c5-1-016 gold=SP02 right SP02 kind=current_card cur=d-1-03:SP02:None:draft prev=d-1-00:SP01:220000:edited

@@ -1,18 +1,18 @@
-DATABASE_URL name: /keviq_identity_identity_after_1101_1909_test
+DATABASE_URL name: /keviq_identity_identity_after_1101_2008_test
 MODEL_API_KEY set: no
-binding: session identity-after-1101-1909 epoch epoch-identity-after-1101-1909 (two tokens generated, not shown)
-git: b3c263d42b90ffc6f11d3865c00d8c045740cb7d tree 6a756d96e0c29be2af5f6a043e2b5891fc121f37 status-lines 0
+binding: session identity-after-1101-2008 epoch epoch-identity-after-1101-2008 (two tokens generated, not shown)
+git: 269018cac232d91187922b94c16d60e2ca283711 tree 3b0718b630bd4c598accbd5bb41b5c6d79dace01 status-lines 0
 created the test database
 migrations applied: 001_events.sql, 002_attachments.sql, 003_attachment_inputs.sql
 healthz: {"ok":true,"store":"pg","head_seq":0}
 cost before: {"today_usd":0.0,"total_usd":0.0,"daily_cap_usd":30.0,"daily_warn_usd":20.0,"total_cap_usd":300.0,"test_sessions":{"prefixes":["pytest","smoke-"],"today_usd":0.0,"total_usd":0.0},"session_usd":0.0,"session_cap_usd":8.0,"session_warn_usd":6.0}
 runner rc=0
 session cap 8.0 USD, warning 6.0 USD (env)
-loop 1: t0 1793534987212
+loop 1: t0 1793538470119
 loop 1: done, SETTLED/SETTLED behind 0, retired 12, waits {'many': 2}, failures 0
-run identity-after-1101-1909 sha b3c263d42b90ffc6f11d3865c00d8c045740cb7d loops 1
+run identity-after-1101-2008 sha 269018cac232d91187922b94c16d60e2ca283711 loops 1
 SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd
-FROM events WHERE type = 'model_call' AND session_id = 'identity-after-1101-1909' GROUP BY session_id;
+FROM events WHERE type = 'model_call' AND session_id = 'identity-after-1101-2008' GROUP BY session_id;
 session_id | n | usd
 (0 rows)
 cost after: {"today_usd":0.0,"total_usd":0.0,"daily_cap_usd":30.0,"daily_warn_usd":20.0,"total_cap_usd":300.0,"test_sessions":{"prefixes":["pytest","smoke-"],"today_usd":0.0,"total_usd":0.0},"session_usd":0.0,"session_cap_usd":8.0,"session_warn_usd":6.0}
