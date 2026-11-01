@@ -129,7 +129,7 @@ async def test_repeated_reading_of_the_current_unidentified_item_keeps_one_card(
 
 
 async def test_each_repeated_reading_is_a_version_of_the_kept_card(mem_app):
-    """C1 (D-009): every product_seen has a consequence. A repeat moves only the kept card's frame."""
+    """C1 (D-009): each repeat has a consequence, a version of the kept card that moves only its frame."""
     _, store, client = mem_app
     runner = NoModel("http://test", card.HANDLERS, http=client)
     await priced_first(store, client, runner)
@@ -198,3 +198,21 @@ async def test_a_second_reading_of_a_priced_item_without_sku_sets_nothing_and_co
     assert not [
         event for event in events if event["type"] == "message_out" and event["template"] == "confirm_order"
     ]
+
+
+async def test_a_different_item_in_the_same_colour_opens_its_own_card(mem_app):
+    """Only the same category and colour is a repeat of the kept card without SKU. A shirt read after an
+    unidentified 'other' item of the same colour is a new item with its own card; the jitter test above would
+    not catch a colour-only merge, because a frame-only version of the kept card also meets its asserts."""
+    _, store, client = mem_app
+    runner = NoModel("http://test", card.HANDLERS, http=client)
+    await ingest(client, runner, seen("ps-other", "other", "trắng", 1000))
+    [kept] = await history(store)
+    assert kept["sku"] is None
+    await ingest(client, runner, seen("ps-shirt", "shirt", "trắng", 2000))
+    cards = await history(store)
+    opened = [e for e in cards if e.get("caused_by") == ["ps-shirt"] and e["card_id"] != kept["card_id"]]
+    assert len(opened) == 1 and opened[0]["version"] == 1
+    assert all(e["provenance"]["frame_ts_ms"] == 1000 for e in cards if e["card_id"] == kept["card_id"])
+    current, _ = current_at(cards, 2500)
+    assert current["card_id"] == opened[0]["card_id"]
