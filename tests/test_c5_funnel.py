@@ -3,6 +3,8 @@ chain of comments that pass every tier up to each one; receipts count version an
 
 import json
 
+import pytest
+
 from app.settings import ROOT
 from measure import c5_score
 from measure.c5_score import Run
@@ -17,7 +19,7 @@ IMAGE = "data:image/png;base64,AAAA"
 
 def card(cid, version, status, ts, frame=None, price=None):
     return {"type": "card", "event_id": f"{cid}-v{version}", "card_id": cid, "version": version, "status": status,
-            "ts_ms": T0 + ts, "price": price, "sku": None, "caused_by": [],
+            "ts_ms": T0 + ts, "price": price, "sku": None, "caused_by": [], "image_url": IMAGE,
             "provenance": {} if frame is None else {"frame_ts_ms": T0 + frame}}  # fmt: skip
 
 
@@ -107,3 +109,36 @@ def test_a_gold_comment_with_no_item_is_never_the_right_item():
     run = Run(events, LOOPS, GOLD)
     out = c5_score.funnel(run, c5_score.order_ids(run, [row("c-1", None)])["rows"], [])
     assert out["tiers"]["right_item"] == 0
+
+
+@pytest.mark.parametrize(
+    "case", ["match", "wrong_card", "missing_card_image", "different_image", "wrong_version", "wrong_price"]
+)
+def test_receipt_tier_binds_the_quoted_card_version_price_and_image(case):
+    cards = [card("card-a", 1, "draft", 16_500, 15_000), card("card-a", 2, "live", 26_000, price=250_000)]
+    flow = confirmed("c-ok", 31_500, image=True)
+    receipt = flow[-1]["receipt"]
+    if case == "wrong_card":
+        cards += [
+            card("card-b", 1, "draft", 71_500, 70_000),
+            card("card-b", 2, "live", 72_000, price=250_000),
+        ]
+        receipt["card_id"] = "card-b"
+        flow[-1]["ts_ms"] = T0 + 90_000
+    elif case == "missing_card_image":
+        cards[1].pop("image_url")
+    elif case == "different_image":
+        cards[1]["image_url"] = "data:image/png;base64,QkJCQg=="
+    elif case == "wrong_version":
+        cards.append(card("card-a", 3, "live", 27_000, price=250_000))
+        receipt["card_version"] = 3
+    elif case == "wrong_price":
+        receipt["price"] = 260_000
+    run = Run(cards + [comment("c-ok", 30_000), labeled("c-ok", 31_000, "card-a"), *flow], LOOPS, GOLD)
+    rec = c5_score.receipts(run)
+    out = c5_score.funnel(run, c5_score.order_ids(run, [row("c-ok", "SP01")])["rows"], rec["rows"])
+    expected = int(case == "match")
+    assert rec["version_and_image"] == expected
+    assert out["tiers"]["receipt"] == expected
+    assert out["chain"]["receipt"] == expected
+    assert out["chain"]["confirmed"] == 1
