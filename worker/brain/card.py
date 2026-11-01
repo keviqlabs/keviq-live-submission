@@ -4,7 +4,9 @@
   previous card, if it never got a price and no undecided speech line overlaps it, is retired, so a quick switch
   (< 3 s) never merges two items (C7). A known card is reopened only when its observation still agrees and the
   current appearance has not lost identity. A changed coarse observation opens an independent unknown draft.
-  A product_seen already handled (the same event id) or of a frame older than the last one taken is ignored.
+  The same category and colour again while the current card has no SKU is that card, not a new one: two reads in
+  flight together both report the change from the item before (worker/vision/spark.py), so no card is opened,
+  retired or given a span for it. A product_seen already handled (the same event id) or of a frame older than the last one taken is ignored.
 - A final `speech` goes to a card by media time, not by arrival (D-025, worker/brain/window.py). Spark reads
   price, sizes and colours in the background (D-018; the rule reader in worker/voice/vn.py when there is no key
   or the call fails), at most SPEECH_READS lines at a time from read to decision; the others wait their turn. The
@@ -216,6 +218,12 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
     out = []  # (version, its changes), in posting order
     async with s.lock:
         prev = s.cards.get(s.current) if s.current else None
+        if prev and prev["sku"] is None and prev["status"] != "retired":
+            last = s.meta.get(prev["card_id"], {})
+            if (last.get("category"), last.get("color")) == (category, color):
+                log.info("product_seen %s repeats %s %s of unidentified card %s: same item", event["event_id"],
+                         category, color, prev["card_id"])  # fmt: skip
+                return []
         same = item and next(
             (c for c in s.cards.values() if c["sku"] == item["sku"] and c["status"] != "retired"), None
         )
