@@ -3,15 +3,25 @@ when unset), says which it runs with, and the app must have the same before loop
 
 import asyncio
 import json
+import os
 from types import SimpleNamespace
 
 import httpx
 import pytest
 
+from app import settings
 from measure import c5_live, c5_shop
 
 RUN = "cap-run"
 AsyncClient = httpx.AsyncClient  # the real one: start() patches httpx for main
+
+
+@pytest.fixture(autouse=True)
+def clean_env(monkeypatch):
+    """A shell that holds a run's C5_BIND_* or MODEL_* variables, or a repo .env, must not change these tests."""
+    for k in [k for k in os.environ if k.startswith(("C5_BIND_", "MODEL_"))]:
+        monkeypatch.delenv(k)
+    monkeypatch.setattr(settings, "load_dotenv", lambda *a, **kw: None)
 
 
 def app(cap: float, warn: float):
