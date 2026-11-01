@@ -1,4 +1,8 @@
-# Paid bound rescore, stages 1 and 2: rescore-paid-1031-0737 and rescore-paid-1031-0742, on the label-lane branch
+# Paid bound rescore, stages 1 and 2: rescore-paid-1031-0737 and rescore-paid-1031-0742, on the label-lane branch; rescore-paid-1031-1615 on main
+
+A later session, `rescore-paid-1031-1615`, ran on main `bfc7611` and has its own section below ("Stage 2 again, on
+main: rescore-paid-1031-1615"). Everything from here to that section describes the 0144, 0737 and 0742 runs, which ran
+on `4c53e72`, a head of pull request #74 that is not main, so they do not describe the final build.
 
 Two measured sessions on 31 October under the plan `../2026-10-29/rescore-paid-1030-PLAN.md` (sha256 first 16 `1ac69de2aec057c7`), run on the tree of
 pull request #74 (head `4c53e720833c4cc895ae0f0901a9a2a790b446e7`, tree `f4b75feeb25b239bf150e831eb876296cfeefea2`, base main `062dade`), not on main: the branch changes only the label
@@ -371,6 +375,108 @@ The three sessions of 31 October cost 1.10517550 USD together (the app's `/api/c
 1.105176, `total_usd` 2.250333). The provider's billing page was not read for this note; the costs above are the
 ledger's.
 
+## Stage 2 again, on main: rescore-paid-1031-1615
+
+One 350 s stage on main `bfc76115189b7283c99125359ae41097c1db0b8f` (tree `01f1c7822a87d107a9073d54fc49200e312d1b69`),
+the merge of pull request #75, which comes after the merge of #74 (`ed34b04`). It is the only run in this note on main:
+0737, 0742 and the lost 0144 ran on `4c53e72`, a head of pull request #74 that is not main, so their numbers do not
+describe the final build. Same setup as stage 2 above: catalog `data/comments/c5/catalog.json` (sha256 first 16
+`fd5e86ad67ada1c0`), session cap 8.0 USD and warning 6.0 USD from env, port 8040, database `keviq_paid_test`,
+`reasoning.effort` minimal, 1 frame per second. Wrapper 16:15:55 to 16:22:53 (app 16:15:57 to 16:22:50); runner rc 0;
+image guard rc 0 (`IMAGE_OK`, `card-88e63c823459` version 5); the watcher logged only the stage start and
+`wrapper rc=0` and never stopped the stage; runner `loop 1: done, SETTLED/SETTLED behind 0, retired 12, waits {'many':
+1}, failures 0`.
+
+What is real and what is not:
+
+- Real: the Meta model calls (muse-spark-1.3, sam-3.1, muse-voice-transcribe-1.0) and their ledger costs.
+- Replayed: a recorded product video, played by `worker.media` on the session clock (350 frames, one transcript); not a
+  live broadcast.
+- Synthetic: the 100 comments of `data/comments/c5/stream-1.jsonl` (the 100 ids in
+  `rescore-paid-1031-1615-comments.jsonl` are exactly that file's ids).
+- Simulated: Messenger. The two customer messages went through `POST /api/sessions/rescore-paid-1031-1615/sim/messenger`
+  (`posted.messenger_sent` 2); nothing was sent through Meta's Messenger.
+
+Scale: 100 comments in 6.36 session minutes (`score.c5.session_minutes`). The C5 target of 500 comments in 30 minutes
+has not been run; nothing here measures that load.
+
+Cost, from the event ledger only: 499 `model_call` events, 0.79893985 USD (the wrapper's `SUM` query, and the sum of
+`cost_usd` over `rescore-paid-1031-1615-model-calls.jsonl`), not reconciled with billing; the provider's billing page
+was not read. The cost API's `today_usd` went from 0.273011 to 1.071951 over the stage.
+
+### Numbers (recomputed from the files beside this note)
+
+| what | value | source |
+| --- | --- | --- |
+| Scorer | PASS 7 (1, 2, 6, 7, 9, 10, 12) / FAIL 3 (3, 4, 5) / NOT_TRIGGERED 1 (8) / TEST_ONLY 1 (11) | `-scenarios.json` |
+| Order references | 15 of 28 right (current card 13 of 24, previous card 2 of 4); 0 on a wrong card (`disagree` empty, every `wrong` row is `no_card`); 13 with no order and so no card | `score.references` |
+| Interventions | 9, 84.95 per hour (variant → `CONFIRM_SENT` 5, `price_used` 2, price changed 1, discount 1); 1 ask-the-customer message | `score.interventions` |
+| Phones hidden | 4 of 4 (situation 9); longest visible 0.042 s | `score.c5`, `-scenarios.json` |
+| Ask for size | fired 1 of 4 (situation 4); stock questions answered 0 of 13 | `-scenarios.json` |
+| Comment cancel | not triggered (situation 8): the one `confirm_cancel` comment, `c5-1-068`, was labelled `complaint` and got no action | `-comments.jsonl` |
+| Receipts | 1, at the confirmed version; 0 of 1 with an image (`image_path` `NOT_RUN`; `image_sha256`, `source_session`, `source_t` missing) | `score.receipts` |
+| Attachments | 30 (28 `ready`, 2 `expired`); app log 34 `covered=True` of 34 | `-watch.log`, wrapper |
+
+The 13 order comments without a card: for 10 of them the gold item (SP03 four times, SP07 twice, SP08, SP09 twice,
+SP10) never had a card with an item code in this run (`score.card_sku`: 5 of 21 cards carry one, SP01, SP02, SP04,
+SP05 and SP06), and `contracts/comment_attachment.md` requires the chosen card to have an item code and an approved
+price before an order exists. The other 3 (`c5-1-031` gold SP02, `c5-1-095` and `c5-1-098` gold SP01) are not
+explained by these files: the card each attachment chose is not among them.
+
+Latency, p50 / p95 in ms, the scorer's `infer` stage (`score.latency`):
+
+| event | n | p50 | p95 |
+| --- | --- | --- | --- |
+| `comment_labeled` | 115 | 1705 | 2312 |
+| `frame` | 350 | 207 | 254 |
+| `speech` | 59 | 1433 | 1489 |
+| `product_seen` | 28 | 1956 | 3401 |
+
+Model calls by purpose and model (from `rescore-paid-1031-1615-model-calls.jsonl`; every row has `ok = true`). By
+model: muse-spark-1.3 487, sam-3.1 11, muse-voice-transcribe-1.0 1.
+
+| purpose | model | calls | USD | avg ms | max ms |
+| --- | --- | --- | --- | --- | --- |
+| `product_seen` | muse-spark-1.3 | 350 | 0.48709690 | 1819 | 3579 |
+| `label_comments` | muse-spark-1.3 | 80 | 0.11125485 | 1651 | 2663 |
+| `card_from_speech` | muse-spark-1.3 | 57 | 0.15558810 | 2801 | 11432 |
+| `card_cutout` | sam-3.1 | 11 | 0.02750000 | 1438 | 2764 |
+| `transcribe` | muse-voice-transcribe-1.0 | 1 | 0.01750000 | 350883 | 350883 |
+| total | | 499 | 0.79893985 | | |
+
+### Wrapper output (verbatim, `rescore-paid-1031-1615-wrapper.log`)
+
+```
+DATABASE_URL name: /keviq_paid_test
+MODEL_API_KEY set: yes
+binding: session rescore-paid-1031-1615 epoch epoch-rescore-paid-1031-1615 (two tokens generated, not shown)
+migrations applied: none (up to date)
+healthz: {"ok":true,"store":"pg","head_seq":462}
+cost before: {"today_usd":0.273011,"total_usd":0.273011,"daily_cap_usd":30.0,"daily_warn_usd":20.0,"total_cap_usd":300.0,"test_sessions":{"prefixes":["pytest","smoke-"],"today_usd":0.0,"total_usd":0.0},"session_usd":0.0,"session_cap_usd":8.0,"session_warn_usd":6.0}
+cost pre-flight ok
+runner rc=0
+guard rc=0
+{"t": "16:16:33", "kind": "IMAGE_OK", "cutout_call": "model_call_fc88c2bd9a5a407d9e9c", "card_id": "card-88e63c823459", "version": 5, "event_id": "card_372d3dbc5557408c9638", "image_sha256": "34bfd130e960e93309d4882789765eaac3f5d448e835a58e32a13803007c1058", "bytes": 5023}
+session cap 8.0 USD, warning 6.0 USD (env)
+loop 1: t0 1793438159298
+loop 1: done, SETTLED/SETTLED behind 0, retired 12, waits {'many': 1}, failures 0
+run rescore-paid-1031-1615 sha bfc76115189b7283c99125359ae41097c1db0b8f loops 1
+SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd
+FROM events WHERE type = 'model_call' AND session_id = 'rescore-paid-1031-1615' GROUP BY session_id;
+session_id | n | usd
+rescore-paid-1031-1615 | 499 | 0.79893985
+(1 rows)
+cost after: {"today_usd":1.071951,"total_usd":1.071951,"daily_cap_usd":30.0,"daily_warn_usd":20.0,"total_cap_usd":300.0,"test_sessions":{"prefixes":["pytest","smoke-"],"today_usd":0.0,"total_usd":0.0},"session_usd":0.79894,"session_cap_usd":8.0,"session_warn_usd":6.0}
+state after: {'attachment_enabled': True}
+app log: attachments INFO lines 34, covered=True 34
+app stopped
+```
+
+The run's files are kept beside this note with the same names as stage 2's. Only `rescore-paid-1031-1615-runner.log`
+was changed: its three `wrote` lines named the run's temporary folder and now name `docs/evidence/2026-10-31/`, as in
+the 0742 runner log; every other file is the run's output byte for byte. The copies of the wrapper and watcher used for
+this stage were not kept, so this note does not claim they matched the tracked 29 October files byte for byte.
+
 ## Files beside this note (sha256, first 16)
 
 | file | sha256 | bytes |
@@ -415,6 +521,17 @@ ledger's.
 | `rescore-paid-1031-0742-watch.log` | `b4c06ad304b025d6` | 3924 |
 | `rescore-paid-1031-0742-wrapper.log` | `048bccc154d0b380` | 1704 |
 | `rescore-paid-1031-0742.json` | `73032144c50499d4` | 41505 |
+| `rescore-paid-1031-1615-app.log` | `f2e8710d0f93402d` | 391025 |
+| `rescore-paid-1031-1615-comments.jsonl` | `8936c9245993b810` | 35110 |
+| `rescore-paid-1031-1615-image-guard.log` | `b029d195f9ab970a` | 723 |
+| `rescore-paid-1031-1615-loop1-media.log` | `a40d4d1ab09c9177` | 57259 |
+| `rescore-paid-1031-1615-loop1-worker.log` | `74fb0f86bd67397b` | 784691 |
+| `rescore-paid-1031-1615-model-calls.jsonl` | `3e8eb4abedde3b27` | 306109 |
+| `rescore-paid-1031-1615-runner.log` | `e5f0060e305d55ee` | 688 |
+| `rescore-paid-1031-1615-scenarios.json` | `58331f4727da5c29` | 3568 |
+| `rescore-paid-1031-1615-watch.log` | `4696004b9dc8ffaf` | 3921 |
+| `rescore-paid-1031-1615-wrapper.log` | `d4065ff3aa85ccae` | 1703 |
+| `rescore-paid-1031-1615.json` | `05fa3d4e41d0a07d` | 40254 |
 
 The wrapper, the watcher, the query script and the uvicorn log config are the tracked 29 October files
 `../2026-10-29/rescore-paid-run.sh` (`b19004443a8901f0`), `rescore-paid-go-stage.sh` (`ba0d787284230631`),
