@@ -6,7 +6,9 @@
   current appearance has not lost identity. A changed coarse observation opens an independent unknown draft.
   The same category and colour again while the current card has no SKU is that card, not a new one: two reads in
   flight together both report the change from the item before (worker/vision/spark.py), so no card is opened,
-  retired or given a span for it. A product_seen already handled (the same event id) or of a frame older than the last one taken is ignored.
+  retired or given a span for it. The kept card gets a version that only moves its frame to the repeat's
+  (caused by the repeat, so every product_seen still has a consequence, D-009); SKU, price and status stay.
+  A product_seen already handled (the same event id) or of a frame older than the last one taken is ignored.
 - A final `speech` goes to a card by media time, not by arrival (D-025, worker/brain/window.py). Spark reads
   price, sizes and colours in the background (D-018; the rule reader in worker/voice/vn.py when there is no key
   or the call fails), at most SPEECH_READS lines at a time from read to decision; the others wait their turn. The
@@ -218,61 +220,71 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
     out = []  # (version, its changes), in posting order
     async with s.lock:
         prev = s.cards.get(s.current) if s.current else None
-        if prev and prev["sku"] is None and prev["status"] != "retired":
-            last = s.meta.get(prev["card_id"], {})
-            if (last.get("category"), last.get("color")) == (category, color):
-                log.info("product_seen %s repeats %s %s of unidentified card %s: same item", event["event_id"],
-                         category, color, prev["card_id"])  # fmt: skip
-                return []
-        same = item and next(
-            (c for c in s.cards.values() if c["sku"] == item["sku"] and c["status"] != "retired"), None
-        )
-        if same:
-            prior = s.meta.get(same["card_id"], {})
-            agrees = prior.get("category") == category and prior.get("color") == color
-            if not agrees or (prev and prev["sku"] is None):
-                # A unique catalog candidate does not prove that this is the same physical item.
-                item, same = None, None
-        if prev and prev is not same:
-            window.close_span(s.spans.setdefault(prev["card_id"], []), event["frame_ts_ms"])
-            if prev["status"] == "draft" and not pending(s, prev["card_id"]):
-                out.append((s.bump(prev["card_id"], status="retired"), {"status": "retired"}))
-        if same:
-            prov = {**same["provenance"], "frame_ts_ms": event["frame_ts_ms"]}
-            card, changes = s.bump(same["card_id"], provenance=prov), {"provenance": prov}
+        last = s.meta.get(prev["card_id"], {}) if prev else {}
+        if (
+            prev
+            and prev["sku"] is None
+            and prev["status"] != "retired"
+            and (last.get("category"), last.get("color")) == (category, color)
+        ):
+            # The same item read again: only the frame moves, so the repeat has its own version (C1) while the
+            # SKU, price, status, span and current item stay as they are.
+            log.info("product_seen %s repeats %s %s of unidentified card %s: same item", event["event_id"],
+                     category, color, prev["card_id"])  # fmt: skip
+            prov = {**prev["provenance"], "frame_ts_ms": event["frame_ts_ms"]}
+            s.meta[prev["card_id"]] = {**last, "frame_ts_ms": event["frame_ts_ms"],
+                                       "frame_event_id": (event.get("caused_by") or [None])[0]}  # fmt: skip
+            out.append((s.bump(prev["card_id"], provenance=prov), {"provenance": prov}))
         else:
-            cid = card_id_for(event["event_id"], s.cards)
-            variants = variants_of(item, color)
-            card = {
-                "card_id": cid,
-                "version": 1,
-                "sku": item["sku"] if item else None,
-                "name": item["name"]
-                if item
-                else f"{CATEGORY_VI.get(category, category)} {color or ''}".strip(),
-                "price": None,
-                "currency": "VND",
-                "variants": variants,
-                "stock": sum(v["stock"] for v in variants),
-                "image_url": None,
-                "status": "draft",
-                "provenance": {
-                    "frame_ts_ms": event["frame_ts_ms"],
-                    "speech_event_ids": [],
-                    "edited_by": None,
-                },
+            same = item and next(
+                (c for c in s.cards.values() if c["sku"] == item["sku"] and c["status"] != "retired"), None
+            )
+            if same:
+                prior = s.meta.get(same["card_id"], {})
+                agrees = prior.get("category") == category and prior.get("color") == color
+                if not agrees or (prev and prev["sku"] is None):
+                    # A unique catalog candidate does not prove that this is the same physical item.
+                    item, same = None, None
+            if prev and prev is not same:
+                window.close_span(s.spans.setdefault(prev["card_id"], []), event["frame_ts_ms"])
+                if prev["status"] == "draft" and not pending(s, prev["card_id"]):
+                    out.append((s.bump(prev["card_id"], status="retired"), {"status": "retired"}))
+            if same:
+                prov = {**same["provenance"], "frame_ts_ms": event["frame_ts_ms"]}
+                card, changes = s.bump(same["card_id"], provenance=prov), {"provenance": prov}
+            else:
+                cid = card_id_for(event["event_id"], s.cards)
+                variants = variants_of(item, color)
+                card = {
+                    "card_id": cid,
+                    "version": 1,
+                    "sku": item["sku"] if item else None,
+                    "name": item["name"]
+                    if item
+                    else f"{CATEGORY_VI.get(category, category)} {color or ''}".strip(),
+                    "price": None,
+                    "currency": "VND",
+                    "variants": variants,
+                    "stock": sum(v["stock"] for v in variants),
+                    "image_url": None,
+                    "status": "draft",
+                    "provenance": {
+                        "frame_ts_ms": event["frame_ts_ms"],
+                        "speech_event_ids": [],
+                        "edited_by": None,
+                    },
+                }
+                s.cards[cid], changes = copy.deepcopy(card), {}
+            if not prev or prev is not same:
+                window.open_span(s.spans.setdefault(card["card_id"], []), event["frame_ts_ms"])
+            s.meta[card["card_id"]] = {
+                "category": category,
+                "color": color,
+                "frame_ts_ms": event["frame_ts_ms"],
+                "frame_event_id": (event.get("caused_by") or [None])[0],
             }
-            s.cards[cid], changes = copy.deepcopy(card), {}
-        if not prev or prev is not same:
-            window.open_span(s.spans.setdefault(card["card_id"], []), event["frame_ts_ms"])
-        s.meta[card["card_id"]] = {
-            "category": category,
-            "color": color,
-            "frame_ts_ms": event["frame_ts_ms"],
-            "frame_event_id": (event.get("caused_by") or [None])[0],
-        }
-        s.current = card["card_id"]
-        out.append((card, changes))
+            s.current = card["card_id"]
+            out.append((card, changes))
     infer = (start, now_ms())
     for new, changes in out:  # one at a time, outside the lock: a 409 reads the store and takes the lock
         await post_version(event, ctx, s, new, changes, infer)
