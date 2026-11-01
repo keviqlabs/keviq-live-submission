@@ -17,7 +17,8 @@ was edited by hand.
 The assistant column is session `rescore-paid-1031-1615`, run on main `bfc7611` on 31 October with the same stream
 and catalog: `../2026-10-31/rescore-paid-1031-1615.json` (sha256 `05fa3d4e…f59d0041`), which pull request #78 adds,
 and the section "Stage 2 again, on main: rescore-paid-1031-1615" that #78 adds to
-`../2026-10-31/rescore-paid-1031-NOTE.md`. That note is on main; the JSON and the section are not yet.
+`../2026-10-31/rescore-paid-1031-NOTE.md`. That note is on main; the JSON, the session's logs (the media log above
+among them) and the section are not yet.
 
 The team states that the person is a member of the team who knows the product and its catalogue, ran the run alone,
 did not write the kit, the C5 streams or the scorer, and did not score the run. All commits in this repository are
@@ -44,10 +45,12 @@ written docs/evidence/2026-11-01/manual-founder-1/score.json
 ```
 
 Of the 28 order comments that name an item, the person took up 5 within 60 s and named the right item on 2 and a
-wrong item on 3; 23 had no order at the lock. The assistant session's order was on a card of the gold item on 15
-(current card 13, previous card 2), on another item's card on 0, and it made no order, so no card, on 13; the scorer
-gives a card the item whose span of the video holds the frame that opened it. Those 13 are also the 13 it did not
-take up within 60 s. For 10 of them the gold item never had a card with an item code in that run, which the
+wrong item on 3; 23 had no order at the lock. The assistant session's label of the comment referred to a card of the
+gold item on 15 (current card 13, previous card 2): it made an order on 14 and, on `c5-1-010`, whose gold action is
+to ask the customer, asked which variant, so its 15 include one question, while the person's 2 are both orders. Its
+label referred to another item's card on 0 and to no card on 13, where it made no order and asked nothing. The
+scorer gives a card the item whose span of the video holds the frame that opened it. Those 13 are also the 13 it did
+not take up within 60 s. For 10 of them the gold item never had a card with an item code in that run, which the
 attachment contract (`contracts/comment_attachment.md`) requires before an order exists; the other 3 are not
 explained by its files (pull request #78's note). Three of the person's five orders (`c5-1-074`, `c5-1-078`,
 `c5-1-091`) are on comments among those 13. In the table, the assistant's "4 rows" is the number of phone comments;
@@ -102,8 +105,10 @@ it.
 
 ## Departures from the kit's rules
 
-The kit's fixed rules are in `measure/manual/README.md` (pull request #79). This run departs from rules 1, 2 and 4;
-rules 3 and 5 follow with what the files show.
+The kit's fixed rules are in `measure/manual/README.md` (pull request #79). This run departs from rules 1, 2 and 4.
+Items 1 and 2 and the kit author's part under rule 5 rest on the team's statement: no committed file records the
+request for the line, the team's chat or the 08:36 confirmation. The paragraphs on rules 3 and 5 say what the files
+show and what the team states.
 
 1. Rule 1 asks the person to state in one line, before the run, what they have already seen. The line was asked for
    before the run, but the person started the run without giving it. The line below was written after the run from
@@ -130,12 +135,15 @@ rules 3 and 5 follow with what the files show.
 Rule 3: the only stream-1 run at speed 1 in the kit's `.scratch/manual-baseline/` is `founder-1`. The team states it
 is the person's only full run and that the person did not watch the kit author's checks: on stream-1 on 31 October
 between 20:11 and 20:38 ICT at speeds 2, 8 and 16, and on the stream-2 practice segment, all on a tree with
-uncommitted changes. Those logs are not committed and were not scored.
+uncommitted changes. Those logs are not committed. To check the kit, its author also ran the scorer on three of them
+(`kitcheck-speed8`, `kitcheck-actions` and `kitcheck-practice`, at speeds 8, 2 and 4, between 20:13 and 20:19 ICT);
+none of those scores is used here.
 
 Rule 5 says the scorer, the kit author and the author of the C5 streams do not take part in the run. The person is
-none of them, by the team's statement above. The kit author served the page, guided the practice rounds in the
-team's chat, showed the aggregate numbers (item 2) and started the scorer 15 s after the lock; the team states the
-kit author sent the person no message between the start and the lock.
+none of them, by the team's statement above. The team states that the kit author served the page, guided the
+practice rounds in the team's chat, showed the aggregate numbers (item 2), started the scorer and sent the person no
+message between the start and the lock. The scorer's `score.json` in the kit's `.scratch/` is dated 08:06:55 ICT,
+15 s after the lock.
 
 ## Caveats
 
