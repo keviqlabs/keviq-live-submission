@@ -91,9 +91,10 @@ def main():
             return 0
         if t0 is not None and time.time() * 1000 - t0 > a.window_s * 1000:
             say(kind="IMAGE_MISSING", window_s=a.window_s, cutout_call=cut, card_image=img)
-            if not a.passive:
-                targets, killed = stop(a.run)
-                say(kind="stopped", pids=targets, sigkill=killed)
+            if a.passive:
+                return 1
+            targets, killed = stop(a.run)
+            say(kind="stopped", pids=targets, sigkill=killed)
             say(kind="cost", **http.get("/api/cost", params={"session": a.run}).json())
             return 1
         time.sleep(5)
