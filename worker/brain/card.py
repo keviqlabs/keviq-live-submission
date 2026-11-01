@@ -7,7 +7,7 @@
   The same category and colour again while the current card has no SKU is that card, not a new one: two reads in
   flight together both report the change from the item before (worker/vision/spark.py), so no card is opened,
   retired or given a span for it. The kept card gets a version that only moves its frame to the repeat's
-  (caused by the repeat, so every product_seen still has a consequence, D-009); SKU, price and status stay.
+  (caused by the repeat, so the repeat has a consequence of its own, D-009); SKU, price and status stay.
   A product_seen already handled (the same event id) or of a frame older than the last one taken is ignored.
 - A final `speech` goes to a card by media time, not by arrival (D-025, worker/brain/window.py). Spark reads
   price, sizes and colours in the background (D-018; the rule reader in worker/voice/vn.py when there is no key
