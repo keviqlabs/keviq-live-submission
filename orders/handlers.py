@@ -1,6 +1,6 @@
-"""Worker handlers for the orders stream: comment_labeled(order|other) -> draft + rules, or ask_cancel for a
-cancel request, or ask_variant when the size/color is missing; message_in -> confirm / cancel / keep / the
-customer's size or color answer.
+"""Worker handlers for the orders stream: comment_labeled(order|other|complaint) -> draft + rules (order only),
+or ask_cancel for a cancel request, or ask_variant when the size/color is missing; message_in -> confirm /
+cancel / keep / the customer's size or color answer.
 
 Each handler reads the session so far from the app (`GET /api/sessions/{sid}/events?follow=false`) and hands it
 to orders/flow.py; the runner posts what comes back (D-003: the app is the only writer). Fixture triggers and
