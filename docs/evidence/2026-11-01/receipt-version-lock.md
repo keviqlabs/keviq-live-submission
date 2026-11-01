@@ -33,7 +33,7 @@ blank. Each tree ran the same steps:
 3. `CONFIRM:<order_id>` through `POST /api/sessions/{sid}/sim/messenger` for each order in `CONFIRM_SENT`.
 4. Events read back over SSE (`/events?cursor=0&follow=false`).
 
-"before" is the main tree with the cancel-question changes and without this change; "after" adds it.
+"before" is an export of the cancel-question branch head `b7b6e92`, which is based on an earlier main; "after" is this branch, which merges that head into main and adds this change. Between the two trees the runtime code (`app/`, `worker/`, `orders/`, `connectors/`) differs only in `orders/flow.py`; the other differences are docs, tests and the new `measure/manual/` package.
 
 ```
 == before: locked_card in flow.py: 0
