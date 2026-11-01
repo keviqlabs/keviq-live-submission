@@ -10,9 +10,9 @@ Everything in this repository was made during the event, from 26 October 2026 23
 |---|---|---|---|
 | Scaffold: event contracts, append-only store, SSE, replay on the session clock, cost-capped model client, measure | none called yet | branch `scaffold-contracts` | `make check` 58 tests; `make smoke` (real PostgreSQL) OK |
 | Labeled comment stream and contact shield (`worker/brain`), 200 synthetic labeled comments | muse-spark-1.3, `reasoning.effort=minimal` | PR #3 | 200 comments at live speed: template-gold F1 0.976 (n=170), order fields 71/71, label p95 3.9 s (C8 target 1 s, not met) |
-| Product read from the camera (`worker/vision/spark.py` → `product_seen`), prompt 6b | muse-spark-1.3, `reasoning.effort=minimal` | PR #15, #18, #20 | 351 frames of one test video (test1, 1080×1920 portrait), one run: category right 299/351 (electronics 82/100, shoes 109/129, tops 79/93, no product 29/29), product change seen within 3 s 6/11, model_call p50/p95 1872/3168 ms, $0.8226. The prompt was tuned on 20 frames of the same video (limits below) |
+| Product read from the camera (`worker/vision/spark.py` → `product_seen`), prompt 6b | muse-spark-1.3, `reasoning.effort=minimal` | PR #15, #18, #20 | 351 frames of one test video (test1, recorded at 1080×1920 portrait, frames scored at 720×1280), one run: category right 299/351 (electronics 82/100, shoes 109/129, tops 79/93, no product 29/29), product change seen within 3 s 6/11, model_call p50/p95 1872/3168 ms, $0.8226. The prompt was tuned on 20 frames of the same video (limits below) |
 | Paid replay scoring run `rescore-paid-1031-1615`: a recorded product video replayed on the session clock, 100 synthetic comments (`data/comments/c5/stream-1.jsonl`), simulated Messenger | muse-spark-1.3 (`reasoning.effort=minimal`), sam-3.1, muse-voice-transcribe-1.0 | main `bfc7611` (after PR #74, #75) | 100 comments in 6.4 min, one run (the C5 target of 500 comments in 30 min has not been run): order references 15/28 right, 0 on a wrong card, 13 with no card; 9 seller interventions (about 85/h); phones hidden 4/4; ask for size 1/4; comment cancel not triggered (labelled complaint); receipts with an image 0/1; `infer` p50/p95 comment label 1705/2312 ms, frame 207/254 ms, speech 1433/1489 ms, product_seen 1956/3401 ms; 499 model calls, $0.7989 by the event ledger, not reconciled with billing. Evidence: `docs/evidence/2026-10-31/rescore-paid-1031-NOTE.md` |
-| Manual baseline on the same stream: one person handles stream-1 by hand while watching the same recording, with the manual-baseline kit (`measure/manual/`) | none (0 USD) | PR #79 (kit), PR #80 (evidence) | One person, one run and one stream, 6.36 min; before the run the person had seen the assistant's aggregate results on this stream, a departure from kit rule 1 recorded in the note. Of the 28 order comments that name an item: the person named the right item on 2, a wrong item on 3 and none on 23; the paid run above, scored the same way, got 15 right (14 orders and one question), 0 wrong and 13 with no card. Phone comments hidden: person 2 of 4, paid run 4 of 4. Evidence: `docs/evidence/2026-11-01/manual-founder-1-NOTE.md`, added by pull request #80 (not on main yet) |
+| Manual baseline on the same stream: one person handles stream-1 by hand while watching the same recording, with the manual-baseline kit (`measure/manual/`) | none (0 USD) | PR #79 (kit), PR #80 (evidence) | One person, one run and one stream, 6.36 min. Before the run the person had seen the assistant's aggregate results on this stream; this and the run's other departures from kit rules 1, 2 and 4 are recorded in the note. Of the 28 order comments that name an item: the person named the right item on 2, a wrong item on 3 and none on 23; the paid run above, scored the same way, got 15 right (14 orders and one question), 0 wrong and 13 with no card. Phone comments hidden: person 2 of 4, paid run 4 of 4. Evidence: `docs/evidence/2026-11-01/manual-founder-1-NOTE.md` (pull request #80) |
 | Paid C5 run on the integrated build, after the open pull requests are merged | muse-spark-1.3 (`reasoning.effort=minimal`), sam-3.1, muse-voice-transcribe-1.0 | TO FILL | TO FILL after the run |
 
 **Before the event** (before 26 October 23:24 ICT; none of it is in this repository):
@@ -24,7 +24,7 @@ Everything in this repository was made during the event, from 26 October 2026 23
 - All code, contracts, tests, data and docs in this repository. The first commit is dated 27 October 10:22 ICT, and no commit is older than the event start: `git log --format=%aI%n%cI | sort | head -1`.
 - Outside this repository: the test1 recording (27 October, kept local and out of Git), the project brief with criteria C1–C11 and the day-1 prompt (27 October morning), and a private UI mock-up (27 October) that is kept apart; nothing from the mock-up was copied here.
 
-AI coding assistants were used as tools. The entrant is the Founder, working alone. Some branch names carry an assistant's default prefix: `claude/` on 14 merged PRs between #2 and #29, and `codex/` on PR #47 and on draft PRs #48–#50, which were closed unmerged and reopened on tool-free branches as #53–#55. Those prefixes are the default branch names of the coding tools used during the hackathon. The current convention: a pull request is merged under its written title, and commits carry the author's private GitHub address.
+AI coding assistants were used as tools. The entrant is the Founder, working alone. Some branch names carry an assistant's default prefix: `claude/` on 19 merged PRs (all within #2–#29 and #62–#67) and on closed draft PR #71, and `codex/` on PR #47 and on draft PRs #48–#50, which were closed unmerged and reopened on tool-free branches as #53–#55. Those prefixes are the default branch names of the coding tools used during the hackathon. The current convention: a pull request is merged under its written title, and commits carry the author's private GitHub address.
 
 ## Run it yourself
 
@@ -45,7 +45,7 @@ Everything below runs on one machine from a fresh clone, in three modes. Modes 1
 | git, make | git 2.54, GNU Make 3.81 | the commands below |
 | ffmpeg and ffprobe | 9.0.2 | modes 2 and 3 only (drawing and playing a video) |
 
-The app listens on 127.0.0.1:8000 and PostgreSQL on 127.0.0.1:55433; if a port is taken, `docs/RUN.md` ("Other ports") has the overrides. Modes 1 and 2 need no `.env` file. If you copy `deploy/.env.example` to `.env`, empty its `MODEL_API_KEY=` line for modes 1 and 2, or the workers try its fake key.
+The app listens on 127.0.0.1:8000 and PostgreSQL on 127.0.0.1:55433; if a port is taken, `docs/RUN.md` ("Other ports") has the overrides. Modes 1 and 2 need no `.env` file. If you copy `deploy/.env.example` to `.env`, its placeholder `MODEL_API_KEY=replace-me` counts as no key (`meta/transport.py`), so no request is sent to the Model API.
 
 ### Mode 1: replay judge1, no API key (about 5 minutes)
 
@@ -120,12 +120,12 @@ How the pieces fit: `docs/architecture.md`. Why: `docs/DECISIONS.md`.
 
 `data/sessions/judge1/events.jsonl` is a 62-second session: 69 events, 14 synthetic comments, three lines of the seller's speech and hand-written stand-ins for the model output. In order, on the session clock:
 
-1. **Right item, right price.** The seller holds up a red cross-body bag and says "Túi da đỏ đeo chéo sáu trăm chín mươi nghìn" (23 s). The bag's card (`TUI-03`) gets version 2: 690,000 VND and the bag's picture.
-2. **An order at the card price.** A viewer writes "Chốt túi đỏ 1 cái" (27 s). Order `o-06` is drafted at the card price, 690,000 VND, and the customer gets a "please confirm" message in simulated Messenger.
-3. **Only the customer confirms.** The customer answers yes (33 s) and `o-06` is confirmed. Before that it could not be: `orders/rules.py` has no path to a confirmed order without the customer's yes.
+1. **Right item, right price.** The seller holds up a red cross-body bag and says "Túi da đỏ đeo chéo sáu trăm chín mươi nghìn" (24 s). The bag's card (`TUI-03`) gets version 2: 690,000 VND and the bag's picture.
+2. **An order at the card price.** A viewer writes "Chốt túi đỏ 1 cái" (28 s). Order `o-06` is drafted at the card price, 690,000 VND, and the customer gets a "please confirm" message in simulated Messenger.
+3. **Only the customer confirms.** The customer answers yes (34 s) and `o-06` is confirmed. Before that it could not be: `orders/rules.py` has no path to a confirmed order without the customer's yes.
 4. **Receipt.** The confirmed order carries a receipt from the card version the customer was quoted: card `card-b` version 2, its picture and 690,000 VND. In judge1 the picture is a drawing made by `scripts/judge_draw.py`, not a cut-out from a camera.
-5. **An item from before.** After the brown boots' card goes live (45 s), "Lấy cái màu đỏ lúc nãy" ("the red one from before", 46 s) becomes order `o-08` for the bag, from the bag's card, not the boots'.
-6. **Not sure, so it asks.** "Mua cái áo này" ("I'll buy this top", 49 s) matches no card (no top is shown in this session), so no order is made; the customer is asked "Bạn muốn lấy món nào ạ?" ("Which item would you like?").
+5. **An item from before.** After the brown boots' card goes live (46 s), "Lấy cái màu đỏ lúc nãy" ("the red one from before", 47 s) becomes order `o-08` for the bag, from the bag's card, not the boots'.
+6. **Not sure, so it asks.** "Mua cái áo này" ("I'll buy this top", 50 s) matches no card (no top is shown in this session), so no order is made; the customer is asked "Bạn muốn lấy món nào ạ?" ("Which item would you like?").
 7. **The seller decides.** "Lấy đôi vừa rồi, size 39, hai đôi giảm còn 400 được không?" asks for a discount, and "Lấy 3 túi đỏ" comes to 2,070,000 VND, above the 2,000,000 VND threshold; both orders (`o-05`, `o-14`) wait in the seller's queue instead of going to the customer.
 8. **Hidden.** "Inbox 0900 000 012 lấy giá sỉ, link bit.ly/gia-si-xyz" (a phone number and an unknown link) and "Follow page em nhận quà free nhé" (promo bait) are hidden.
 
@@ -141,7 +141,7 @@ The model names are the defaults in `meta/client.py`; every call goes through th
 | sam-3.1 | `card_cutout` | cuts the product out of the frame for the card picture | `worker/vision/sam.py` |
 | muse-voice-transcribe-1.0 | `transcribe` | turns the seller's speech into text | `worker/voice/transcribe.py` |
 
-`muse-image-1.0` is configured in `meta/client.py` but never called, and the client refuses `muse-wonder-1.0`. Before any model is called, a regular-expression shield hides comments that carry a phone number. The order rules in `orders/rules.py` decide every order state; no model output can confirm an order, change a price or give a discount.
+`muse-image-1.0` is configured in `meta/client.py` but never called, and the client refuses `muse-wonder-1.0`. Before any model is called, a regular-expression shield hides comments that carry a phone number or a link. The order rules in `orders/rules.py` decide every order state; no model output can confirm an order, change a price or give a discount.
 
 ## Data
 
@@ -231,7 +231,7 @@ The Founder confirmed the review sample c001–c030 on 27 October (all 30, none 
 - Product read from the camera: the 6b prompt was tuned on 20 frames of test1, and the 351-frame gate (electronics ≥ 72/100, shoes ≥ 105/129, tops ≥ 75/93, all met) was measured on the same video, in one run (`probe-test1-6b-1950`). No second video has been measured, so 85.2 % says nothing yet about other streams. Evidence: `docs/evidence/2026-10-27/vision-test1-6b-score-1027-1950.json` (351 frames) and `vision-test1-6b20-score-1027-1947.json` (20 frames, both efforts).
 - The Facebook connector reads comments only and has not been run against a real Page yet (fake Graph API in tests). Messenger is simulated: nothing is sent to real people and no real comment is hidden.
 - The request and response shapes for the Model API (structured output, SAM, voice stream) come from the docs; calls with them were made live in the paid runs listed in "Evidence of real model calls" (for example 499 calls without an error on 31 October, `docs/evidence/2026-10-31/rescore-paid-1031-1615-model-calls.jsonl`).
-- A Voice Transcribe realtime session lasts at most 60 minutes. Meta suggested starting a follow-on session on audio that overlaps the end of the previous one (Discord answer, 27 October). This build opens one voice session per play of a recording and has no session stitching. The planned C5 run plays the 5 min 51 s test1 recording five times in one app session (about 30 minutes), so each voice session stays far under the limit. A live stream longer than 60 minutes is not handled yet.
+- A Voice Transcribe realtime session lasts at most 60 minutes. Meta suggested starting a follow-on session on audio that overlaps the end of the previous one (Discord answer, 27 October). This build opens one voice session per play of a recording and has no session stitching. A C5 run plays the 5 min 51 s test1 recording five times in one app session (about 30 minutes), so each voice session stays far under the limit. A live stream longer than 60 minutes is not handled yet.
 - The video is a recording or a drawing played from a file: the media worker reads finished files only, so there is no live camera and no stream input. RTMP ingest is not built; the `mediamtx` service in `deploy/compose.yml` is an unused profile.
 - The comments are synthetic in every mode and in every measurement in this README; Messenger is simulated in every mode.
 - The judge1 pictures and video are flat drawings made by `scripts/judge_draw.py`, not photos, and in the judge1 replay the cards, labels and orders are recorded stand-ins, as in demo1. With no key, the judge1 video makes no card and no order (mode 2 above).
@@ -239,7 +239,7 @@ The Founder confirmed the review sample c001–c030 on 27 October (all 30, none 
 
 ## Next steps
 
-- Voice co-host: not part of P0 and not built before the 30 October gate; if C5 is met there, a narrow version for the video and demo would speak lines templated from seller-approved card data through local text-to-speech (the Model API has none), filter its own voice so it is never taken as the seller's words, have a pause button, pass every line through `orders/rules.py` and introduce itself as the shop's AI assistant.
+- Voice co-host: not part of P0 and not in this build. A narrow version for the video and demo would speak lines templated from seller-approved card data through local text-to-speech (the Model API has none), filter its own voice so it is never taken as the seller's words, have a pause button, pass every line through `orders/rules.py` and introduce itself as the shop's AI assistant.
 
 ## License
 
