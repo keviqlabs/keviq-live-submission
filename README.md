@@ -36,7 +36,7 @@ Everything below runs on one machine from a fresh clone, in three modes. Modes 1
 
 | Mode | Models called | Recorded, drawn or simulated | Time |
 |---|---|---|---|
-| 1. Replay the judge1 session | none | product sightings, cards, comment labels, orders and Messenger messages are recorded stand-ins; product pictures drawn by this repository; synthetic comments | about 5 min from a clone |
+| 1. Replay the judge1 session | none | product sightings, cards, comment labels, orders and Messenger messages are recorded stand-ins; product pictures drawn by this repository; synthetic comments | 77 s measured once from `git clone` to the console page, with the PostgreSQL image and Python 3.12 already on the machine; downloading them adds time (`docs/RESULTS.md`, "Clean clone") |
 | 2. Play the judge1 video, no key | none | video drawn by this repository; synthetic comments and seller speech, typed in on the video's clock; with no key nothing is recognised, so no card or order is made | about 2 min more |
 | 3. Real models | muse-spark-1.3, sam-3.1 (muse-voice-transcribe-1.0 for a video with sound) | recorded or drawn video, synthetic comments, simulated Messenger; the cards, labels and orders are model and rule output | the length of the video, plus setup |
 
@@ -49,7 +49,7 @@ Everything below runs on one machine from a fresh clone, in three modes. Modes 1
 
 The app listens on 127.0.0.1:8000 and PostgreSQL on 127.0.0.1:55433; if a port is taken, `docs/RUN.md` ("Other ports") has the overrides. Modes 1 and 2 need no `.env` file. If you copy `deploy/.env.example` to `.env`, its placeholder `MODEL_API_KEY=replace-me` counts as no key (`meta/transport.py`), so no request is sent to the Model API.
 
-### Mode 1: replay judge1, no API key (about 5 minutes)
+### Mode 1: replay judge1, no API key (about 1.5 minutes, measured once)
 
 ```bash
 git clone https://github.com/keviqlabs/keviq-live-event.git
@@ -108,6 +108,8 @@ With a key, the workers read the product in each frame (muse-spark-1.3), cut it 
 ### Evidence of real model calls
 
 Each row comes from the stored `model_call` events of one run with a key.
+
+The full-size C5 runs and the judge1 runs side by side, with what limits their numbers: [docs/RESULTS.md](docs/RESULTS.md).
 
 | Run | Date | Model calls | Cost by the event ledger | Evidence |
 |---|---|---|---|---|
