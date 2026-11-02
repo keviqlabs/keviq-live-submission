@@ -21,7 +21,7 @@ from meta.meter import Meter, memory_spend
 from meta.transport import responses_reply
 from orders import flow
 from orders import handlers as orders_handlers
-from tests.test_attachments_runtime import world  # noqa: F401  (the bound-session fixture)
+from tests.test_attachments_runtime import DEADLINE_MS, world  # noqa: F401  (the bound-session fixture)
 from tests.test_labels import card_event, drain, feed, wire
 from worker.brain import labels as labels_mod
 from worker.brain.labels import Labeler
@@ -416,7 +416,7 @@ async def test_bound_cancel_label_is_judged_once_the_earlier_attachment_expires_
     )
     kinds = {"comment_attachment", "order", "message_out"}
     assert [e["type"] for e in await w.events() if e["type"] in kinds] == []
-    w.now = 104_000
+    w.now = DEADLINE_MS
     await w.service.expire_due(w.sid)
     events = await w.events()
     attachments = [e for e in events if e["type"] == "comment_attachment"]

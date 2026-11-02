@@ -59,8 +59,9 @@ The run cost 0.79893985 USD by the event ledger: 499 `model_call` events, the wr
 recomputed on 2 November). The value 0.273011 USD in its wrapper log (`rescore-paid-1031-1615-wrapper.log`, lines 5–6:
 `head_seq` 462, `cost before` `today_usd` 0.273011) is the balance of that database at the start of the run, not
 the run's spend. A read-only count on 2 November found no `model_call` row for this session in the current
-`keviq_paid_test` database, so that database has been reset or replaced since; the committed JSONL file is the record
-of this run's ledger.
+`keviq_paid_test` database: the run wrote to a different database instance with the same name (its wrapper started
+at `head_seq` 462 and 0.273011 USD); the current database still holds the 31 October runs, so the committed JSONL is
+the record.
 
 ## Committed logs and JSONL files, 29 October to 2 November
 

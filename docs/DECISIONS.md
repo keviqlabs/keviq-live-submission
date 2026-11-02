@@ -2,6 +2,106 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-02 — Eight concurrent vision reads per bound session by default
+
+**D-042 A bound session reads up to eight frames at once by default (`VISION_READS_PER_SESSION`, was 4); the read
+timeout stays 10 s (`VISION_TIMEOUT_S`) and recognitions are still posted in frame order.** With four, frames of a paid
+C5 run waited much longer for a read to start than one read may take. Replayed through the worker's own runner and
+bound lane with the recorded read times (`tests/test_worker_vision_readers_replay.py`; the fixture
+`tests/fixtures/c5_vision_reads.csv` holds only the arrival, read time and failed flag of each of the 1755 frames of
+`c5-paid-1102-1709`), the longest wait is 96.6 s (p95 42.3 s) with four readers, 22.6 s with six and 7.9 s (p95
+2.0 s) with eight. The test fails on the old default and passes on the new one. The environment variable still
+overrides the default. No contract, schema, catalog or rule changes; `v` unchanged.
+
+Before (four readers, `c5-paid-1102-1709`, head `31e7d8a`): p95 frame to product event 56.4 s (p50 5.3 s), right
+item for 72 of 140 order comments (reference accuracy 0.514), latest attachment expired 54 of 151 times, 129 of 1755
+product reads cancelled at 10 s (read p50 2.4 s), ledger 4.253265 USD for 2536 calls, 34 seller interventions (61.4
+per hour), 9 receipts.
+After (eight readers, `c5-paid-1102-2141-r8`, same head, only `VISION_READS_PER_SESSION` changed): p95 frame to
+product event 11.7 s (p50 4.7 s), right item for 86 of 140 (0.614), expired 23 of 152, 176 of 1755 reads cancelled
+(read p50 2.9 s), ledger 4.365958 USD for 2552 calls, 49 seller interventions (91.7 per hour), 7 receipts.
+One run per configuration, no control run at the same time, synthetic comments. Reference accuracy (target 0.9) and
+the C5 seller-intervention rate (target 10 per hour) fail in both runs. Why cancellations, cost and interventions rose
+is not established; the replay covers the queue only, not slower reads under more load. The run's comparison file is
+kept outside the repository (`COMPARISON.json`, sha256
+`020a589fd2d94b3b4ce97a806b3b487744d991b454fff8e6f1234830f46875a4`).
+
+## 2026-11-02 — A draft replaced within seconds, never priced, is not "the one before"
+
+**D-041 Without an attachment binding, a retired item is "the one before" unless it was a misread: none of its
+versions known at the comment time was live or edited, and it was put away within 5 s (`QUICK_SWITCH_MS`) of its
+first version.** This narrows D-040 in `live_cards_at` (`worker/brain/labels.py`); current is unchanged. An item put
+away after it had a price (the demo's card-03) stays previous. An item shown a while whose spoken price was missed also
+stays previous: the card brain retires every unpriced draft when the next item opens, so status alone cannot tell a
+presented item from a misread. A draft replaced by another item within seconds is skipped. `live` and `edited` are the
+statuses a priced card has (`app/store.py` `LIVE_STATUSES`). The 5 s window comes from the recorded paid-test runs: of
+364 retired drafts that never had a price, 249 were put away within 5 s; the three in the judge1 and demo replays
+below were put away after 2.0, 2.0 and 2.5 s. No contract, schema, catalog or rule changes; `v` unchanged.
+
+Before (judge1 replay with the model, main `137ffca`, `judge-paid-1102-2006`): right card 4 of 7 order comments, wrong
+card 2 (cm-08 on BOOT-02, a draft put away 2.5 s after it opened; cm-09), no order 1 (cm-14).
+After: not a new paid run. A 0 USD rebinding of the recorded order labels with the new pair over seven recorded
+sessions (`judge-paid-1102-1109`, `-1459`, `-1605`, `-1644`, `-2006`, `demo-paid-1102-1112r`, `-1646r`) changes
+exactly 6 bindings, all to the expected TUI-03 (in each of `judge-paid-1102-2006`, `demo-paid-1102-1112r` and
+`demo-paid-1102-1646r`: cm-08 BOOT-02 → TUI-03 and cm-14 no card → TUI-03), and no other binding. The labeling
+prompt shows the same pair (D-038), so the model input changes for these comments; a paid run after this change gives
+the model's number.
+
+## 2026-11-02 — "The one before" is the item shown before the one on screen
+
+**D-040 Without an attachment binding, the current item is the most recently shown item that is not retired, a draft
+included, and the previous item is the next most recently shown item, a just-retired item included.**
+`live_cards_at` (`worker/brain/labels.py`) takes the card versions known at the comment time, each card at its latest
+known version (a price set later is not used), and orders the cards by their last frame-time appearance, a card with
+none last. Current is the first card whose version is not retired, an unpriced draft included; previous is the first
+card that is not current. This reverses the pair chosen in `6e6bcc9`: current was the newest live card and previous the
+latest other card by first version, so while a new item was still an unpriced draft on screen, "the one before" bound
+that draft itself. A retired card is never current, but it may be previous: the demo gold expects "the one before"
+right after the seller puts an item away (labels c076, c081, c100 bind card-03, BOOT-02, retired at 199.5 s just
+before card-04 appears at 200 s). An order on an unpriced draft stays held for the seller by the order rules ("card
+has no price yet"); `orders/` is unchanged. The labeling prompt shows the same pair (D-038), so the model input
+changes. No contract, schema, catalog or rule changes; `v` unchanged.
+
+Before (paid judge1 replay `judge-paid-1102-1644` on `46a0f0e`): right card 4 of 7 order comments, wrong card 2 (cm-05
+bound TUI-03, cm-08 bound BOOT-02), no order 1 (cm-11).
+After (the recorded labels of four paid judge1 replays bound again with main's and with this rule, no model call; per
+comment, main → this change; every other order comment is unchanged):
+- `judge-paid-1102-1109`: cm-05 TUI-03 → GIAY-01; cm-06 (current_card at 28.0 s, TUI-03 still an unpriced draft)
+  GIAY-01 → TUI-03; cm-08 BOOT-02 → TUI-03.
+- `judge-paid-1102-1459`: cm-05 TUI-03 → GIAY-01; cm-08 TUI-03 → GIAY-01 (no BOOT-02 card was made in that run, so at
+  47 s the bag, still an unpriced draft, is the item on screen).
+- `judge-paid-1102-1605`: cm-05 TUI-03 → GIAY-01; cm-08 BOOT-02 → TUI-03.
+- `judge-paid-1102-1644`: cm-05 TUI-03 → GIAY-01; cm-08 BOOT-02 → TUI-03; cm-14 (current_card at 62.0 s while BOOT-02
+  is an unpriced draft) TUI-03 → BOOT-02.
+
+Against the judge1 gold (cm-05 GIAY-01; cm-06, cm-08 and cm-14 TUI-03), two changes are regressions: cm-14 in
+`judge-paid-1102-1644` and cm-08 in `judge-paid-1102-1459`; cm-06 in `judge-paid-1102-1109` now matches the gold. With
+its labels held fixed, `judge-paid-1102-1644` gives right card 5 of 7, wrong card 1 (cm-14), no order 1 (cm-11). A
+paid replay after merge measures the model's labels with the new prompt; its numbers are recorded as they come.
+
+## 2026-11-02 — A card's cut-out is ready when it goes live
+
+**D-039 A card's SAM cut-out starts when its draft opens, so the version that makes it live carries the image, and
+an `other` item is asked for by the English noun of its catalog kind.**
+An order is locked to the card version live at the comment (D-032), and the cut-out used to start only when the card
+went live, so its image came as a later version that the quote and the receipt did not carry. In the paid C5 runs
+the receipt image tier was 0. Now the cut-out starts when the draft opens (or its frame is first cached) and nothing
+is posted then. When the price makes the card live and the cut-out is ready, the live version carries `image_url`;
+otherwise the image is the next version, caused by the event that made the card live (the speech, or the seller's
+priced version) and the frame. A version posted after a product_seen's handler returns never cites that product_seen,
+so the attachment evidence stays complete (#102). At most one SAM call per card, each with its `model_call`; one call
+at a time per session, live cards first; a waiting cut-out of a retired or no longer current card is skipped. A card
+whose frame is never cached behaves as before (`worker/brain/card.py`).
+
+Asked for the noun "other", SAM often finds nothing. For an `other` card, `sam.subject` maps its kind (normalised with
+`vn.tokens`) to an English noun: "tay cầm" to "game controller", "bàn phím" to "keyboard". An unknown kind and every
+other category keep today's noun (`worker/vision/sam.py`). No contract, schema, catalog or rule changes; `v`
+unchanged.
+
+Before (paid C5 runs on main): 17 of 48 `card_cutout` calls logged "sam found no other"; 21 of 48 live cards never
+got an image; receipts with an image 0 of 6.
+After: _to be measured by the next paid C5 run on main._
+
 ## 2026-11-02 — The labeling prompt shows the cards orders bind to
 
 **D-038 The labeling prompt shows the current and previous card from the same snapshot that binds the order.**
