@@ -53,6 +53,8 @@ NOTE states from the ledger (`model_call` events); "not stated" means the NOTE g
 
 The Facebook row is dated by its run (30 October); its NOTE was written on 2 November.
 
+Commit ids cited in these NOTEs and in the other Markdown files refer to the working repository; [commit-ids.md](commit-ids.md) gives the id of each one in the public copy.
+
 ## Ledger note: `rescore-paid-1031-1615`
 
 The run cost 0.79893985 USD by the event ledger: 499 `model_call` events, the wrapper's `SUM` query and the sum of
