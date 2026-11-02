@@ -510,6 +510,9 @@ async def ask_variant(
     """Ask the commenter to choose the missing size/color among the variants of `card` (the version the comment
     was priced from) that still have stock. Nothing is guessed and no order event is made until the customer
     answers. None when it cannot ask (no 24h window, no variant left): the caller falls back to the seller."""
+    event_id = step_id(base, order_id, "ask-variant")
+    if any(m["event_id"] == event_id for m in view.messages):
+        return []  # asked already: a replay changes nothing, even if the window or the stock has gone since
     thread = thread_for(comment["user_ref"])
     window = rules.can_message(view.last_contact.get(thread, comment["ts_ms"]), now)
     vs = card["variants"]
@@ -518,9 +521,6 @@ async def ask_variant(
     ]
     if not window.allowed or not free:
         return None
-    event_id = step_id(base, order_id, "ask-variant")
-    if any(m["event_id"] == event_id for m in view.messages):
-        return []
     payload = variants.question(
         card, order_id, comment["comment_id"], free, missing, again=again, price=vnd(card.get("price"))
     )
