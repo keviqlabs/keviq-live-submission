@@ -1,0 +1,23 @@
+{
+  "mode": "run",
+  "stream": {
+    "path": "data/comments/c5/stream-1.jsonl",
+    "sha256": "9c259c030cda0e74a10b6bf725aededdb741d874a3c63ff6653e38c9edb9e79c",
+    "rows": 100
+  },
+  "catalog": {
+    "path": "data/comments/c5/catalog.json",
+    "sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73"
+  },
+  "video": {
+    "name": "test1-h264.mp4",
+    "bytes": 26225951,
+    "sha256": "02cd69752fc2b0a89e16466ba558b37578f3394e818a3d8a645426507cf176fc"
+  },
+  "speed": 1.0,
+  "tail_ms": 30000,
+  "stop_ms": null,
+  "git_head": "1e37fb64d0184eba2ab9a1c60e4a67d34b737f55",
+  "git_dirty": false,
+  "started_at": "2026-11-01T08:00:18+07:00"
+}

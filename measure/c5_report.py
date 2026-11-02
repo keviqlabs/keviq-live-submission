@@ -9,6 +9,7 @@ from measure.c5_score import (
     TARGETS,
     WAIT_LINE,
     Run,
+    funnel,
     intervention,
     interventions,
     missed,
@@ -270,11 +271,17 @@ def score(events: list[dict], run_file: dict, rows: list[dict], msgs: list[dict]
     out = {
         "run": run_file.get("run"), "session_id": run_file.get("session_id"), "sha": run_file.get("sha"),
         "config": run_file.get("config"), "loops_run": len(run_file["loops"]),
+        "git": run_file.get("git"),
         "posted": {"comments": len(posted), "messenger_sent": sum(r.get("sent", False) for r in sent.values())},
+        "shop": {"actions": sum("status" in r for r in run_file.get("shop", [])),
+                 "failed": sum(r.get("status") not in (None, 200) for r in run_file.get("shop", [])),
+                 "rejected_after_409": sum(bool(r.get("refused")) for r in run_file.get("shop", [])),
+                 "by_status": dict(Counter(f"{r['kind']}:{r.get('status')}" for r in run_file.get("shop", [])))},
         "c5": c5, "latency": core.latency(events), "cards": dict(Counter(run.item.values())),
         "card_sku": {c: vs[0]["sku"] for c, vs in run.cards.items()},
         **{k: v for k, v in parts.items() if k != "waits_lines"},
     }  # fmt: skip
+    out["funnel"] = funnel(run, parts["order_ids"]["rows"], parts["receipts"]["rows"])
     out["situations"] = situations(run, rows, msgs, sent, parts, code_rc or {})
     out["per_loop"] = per_loop(run, rows, parts)
     out["estimate"] = estimate(rows, run, parts)

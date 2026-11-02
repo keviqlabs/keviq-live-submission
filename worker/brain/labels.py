@@ -32,9 +32,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from app.contracts import new_id, now_ms
-from app.current import appearances, current_at
+from app.current import appearance_ids, appearances, current_at
 from app.settings import catalog_path
-from app.store import live_cards_from
 from connectors.facebook.interface import CommentModerator
 from connectors.sim.moderator import SimModerator
 from orders.rules import authorize, can_message
@@ -49,6 +48,9 @@ EFFORT = "minimal"
 LABELS = ["order", "price_question", "stock_question", "complaint", "spam", "scam", "other"]
 KINDS = ["explicit_sku", "current_card", "previous_card", "unresolved"]
 SIGNALS = ["phone_number", "link"]
+# A draft put away this soon after it opened, without ever having a price, was a passing misread (one item replaced
+# by another), not an item the seller presented (D-041).
+QUICK_SWITCH_MS = 5_000
 
 SCHEMA = {
     "type": "object",
@@ -125,31 +127,44 @@ def go_live_order(versions: list[dict]) -> list[dict]:
     return appearances(versions)
 
 
-def _first_versions(versions: list[dict]) -> list[dict]:
-    """First version of each card, in the order the cards appeared (the base go-live order)."""
-    first: dict[str, dict] = {}
-    for card in sorted(versions, key=lambda c: (c["ts_ms"], c["version"])):
-        first.setdefault(card["card_id"], card)
-    return sorted(first.values(), key=lambda c: c["ts_ms"])
-
-
 def live_cards_at(versions: list[dict], ts_ms: int) -> tuple[dict | None, dict | None]:
-    """(current, previous) from live/edited versions only, as before media-time binding: current = newest
-    live card at ts_ms; previous = the latest other card shown. Sessions without an attachment binding
-    order from this snapshot, so an unpriced draft never becomes an order line."""
-    live = live_cards_from(versions, ts_ms)
-    current = live[0] if live else None
-    others = [
-        c
-        for c in _first_versions(versions)
-        if c["ts_ms"] <= ts_ms and c["card_id"] != (current or {}).get("card_id")
-    ]
-    return current, others[-1] if others else None
+    """(current, previous) from the versions known at ts_ms, each card at its latest known version (a price set
+    after ts_ms is not used), ordered by frame time: the most recently shown card first, a card with no
+    frame-time appearance by ts_ms last. Sessions without an attachment binding order from this snapshot.
+    current is the first card whose latest known version is not retired; an unpriced draft on screen counts, so
+    "the one before" is the item shown before it, and an order on the draft is held for the seller by the order
+    rules. previous is the first card that is not current and is not a misread: a card whose latest known version
+    is retired, none of whose versions known at ts_ms was live or edited (the statuses a priced card has), and that
+    was put away within QUICK_SWITCH_MS of its first version. A retired card is never the current item; the item
+    the seller put away after it had a price, or after it was shown a while with its price missed, is still "the
+    one before", but a draft replaced by another item within seconds is skipped."""
+    known = [c for c in versions if c["ts_ms"] <= ts_ms]
+    latest: dict[str, dict] = {}
+    opened: dict[str, int] = {}
+    priced: set[str] = set()
+    for card in sorted(known, key=lambda c: (c["ts_ms"], c["version"])):
+        latest[card["card_id"]] = card
+        opened.setdefault(card["card_id"], card["ts_ms"])
+        if card["status"] in ("live", "edited"):
+            priced.add(card["card_id"])
+
+    def misread(c: dict) -> bool:
+        return (
+            c["status"] == "retired"
+            and c["card_id"] not in priced
+            and c["ts_ms"] - opened[c["card_id"]] < QUICK_SWITCH_MS
+        )
+
+    rank = {cid: i for i, cid in enumerate(appearance_ids(known, ts_ms))}
+    shown = sorted(latest.values(), key=lambda c: rank.get(c["card_id"], len(rank)))
+    current = next((c for c in shown if c["status"] != "retired"), None)
+    previous = next((c for c in shown if c is not current and not misread(c)), None)
+    return current, previous
 
 
 def cards_at(versions: list[dict], ts_ms: int, *, live_only: bool = False) -> tuple[dict | None, dict | None]:
-    """Known current/previous identity at media time, including an unpriced draft; with live_only the
-    live/edited snapshot of live_cards_at."""
+    """Known current/previous identity at media time, including an unpriced draft, from each card's latest
+    supplied version; with live_only the snapshot of live_cards_at, from the versions known at ts_ms."""
     return live_cards_at(versions, ts_ms) if live_only else current_at(versions, ts_ms)
 
 
@@ -179,6 +194,12 @@ def resolve(item: dict, versions: list[dict], ts_ms: int, skus: set[str], *, liv
         "referenced_card_id": card["card_id"] if card else None,
         "reference_kind": kind,
     }
+
+
+async def attached(ctx: Ctx | None, event: dict) -> bool:
+    """Whether the event's session binds orders through attachments; otherwise they bind from the live snapshot."""
+    runner = getattr(ctx, "runner", None)
+    return hasattr(runner, "attachment_enabled") and await runner.attachment_enabled(event["session_id"])
 
 
 def card_brief(card: dict | None) -> dict | None:
@@ -416,9 +437,11 @@ class Labeler:
             log.warning("labels: card history for %s not loaded (%s)", sid, exc)
 
     async def _ask(self, batch: list[Pending], versions: list[dict]) -> tuple[dict, tuple | None]:
+        # The model sees the same current/previous pair resolve() binds from, so "this one" means the same card.
+        live_only = not await attached(batch[0].ctx, batch[0].event)
         comments = []
         for p in batch:
-            current, previous = cards_at(versions, p.event["ts_ms"])
+            current, previous = cards_at(versions, p.event["ts_ms"], live_only=live_only)
             comments.append(
                 {
                     "comment_id": p.event["comment_id"],
@@ -455,9 +478,7 @@ class Labeler:
 
     async def _consequences(self, p: Pending, item: dict | None, versions: list[dict], infer) -> list[dict]:
         event, ctx = p.event, p.ctx
-        attached_flow = hasattr(ctx.runner, "attachment_enabled") and await ctx.runner.attachment_enabled(
-            event["session_id"]
-        )
+        attached_flow = await attached(ctx, event)
         if item is None:
             label, draft, model_signals = "other", None, []
         else:

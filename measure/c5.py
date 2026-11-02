@@ -4,8 +4,8 @@
       0 USD: in-process app on keviq_test, MODEL_API_KEY empty. The 6b vision rows and the test1 lines stand in
       for media; the labels brain runs with the gold labels in place of the model (no model_call). measure/c5_dry
   uv run python -m measure.c5 --base-url URL [--loops 5] [--out DIR] [--seconds N] [--paid]
-      a running app: per loop the worker (--session) and media start under measure/c5_proc and stop after the
-      loop; without --paid their MODEL_API_KEY is empty (0 USD, plumbing only). The session cap / warning are
+      a running app: one worker (--session) persists across loops; each loop starts/stops its own media process
+      under measure/c5_proc; without --paid their MODEL_API_KEY is empty (0 USD, plumbing only). The session cap / warning are
       MODEL_SESSION_CAP_USD / MODEL_SESSION_WARN_USD of this env (both or neither; 8 / 6). measure/c5_live
   uv run python -m measure.c5 --rescore RUN_JSON [--out DIR]
       a stored dry session scored again with the scorer at HEAD (events from keviq_test). measure/c5_rescore
@@ -13,7 +13,7 @@
 Per loop k, on the session clock from the loop's t0: the comments of stream-k at t0 + ts_ms (posted at
 t0 + arrives_ms when one arrives late), the shop and the customers of measure/c5_shop; at the loop end every
 open card is closed by posting a retired version (never deleted), the `Session.waits` snapshot is kept and the
-worker state goes (a restart). Writes <run>.json, <run>-scenarios.json and <run>-comments.jsonl to --out,
+live worker and its completion evidence persist; the separate dry runner still resets its state. Writes <run>.json, <run>-scenarios.json and <run>-comments.jsonl to --out,
 without comment text, utterances or phone numbers, and prints the SQL ledger of the session.
 """
 
@@ -22,6 +22,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -57,6 +58,19 @@ def git_sha() -> str:
     return subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True
     ).stdout.strip()
+
+
+def git_state() -> dict:
+    """What the run ran on: HEAD, whether tracked files differ from it (a dirty tree is not HEAD), and the pull
+    requests merged on the first-parent line ("Merge pull request #N: ..." or "#N from ..."), newest first."""
+
+    def git(*args: str) -> str:
+        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout
+
+    subjects = git("log", "--first-parent", "--merges", "--format=%s", "HEAD").splitlines()
+    prs = [int(m[1]) for s in subjects if (m := re.match(r"Merge pull request #(\d+)\b", s))]
+    return {"head": git("rev-parse", "HEAD").strip(), "dirty": git("status", "--porcelain", "--untracked-files=no") != "",
+            "merged_prs": prs}  # fmt: skip
 
 
 def comment_event(row: dict, sid: str, t0: int) -> dict:

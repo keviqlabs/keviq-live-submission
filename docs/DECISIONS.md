@@ -2,6 +2,225 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-02 — A draft replaced within seconds, never priced, is not "the one before"
+
+**D-041 Without an attachment binding, a retired item is "the one before" unless it was a misread: none of its
+versions known at the comment time was live or edited, and it was put away within 5 s (`QUICK_SWITCH_MS`) of its
+first version.** This narrows D-040 in `live_cards_at` (`worker/brain/labels.py`); current is unchanged. An item put
+away after it had a price (the demo's card-03) stays previous. An item shown a while whose spoken price was missed also
+stays previous: the card brain retires every unpriced draft when the next item opens, so status alone cannot tell a
+presented item from a misread. A draft replaced by another item within seconds is skipped. `live` and `edited` are the
+statuses a priced card has (`app/store.py` `LIVE_STATUSES`). The 5 s window comes from the recorded paid-test runs: of
+364 retired drafts that never had a price, 249 were put away within 5 s; the three in the judge1 and demo replays
+below were put away after 2.0, 2.0 and 2.5 s. No contract, schema, catalog or rule changes; `v` unchanged.
+
+Before (judge1 replay with the model, main `137ffca`, `judge-paid-1102-2006`): right card 4 of 7 order comments, wrong
+card 2 (cm-08 on BOOT-02, a draft put away 2.5 s after it opened; cm-09), no order 1 (cm-14).
+After: not a new paid run. A 0 USD rebinding of the recorded order labels with the new pair over seven recorded
+sessions (`judge-paid-1102-1109`, `-1459`, `-1605`, `-1644`, `-2006`, `demo-paid-1102-1112r`, `-1646r`) changes
+exactly 6 bindings, all to the expected TUI-03 (in each of `judge-paid-1102-2006`, `demo-paid-1102-1112r` and
+`demo-paid-1102-1646r`: cm-08 BOOT-02 → TUI-03 and cm-14 no card → TUI-03), and no other binding. The labeling
+prompt shows the same pair (D-038), so the model input changes for these comments; a paid run after this change gives
+the model's number.
+
+## 2026-11-02 — "The one before" is the item shown before the one on screen
+
+**D-040 Without an attachment binding, the current item is the most recently shown item that is not retired, a draft
+included, and the previous item is the next most recently shown item, a just-retired item included.**
+`live_cards_at` (`worker/brain/labels.py`) takes the card versions known at the comment time, each card at its latest
+known version (a price set later is not used), and orders the cards by their last frame-time appearance, a card with
+none last. Current is the first card whose version is not retired, an unpriced draft included; previous is the first
+card that is not current. This reverses the pair chosen in `6e6bcc9`: current was the newest live card and previous the
+latest other card by first version, so while a new item was still an unpriced draft on screen, "the one before" bound
+that draft itself. A retired card is never current, but it may be previous: the demo gold expects "the one before"
+right after the seller puts an item away (labels c076, c081, c100 bind card-03, BOOT-02, retired at 199.5 s just
+before card-04 appears at 200 s). An order on an unpriced draft stays held for the seller by the order rules ("card
+has no price yet"); `orders/` is unchanged. The labeling prompt shows the same pair (D-038), so the model input
+changes. No contract, schema, catalog or rule changes; `v` unchanged.
+
+Before (paid judge1 replay `judge-paid-1102-1644` on `46a0f0e`): right card 4 of 7 order comments, wrong card 2 (cm-05
+bound TUI-03, cm-08 bound BOOT-02), no order 1 (cm-11).
+After (the recorded labels of four paid judge1 replays bound again with main's and with this rule, no model call; per
+comment, main → this change; every other order comment is unchanged):
+- `judge-paid-1102-1109`: cm-05 TUI-03 → GIAY-01; cm-06 (current_card at 28.0 s, TUI-03 still an unpriced draft)
+  GIAY-01 → TUI-03; cm-08 BOOT-02 → TUI-03.
+- `judge-paid-1102-1459`: cm-05 TUI-03 → GIAY-01; cm-08 TUI-03 → GIAY-01 (no BOOT-02 card was made in that run, so at
+  47 s the bag, still an unpriced draft, is the item on screen).
+- `judge-paid-1102-1605`: cm-05 TUI-03 → GIAY-01; cm-08 BOOT-02 → TUI-03.
+- `judge-paid-1102-1644`: cm-05 TUI-03 → GIAY-01; cm-08 BOOT-02 → TUI-03; cm-14 (current_card at 62.0 s while BOOT-02
+  is an unpriced draft) TUI-03 → BOOT-02.
+
+Against the judge1 gold (cm-05 GIAY-01; cm-06, cm-08 and cm-14 TUI-03), two changes are regressions: cm-14 in
+`judge-paid-1102-1644` and cm-08 in `judge-paid-1102-1459`; cm-06 in `judge-paid-1102-1109` now matches the gold. With
+its labels held fixed, `judge-paid-1102-1644` gives right card 5 of 7, wrong card 1 (cm-14), no order 1 (cm-11). A
+paid replay after merge measures the model's labels with the new prompt; its numbers are recorded as they come.
+
+## 2026-11-02 — A card's cut-out is ready when it goes live
+
+**D-039 A card's SAM cut-out starts when its draft opens, so the version that makes it live carries the image, and
+an `other` item is asked for by the English noun of its catalog kind.**
+An order is locked to the card version live at the comment (D-032), and the cut-out used to start only when the card
+went live, so its image came as a later version that the quote and the receipt did not carry. In the paid C5 runs
+the receipt image tier was 0. Now the cut-out starts when the draft opens (or its frame is first cached) and nothing
+is posted then. When the price makes the card live and the cut-out is ready, the live version carries `image_url`;
+otherwise the image is the next version, caused by the event that made the card live (the speech, or the seller's
+priced version) and the frame. A version posted after a product_seen's handler returns never cites that product_seen,
+so the attachment evidence stays complete (#102). At most one SAM call per card, each with its `model_call`; one call
+at a time per session, live cards first; a waiting cut-out of a retired or no longer current card is skipped. A card
+whose frame is never cached behaves as before (`worker/brain/card.py`).
+
+Asked for the noun "other", SAM often finds nothing. For an `other` card, `sam.subject` maps its kind (normalised with
+`vn.tokens`) to an English noun: "tay cầm" to "game controller", "bàn phím" to "keyboard". An unknown kind and every
+other category keep today's noun (`worker/vision/sam.py`). No contract, schema, catalog or rule changes; `v`
+unchanged.
+
+Before (paid C5 runs on main): 17 of 48 `card_cutout` calls logged "sam found no other"; 21 of 48 live cards never
+got an image; receipts with an image 0 of 6.
+After: _to be measured by the next paid C5 run on main._
+
+## 2026-11-02 — The labeling prompt shows the cards orders bind to
+
+**D-038 The labeling prompt shows the current and previous card from the same snapshot that binds the order.**
+Without an attachment binding, `resolve()` binds "this one" and "the previous one" from the live snapshot at the
+comment time (`cards_at(..., live_only=True)`), but the prompt showed the model the media-time pair, which can include a
+draft card that is not live yet. The model could then name a card the order is not bound to. The prompt now uses the
+same snapshot as `resolve()` (`worker/brain/labels.py`, `_ask`); a session with an attachment binding keeps the
+media-time pair, as before. The prompt text, model, schema and catalog are unchanged; `v` unchanged.
+
+An explicit product name that is not the current or previous card still gets no card; that binding is not part of
+this entry.
+
+Before (judge1 replay with the model, main `aa457d9`): correct orders 2/7, wrong card 3, no order 2.
+After: _to be filled from the next paid run on main after this change._
+
+## 2026-11-02 — C9 delivery and C11 current state
+
+**D-037 C9 delivery definition and C11 current-state wording.**
+Decided by the Founder on 2 November 2026 (07:03 ICT). C9: the judges' entry point is the public repository run from
+the README; a hosted URL is optional. C11: the sentence that implied an RTMP input is replaced by the current state (the
+media worker reads recorded files; live RTMP input is not implemented). The README line on the hosted demo now says to
+include a link and access instructions only if one is deployed. No metric, threshold, event or schema changes; `v`
+unchanged.
+
+## 2026-11-01 — Wonder exception for the model comparison measurement
+
+**D-036 (provisional number) Muse Wonder may be called only inside the product-identification model comparison, which is a measurement, with a 5.00 USD cap for the whole experiment that sits outside the D-006 meter. Nothing reaches production.**
+The number is provisional: D-031 is held by #77 and D-032 by PR #82. Whoever merges later renumbers.
+
+Founder authorization, 2026-11-01, verbatim:
+
+- Question: "Luật 5 cấm dùng Muse Wonder tuần này. Anh có cho phép ngoại lệ dùng Wonder chỉ trong thử nghiệm so sánh model này, trần tổng 5 USD, không đưa vào sản phẩm không? Câu trả lời của anh sẽ được trích nguyên văn vào hồ sơ."
+- Founder: "Cho phép, trần 5 USD"
+
+Scope and limits:
+
+- Only `measure/model_compare.py` calls Wonder. `meta/pricing.py` still lists it in `BLOCKED`. No production schema, prompt, model setting or price changed.
+- Inside that module, Wonder is priced at 4.00 USD input and 20.00 USD output per million tokens. This price is an assumption with no cited source in the repo (`meta/pricing.py` lists no Wonder price). No cached input price is known, so cached input is charged as full input.
+- The 5.00 USD cap covers all three configurations together (Spark minimal, Spark high, Wonder). The experiment's own meter enforced it before each call. The runner wires that meter (`CapMeter`) into the client in place of the project `Meter` (`measure/model_compare.py:268-271`), so `Meter.check` never ran: the D-006 caps of 30 USD/day and 300 USD total were not checked for these 560 calls. Their `model_call` events also went to a JSONL file, not to PostgreSQL. 3.7242853 USD must be added to the 2026-11-01 meter by hand.
+
+Spend from the `model_call` ledger, not reconciled with Billing: 3.7242853 USD over 560 calls. By configuration: spark-minimal 0.27568665, spark-high 0.98927865, wonder-high 2.45932. The 5.00 USD is the cap, not an amount spent. Add 3.7242853 USD to the 2026-11-01 model spend by hand.
+
+Evidence: `docs/evidence/2026-11-01/model-compare-NOTE.md`. No contract change; `v` is unchanged.
+
+## 2026-11-01 — optional catalog kind evidence
+
+**D-035 Prepared candidate: use explicit catalog kinds only to refine a new `other` card.**
+This is a narrow extension of the product-identity work, authorized for local implementation through
+project coordination. It does not claim release approval; independent review, final integrated checks
+and the Founder's Ready/merge decision remain pending. D-026 remains as the historical decision; this
+entry supersedes only its restriction on optional vision kind vocabulary and string attributes below.
+
+When the active seller-approved catalog contains explicit `kind` values for `other` items, the existing
+image call receives their kinds and colors, without SKU, price, stock or expected answers. The coarse
+category and minimal reasoning effort stay unchanged. `product_seen.attributes.kind` and
+`attributes.identity_state` carry optional string/null evidence already allowed by v1. No schema,
+API, event type, acceptance metric, threshold, order permission or confirmation rule changes.
+
+Code assigns SKU only while creating a new card and only when a clear observation above the existing
+confidence threshold matches exactly one catalog item by kind and observed color. For new typed observations,
+missing/unknown kind, missing/mismatched color, unclear/low-confidence evidence and multiple matches stay
+unresolved. Legacy events with both optional attributes absent retain coarse unique matching; the presence
+of either attribute selects strict typed matching, including explicitly null or unclear values. There
+is no first-item, price, previous-SKU or previous-price fallback. A later clear observation creates a
+fresh unpriced card rather than changing an unresolved card's SKU. Repeats and item switches include
+kind/state in continuity checks; unresolved cards still occupy the normal current/previous position.
+
+The existing media-time price selection is retained. For refined identities, a price additionally requires
+exactly the same explicit kind in the speech text; unresolved, unnamed or conflicting kinds wait for seller
+input. Generic price-only speech can therefore lose automatic coverage. Legacy cards retain their old
+speech path. This guard changes no speech prompt, schema, price source or seller authority.
+
+Speech prompt, transcriber keywords, coarse categories, catalog data and all non-`other` behavior stay
+as before. With no explicit `other` kinds, the vision prompt/schema stay unchanged. No model price or
+SKU is accepted. The new combined prompt has not been measured: the saved-output replay in
+`docs/evidence/2026-11-01/catalog-kind-component-NOTE.md` is component evidence only, not a C5 run,
+latency result or proof of extra orders. No paid authority is granted here.
+
+## 2026-11-01 — C5 receipt wording and manual comparison
+
+**D-034 C5 refers to the card version quoted to and confirmed by the customer; the separate manual comparison is not a staffing estimate.**
+The project owner approved both wording replacements on 1 November 2026. Independent review by the contracts
+owner is still required before merge; this entry does not record that review as complete.
+
+- Receipt wording: replace "the card version current at confirmation" with "the card version quoted to and
+  confirmed by the customer", consistent with the quote/receipt version behavior recorded in D-032. This does
+  not assert that every measured receipt already meets C5.
+- Comparison wording: remove the unsupported staffing claim. The [single-run manual comparison](evidence/2026-11-01/manual-founder-1-NOTE.md)
+  may be cited only together with n=1 and its published protocol deviations, including prior exposure to aggregate
+  results and three practice runs. It is not an estimate of staff required or a measurement of staffing savings.
+- Preserve all C5 targets: 500 comments in 30 minutes, order-label recall >=0.9, seller interventions <=10 per hour,
+  phone visibility <=5 seconds, and the 100% receipt target. Correct order labels are not completed orders;
+  intent, right item, order, confirmation and receipt outcomes remain distinct.
+- Only the C5 row and this decision record change. No metric/scoring logic, schema, gold, catalog, order code,
+  price authority, confirmation rule or permission changes. The proposed documentation clarification retains v1;
+  the independent contracts review must confirm compatibility and the evidence references before merge.
+
+## 2026-10-31 — video source
+
+**D-033 The video's main source is a recorded replay with synthetic comments, not a real level-2 live session (C9 and the C4 check amended).**
+C9 named one real level-2 live session as the main source of the video, with before/after numbers from that session.
+Three facts in the code make such a session a poor main source. The media worker reads finished files only: there is
+no live camera or stream input, and frames are stamped from the start of playback, while real Page comments carry
+Facebook's clock, so a comment like "the pair just now" could be matched against the wrong card. Real Messenger sends,
+real comment hiding and real confirmed orders stay closed, so a live session would show real comments beside a
+simulated order path. And a live session has no labelled gold, so it cannot produce the accuracy and seller-relief
+numbers (C3, C5, label F1); latency and cost alone would not carry the story, while the replay's synthetic comments
+are labelled and scored with the real models.
+
+The video is therefore recorded from the replay: a recorded product video through the media worker on the session
+clock, with synthetic comments, both stated on screen, and the numbers in the end-to-end story taken from one measured
+run named in the README. An optional short scene shows real comments from testers on the chosen Page entering the
+console read-only (`make live-ingest`); it is labelled as such and carries no numbers. C4 is now checked by hand on
+the replay, because the cards in the video come from the recording. The judges' path (replay and simulators, no Meta
+account) and the stable URL in C9 are unchanged. The citation for the C5 staffing baseline remains unresolved; this
+decision does not validate that baseline or establish it as "before" comparison evidence. No
+event, schema or version change; acceptance stays v1. No order rule, price authority, customer-confirmation rule or
+level-2 permission changes. The "RTMP input" named in C11 is not built either; that sentence is left for a separate
+contracts change. Product-owner review/merge is required.
+
+## 2026-11-01 — which card version an order keeps
+
+**D-032 An order is locked at drafting to the card version live at the comment, or to a later version known at
+drafting that changes only the name or the image. The quote and the receipt name that version and carry its image.**
+No contract change: the order event keeps `receipt{card_id, card_version, image_url, price}`, `v` stays 1. The
+`confirm_order` payload gains `image_url` and the `receipt` payload gains `sku` and `name`; message payloads are
+free objects in `message_out.schema.json`. Chosen by the product owner on 31 October.
+
+- Why: the worker adds the cut-out image in a version after the price, so a comment written between the two was
+  locked to the version without an image and every such receipt had `image_url: null`.
+- One function (`flow.locked_card`, called from `draft_order`) serves both order flows. The walk follows the
+  versions one by one and stops at the first that changes the SKU, price, currency, variants or stock, or drops the
+  name or image; such a change keeps the comment-time version as before.
+- After the quote: a new price, a new SKU or a dropped variant sends the customer's yes to the seller
+  (`card_change`; SKU is new). A new name or image does not, and the receipt keeps the quoted version.
+- A locked version without a SKU waits for the seller, as the attachment flow already does. Without a price: the
+  seller path as before. Without an image: allowed and counted (`with_image`). `orders/rules.py` is unchanged.
+- Rejected: locking to the newest version at the customer's yes (the customer would confirm a version they were not
+  quoted); locking at drafting to the newest version whatever changed (a new price or SKU would be quoted without
+  the seller).
+- Not done here: a price set in the console makes an `edited` version and queues no cut-out, so such cards still
+  get no image (backlog, worker change). The acceptance wording for C5 is a separate contracts change.
+
 ## 2026-10-28 — attachment reference eligibility
 
 **D-030 Clarify that frame coverage and reference resolution are separate prerequisites for ready.**

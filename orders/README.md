@@ -5,23 +5,41 @@ Order state machine (`states.py`), permission rules (`rules.py`), the order flow
 
 ## Flow
 
-1. `comment_labeled` with `label == order` → `DRAFT`, priced from the card version that was live at the comment's
-   `ts_ms`, stock checked per variant (orders in `CONFIRM_SENT`, `CONFIRMED`, `CLOSED` hold stock). If the comment
+1. `comment_labeled` with `label == order` → `DRAFT`, priced from the card version it is locked to (see "Card
+   version lock" below), stock checked per variant (orders in `CONFIRM_SENT`, `CONFIRMED`, `CLOSED` hold stock). If the comment
    matches several variants and does not say the size or color that tells them apart, the customer is asked first
    (see below) and the draft waits for the answer.
 2. `rules.evaluate_draft` decides. Allowed → `CONFIRM_SENT` and a `confirm_order` message (private reply to the
-   comment) with size, color, qty, unit price, amount, address request and payment method (COD).
+   comment) with size, color, qty, unit price, amount, the locked version's `image_url`, address request and
+   payment method (COD).
    Discount request, amount over the threshold or short stock → `NEEDS_SELLER` and a
    `waiting_for_shop` message.
 3. The seller decides in the console: approve at the card price, approve at a new unit price
    (`rules.price_change`), or reject (`CANCELLED` by the seller). Approve → `CONFIRM_SENT` by the seller.
 4. The customer's `message_in` (quick reply `CONFIRM:<order_id>` / `CANCEL:<order_id>`, or a plain yes in the
    thread) → `CONFIRMED` with a receipt `{card_id, card_version, image_url, price}` from that card version, and a
-   receipt message; or `CANCELLED` by the customer. If the card got a new version after the confirmation was sent
-   (after `CONFIRM_SENT`'s `ts_ms`) and that version has another price or no longer lists the line's variant, the
+   receipt message that also carries `sku` and `name`; or `CANCELLED` by the customer. If the card got a new version after the confirmation was sent
+   (after `CONFIRM_SENT`'s `ts_ms`) and that version has another price, another SKU or no longer lists the line's variant, the
    yes goes to `NEEDS_SELLER` instead (`flow.card_change`). The order keeps its pinned version and price. The
    reason names the version at the send and the version at the yes, and `caused_by` adds the newer card event. A
-   card change between the comment and the send does not count: the order keeps the comment-time price.
+   card change between the comment and the send does not count: the order keeps the locked version and price. A
+   new name or image after the send is not a change either: the receipt names the quoted version and its image.
+
+## Card version lock (`flow.locked_card`)
+
+The worker adds the cut-out image in a later card version, after the price. An order is locked when it is drafted
+(`draft_order`, used by both order flows):
+
+- to the version that was live at the comment's `ts_ms`;
+- or, when the versions after it that are already known at drafting change only `name` or `image_url` (same SKU,
+  price, currency, variants and stock, nothing dropped), to the last of them. The walk stops at the first version
+  that changes anything else, so a new price, SKU or variant list keeps the comment-time version, as before.
+  The DRAFT's notes say which version was taken and `caused_by` adds that card event.
+
+A locked version without a SKU goes to the seller (`NEEDS_SELLER`, "has no SKU"); one without a price goes the
+seller's way as before (`rules.py` is unchanged). One without an image is allowed: the receipt has `image_url:
+null`, and the C5 scorer counts receipts with an image (`with_image`). An image that arrives after the quote does
+not reach that order's receipt; on camera, wait for the image on the card before customers order.
 
 ## Cancel
 

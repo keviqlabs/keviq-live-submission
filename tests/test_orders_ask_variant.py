@@ -92,9 +92,11 @@ async def play(client, events: list[dict]) -> tuple[Runner, list[dict]]:
     return runner, produced
 
 
-async def say(client, runner, thread: str, text: str, quick_reply: str | None = None) -> list[dict]:
+async def say(
+    client, runner, thread: str, text: str, quick_reply: str | None = None, ts: int | None = None
+) -> list[dict]:
     """A customer message through the sim Page webhook, handled as the worker would."""
-    body = webhook_body(thread, now_ms(), text=text, quick_reply=quick_reply)
+    body = webhook_body(thread, now_ms() if ts is None else ts, text=text, quick_reply=quick_reply)
     [mi] = (await client.post(f"/api/sessions/{SID}/sim/messenger", json=body)).json()["events"]
     out = await runner.handle(mi)
     assert runner.failures == 0
@@ -277,6 +279,16 @@ async def test_a_cancel_instead_of_a_size_is_not_asked_again(c019):
     assert order_events(await stored(store)) == []
 
 
+@pytest.mark.parametrize("no", ["không", "ko", "thôi", "huỷ", "hủy", "no", "cancel", "Không!"])
+async def test_a_plain_no_with_no_open_order_then_ok_asks_the_size_again(c019, no):
+    # with no open order a plain "không" asks nothing, so the "ok" after it answers no cancel question
+    runner, store, client, _ = c019
+    t = now_ms()
+    assert await say(client, runner, "th-u064", no, ts=t) == []
+    assert sent(await say(client, runner, "th-u064", "ok", ts=t + 1)) == ["ask_variant"]
+    assert order_events(await stored(store)) == []
+
+
 # --- 5. only the customer who was asked can answer ---------------------------------------------------------
 
 
@@ -400,6 +412,33 @@ async def test_replayed_label_asks_once():
     [ask] = await flow.on_labeled(lb, view, Recorder(), 6000)
     again = flow.View.of([*view.cards, view.comments["c1"]["comment"], lb, ask])
     assert await flow.on_labeled(lb, again, Recorder(), 6100) == []
+
+
+def holding(size: str) -> dict:
+    """Another customer's open order on card Y that holds the only `size`."""
+    line = {
+        "sku": "Y-1",
+        "card_id": "card-y",
+        "card_version": 1,
+        "variant": {"size": size, "color": "đỏ"},
+        "qty": 1,
+    }
+    return {"event_id": f"o-{size}.sent", "type": "order", "ts_ms": 6050, "order_id": f"o-{size}",
+            "customer_ref": "uz", "lines": [line], "state": "CONFIRM_SENT"}  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("later", "others"),
+    [(6100, ["S", "M"]), (5000 + 25 * 3600 * 1000, [])],
+    ids=["sold-out-since", "window-closed-since"],
+)
+async def test_a_replayed_label_after_the_question_makes_no_seller_order(later, others):
+    """The question already sent is checked first: a replay after the sizes sold out or the 24 h window closed does
+    not draft an order for the seller next to the open question."""
+    lb, view = card_scene(TWO_SIZES)
+    [ask] = await flow.on_labeled(lb, view, Recorder(), 6000)
+    again = flow.View.of([*view.cards, view.comments["c1"]["comment"], lb, ask, *map(holding, others)])
+    assert await flow.on_labeled(lb, again, Recorder(), later) == []
 
 
 async def test_outside_the_24h_window_nothing_is_asked_and_the_seller_sees_it():

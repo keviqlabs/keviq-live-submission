@@ -5,6 +5,7 @@ import hashlib
 
 from fastapi import HTTPException
 
+from answers.message import QUESTION_LABELS, on_question
 from app.contracts import make_event
 from connectors.sim.messenger import SimMessenger
 from orders import flow, rules, variants
@@ -198,7 +199,7 @@ async def draft_attachment(
             )
             if asked is not None:
                 return await append_partials(store, comment["session_id"], comment["source"], asked)
-        stock = 0
+        stock = card.get("stock") or 0
         blocking.append("variant is unavailable or unresolved on the selected card")
     partials = await flow.draft_order(
         attachment["event_id"],
@@ -215,6 +216,7 @@ async def draft_attachment(
         blocking,
         [attachment["event_id"], comment["event_id"], label["event_id"], card["event_id"]],
         reply_to=comment["comment_id"],
+        seller_picks_card=bool(candidates),
     )
     if candidates:
         for partial in partials:
@@ -322,6 +324,8 @@ async def reconcile(store, sid, now, events=None):
     for event in events:
         if event["type"] == "message_in":
             inputs.append(event)
+        elif event["type"] == "comment_labeled" and event.get("label") in QUESTION_LABELS:
+            inputs.append(event)  # a price or stock question about the item on screen gets one private reply
         elif event["type"] == "comment_labeled" and event.get("label") in flow.TRIGGER_LABELS:
             cancellation = flow.cancel_request((source_comments.get(event["comment_id"]) or {}).get("text"))
             if cancellation and cancellation["kind"] == "cancel":
@@ -338,6 +342,8 @@ async def reconcile(store, sid, now, events=None):
         view = flow.View.of(events)
         if event["type"] == "message_in":
             partials = await reply_partials(store, sid, event, view, events, now)
+        elif event.get("label") in QUESTION_LABELS:
+            partials, _ = await on_question(event, events, SimMessenger(), now)
         elif event.get("label") in flow.TRIGGER_LABELS:
             row = view.comments.get(event["comment_id"]) or {}
             comment = row.get("comment") or {}

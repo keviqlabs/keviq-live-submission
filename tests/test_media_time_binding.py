@@ -29,6 +29,10 @@ from worker.brain import card, labels, window
 # gives the system the margins production gives it. Every assertion stays in logical time.
 SPEED = 1
 
+# The spec's timelines are drawn around a 4 s attachment window (card B at 16.0, deadline at 16.5), so the
+# binding pins it instead of taking the app default.
+SPEC_WAIT_MS = 4000
+
 
 class Clock:
     def __init__(self, start):
@@ -245,7 +249,7 @@ async def scenario(pg_app, monkeypatch, request):  # noqa: F811
         monkeypatch.setattr(module, "now_ms", clock.now_ms)
     monkeypatch.setattr(card, "asyncio", CardTimers())
     monkeypatch.setattr(labels, "asyncio", CardTimers())
-    monkeypatch.setattr(labels, "ATTACH_WAIT_MS", 4000, raising=False)
+    monkeypatch.setattr(labels, "ATTACH_WAIT_MS", SPEC_WAIT_MS, raising=False)
     monkeypatch.setattr(card, "SESSIONS", {})
     monkeypatch.setattr(window, "HOLD_MS", 4168)
     monkeypatch.setattr(runner_mod.Runner, "client_for", lambda self, event: NoModel())
@@ -264,6 +268,7 @@ async def scenario(pg_app, monkeypatch, request):  # noqa: F811
                     "kinds": {kind: ["sim", "replay"] for kind in SOURCE_KINDS},
                 }
             ],
+            wait_ms=SPEC_WAIT_MS,
         )
     )
     labeler = labels.Labeler(client_for=lambda ctx: Classifier(clock))
@@ -458,7 +463,7 @@ async def test_expiry_deadline_while_lower_frame_result_is_blocked(scenario):
         comment = next(
             e for e in await s.events() if e.get("comment_id") == "deadline-order" and e["type"] == "comment"
         )
-        deadline = comment["ingested_ms"] + 4000
+        deadline = comment["ingested_ms"] + SPEC_WAIT_MS
         tolerance = 200  # logical ms, judged on the outcome's own timestamps (later = recovery-late)
         await s.clock.until(23)
         await s.seen(20, "boot", "đen", "deadline-b")
