@@ -2,7 +2,7 @@
 
 Cleaned copy of the run note kept outside the repository (source sha256
 `e740e7ae148436898d41608681c419ee3523bab48c7ace4ed5572529ec647107`): local paths and internal labels are removed, the
-Vietnamese comment and speech texts are replaced by English glosses, and times are in ICT. The numbers are unchanged.
+Vietnamese comment and speech texts are replaced by English glosses, and times are in ICT. The numbers are unchanged, except the count of order comments under Outcome, corrected from 6 to 7 to match the table below.
 
 ## Outcome
 - Code: origin/main aa457d98785a51320aa80a62c25744941b946afc (tree 6b7da8f), a clean clone outside the working copy, no local change.
