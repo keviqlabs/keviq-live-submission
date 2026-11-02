@@ -2,6 +2,38 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-02 — "The one before" is the item shown before the one on screen
+
+**D-040 Without an attachment binding, the current item is the most recently shown item that is not retired, a draft
+included, and the previous item is the next most recently shown item, a just-retired item included.**
+`live_cards_at` (`worker/brain/labels.py`) takes the card versions known at the comment time, each card at its latest
+known version (a price set later is not used), and orders the cards by their last frame-time appearance, a card with
+none last. Current is the first card whose version is not retired, an unpriced draft included; previous is the first
+card that is not current. This reverses the pair chosen in `6e6bcc9`: current was the newest live card and previous the
+latest other card by first version, so while a new item was still an unpriced draft on screen, "the one before" bound
+that draft itself. A retired card is never current, but it may be previous: the demo gold expects "the one before"
+right after the seller puts an item away (labels c076, c081, c100 bind card-03, BOOT-02, retired at 199.5 s just
+before card-04 appears at 200 s). An order on an unpriced draft stays held for the seller by the order rules ("card
+has no price yet"); `orders/` is unchanged. The labeling prompt shows the same pair (D-038), so the model input
+changes. No contract, schema, catalog or rule changes; `v` unchanged.
+
+Before (paid judge1 replay `judge-paid-1102-1644` on `46a0f0e`): right card 4 of 7 order comments, wrong card 2 (cm-05
+bound TUI-03, cm-08 bound BOOT-02), no order 1 (cm-11).
+After (the recorded labels of four paid judge1 replays bound again with main's and with this rule, no model call; per
+comment, main → this change; every other order comment is unchanged):
+- `judge-paid-1102-1109`: cm-05 TUI-03 → GIAY-01; cm-06 (current_card at 28.0 s, TUI-03 still an unpriced draft)
+  GIAY-01 → TUI-03; cm-08 BOOT-02 → TUI-03.
+- `judge-paid-1102-1459`: cm-05 TUI-03 → GIAY-01; cm-08 TUI-03 → GIAY-01 (no BOOT-02 card was made in that run, so at
+  47 s the bag, still an unpriced draft, is the item on screen).
+- `judge-paid-1102-1605`: cm-05 TUI-03 → GIAY-01; cm-08 BOOT-02 → TUI-03.
+- `judge-paid-1102-1644`: cm-05 TUI-03 → GIAY-01; cm-08 BOOT-02 → TUI-03; cm-14 (current_card at 62.0 s while BOOT-02
+  is an unpriced draft) TUI-03 → BOOT-02.
+
+Against the judge1 gold (cm-05 GIAY-01; cm-06, cm-08 and cm-14 TUI-03), two changes are regressions: cm-14 in
+`judge-paid-1102-1644` and cm-08 in `judge-paid-1102-1459`; cm-06 in `judge-paid-1102-1109` now matches the gold. With
+its labels held fixed, `judge-paid-1102-1644` gives right card 5 of 7, wrong card 1 (cm-14), no order 1 (cm-11). A
+paid replay after merge measures the model's labels with the new prompt; its numbers are recorded as they come.
+
 ## 2026-11-02 — A card's cut-out is ready when it goes live
 
 **D-039 A card's SAM cut-out starts when its draft opens, so the version that makes it live carries the image, and
