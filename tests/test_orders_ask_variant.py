@@ -414,6 +414,33 @@ async def test_replayed_label_asks_once():
     assert await flow.on_labeled(lb, again, Recorder(), 6100) == []
 
 
+def holding(size: str) -> dict:
+    """Another customer's open order on card Y that holds the only `size`."""
+    line = {
+        "sku": "Y-1",
+        "card_id": "card-y",
+        "card_version": 1,
+        "variant": {"size": size, "color": "đỏ"},
+        "qty": 1,
+    }
+    return {"event_id": f"o-{size}.sent", "type": "order", "ts_ms": 6050, "order_id": f"o-{size}",
+            "customer_ref": "uz", "lines": [line], "state": "CONFIRM_SENT"}  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("later", "others"),
+    [(6100, ["S", "M"]), (5000 + 25 * 3600 * 1000, [])],
+    ids=["sold-out-since", "window-closed-since"],
+)
+async def test_a_replayed_label_after_the_question_makes_no_seller_order(later, others):
+    """The question already sent is checked first: a replay after the sizes sold out or the 24 h window closed does
+    not draft an order for the seller next to the open question."""
+    lb, view = card_scene(TWO_SIZES)
+    [ask] = await flow.on_labeled(lb, view, Recorder(), 6000)
+    again = flow.View.of([*view.cards, view.comments["c1"]["comment"], lb, ask, *map(holding, others)])
+    assert await flow.on_labeled(lb, again, Recorder(), later) == []
+
+
 async def test_outside_the_24h_window_nothing_is_asked_and_the_seller_sees_it():
     later = 5000 + 25 * 3600 * 1000
     lb, view = card_scene(TWO_SIZES)

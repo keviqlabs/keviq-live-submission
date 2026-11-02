@@ -388,7 +388,7 @@ async def on_labeled(trigger: dict, view: View, messenger, now: int) -> list[dic
             )
             if asked is not None:
                 return asked
-        stock = 0
+        stock = card.get("stock") or 0  # no single variant: the card's stock bounds the line, not a made-up 0
         how = "not on" if not hits else "ambiguous on"
         blocking.append(f"variant {variant_text(variant)} {how} {card_id} v{card['version']}")
     return await draft_order(
@@ -431,11 +431,14 @@ async def draft_order(
     blocking: list[str],
     causes: list[str],
     reply_to: str | None,
+    *,
+    seller_picks_card: bool = False,
 ) -> list[dict]:
     """DRAFT priced from the version `card` locks to (locked_card: the version current at the comment, or a later
     one that changes only the name or the image), then the rules: CONFIRM_SENT + confirm_order, or NEEDS_SELLER +
     waiting_for_shop. A locked version without a SKU waits for the seller. `reply_to` is the comment for a private
-    reply; None sends by PSID (Meta allows one private reply per comment)."""
+    reply; None sends by PSID (Meta allows one private reply per comment). With `seller_picks_card` the seller still
+    chooses among frozen cards, so the rules' refusal on `card` is not shown (the choice is checked again)."""
     card_id = card["card_id"]
     at_comment, card = card, locked_card(view.cards, card, now)
     if card is not at_comment:
@@ -475,6 +478,8 @@ async def draft_order(
         msg = await messenger.send(thread, "confirm_order", confirm_payload(nxt, card, reply_to))
     else:
         why = blocking or [decision.reason]
+        if blocking and not decision.allowed and not seller_picks_card:
+            why = [*blocking, decision.reason]  # the seller sees the rules' refusal (e.g. stock) too
         if discount:
             why[-1] += f' ("{discount["phrase"]}")'
         if not window.allowed:
@@ -505,6 +510,9 @@ async def ask_variant(
     """Ask the commenter to choose the missing size/color among the variants of `card` (the version the comment
     was priced from) that still have stock. Nothing is guessed and no order event is made until the customer
     answers. None when it cannot ask (no 24h window, no variant left): the caller falls back to the seller."""
+    event_id = step_id(base, order_id, "ask-variant")
+    if any(m["event_id"] == event_id for m in view.messages):
+        return []  # asked already: a replay changes nothing, even if the window or the stock has gone since
     thread = thread_for(comment["user_ref"])
     window = rules.can_message(view.last_contact.get(thread, comment["ts_ms"]), now)
     vs = card["variants"]
@@ -513,9 +521,6 @@ async def ask_variant(
     ]
     if not window.allowed or not free:
         return None
-    event_id = step_id(base, order_id, "ask-variant")
-    if any(m["event_id"] == event_id for m in view.messages):
-        return []
     payload = variants.question(
         card, order_id, comment["comment_id"], free, missing, again=again, price=vnd(card.get("price"))
     )

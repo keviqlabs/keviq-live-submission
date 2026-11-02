@@ -199,7 +199,7 @@ async def draft_attachment(
             )
             if asked is not None:
                 return await append_partials(store, comment["session_id"], comment["source"], asked)
-        stock = 0
+        stock = card.get("stock") or 0
         blocking.append("variant is unavailable or unresolved on the selected card")
     partials = await flow.draft_order(
         attachment["event_id"],
@@ -216,6 +216,7 @@ async def draft_attachment(
         blocking,
         [attachment["event_id"], comment["event_id"], label["event_id"], card["event_id"]],
         reply_to=comment["comment_id"],
+        seller_picks_card=bool(candidates),
     )
     if candidates:
         for partial in partials:
