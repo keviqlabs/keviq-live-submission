@@ -5,11 +5,9 @@ lists the work that is not merged. Every run here is one run (n = 1 per configur
 recounted on 3 November, with the command and output for each, are in
 `docs/evidence/2026-11-03/results-1103-NOTE.md`; the others are copied from the run notes named in each row.
 
-This page depends on pull request #104. The run notes `docs/evidence/2026-11-02/c5-paid-1102-1532-NOTE.md`,
-`c5-paid-1102-1709-NOTE.md` and `c5-paid-1102-1426-NOTE.md`, and the sections "Later run: judge-paid-1102-2131" and
-"Later run: judge-paid-1103-0019" of `docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`, are added by #104.
-Until #104 is merged, the pointers to them below do not resolve on `main`; the line numbers are those of #104's
-versions.
+Every full-size C5 run in the table fails C5: in all three, the right item (reference accuracy, target 0.9) and the
+seller interventions (target 10 per hour) miss their targets (column "Verdict" and the run notes cited there). Both
+judge1 runs fail the video test flow.
 
 ## The runs
 
@@ -115,15 +113,16 @@ judge1 events on their own 61.8 s clock.
 
 ## Work in progress
 
-Branches not merged into `main` on 3 November. None of them is part of the results above, and nothing here claims
-they work. Not listed: the branches of open pull requests #68, #84, #104 and #107. "Last commit" is the date of the
-branch's tip; on three branches that tip, of 3 November, only rewords comments, docstrings and notes.
+The published work-in-progress branches, none of them merged into `main` on 3 November. None of them is part of the
+results above, and nothing here claims they work. Other unmerged branches of the working repository belong to closed or
+superseded pull requests and are not part of this work. "Last commit" is the date of the branch's tip; on three
+branches that tip, of 3 November, only rewords comments, docstrings and notes.
 
 | Branch | Last commit | What it changes |
 |---|---|---|
-| `test/console-ui-gate` (PR #109) | 3 November | `Makefile`: a `ui-test` target (`node --test tests/console_*_ui.mjs`) and its addition to `make check` |
 | `measure-first-hide` | 27 October | `measure/core.py`: the C5 phone-visible time ends at the comment's first hide, not its latest label; `measure/labels.py`: the report line says "measured at the first hide"; a test in `tests/test_measure.py` |
 | `returning-card-current` | 3 November (wording only; code and test of 28 October) | `worker/brain/labels.py`: the current card is the live card shown last, so a product shown again becomes current again; a test in `tests/test_labels.py`; reworded comments in `worker/brain/card.py` and `tests/test_catalog_path.py`, and reworded D-026 text in `docs/DECISIONS.md` |
 | `test/sku-ambiguity` | 3 November (wording only; tests, specs and note of 28 October) | Tests, specs and an evidence note for ambiguous catalog matches and card separation, including a deliberately failing reproduction of a priced card reused after a changed observation; no runtime change. The 3 November commit rewords comments and docstrings in `measure/`, tests, `worker/brain/card.py`, earlier evidence notes and scripts, and `docs/DECISIONS.md` |
 | `test/written-phone-shield` | 3 November (wording only; tests, spec and note of 28 October) | Acceptance tests, a spec and an evidence note for phone numbers written in words, with dots or in mixed forms; no change to the shield. The acceptance tests fail on purpose (39 failed, 514 passed on `650fe39`, by its note) and the branch is not to be merged alone. The 3 November commit rewords the same files as on `test/sku-ambiguity` |
 | `speech-leads-prep` | 27 October | `docs/speech-leads-prep.md`: a preparation draft, not a decision, for letting a spoken product switch trigger a one-frame vision check before a new card opens |
+| `ui/comment-actions` (open draft PR #107) | 2 November | Seller console only (`app/static/console-render.js`, `console.js`, `console.html`, `i18n.js`, `shared.css`): a comment shows the state of its order when exactly one order is linked to it, or "Item matching expired", its item, size and colour, and an "Open order" button that scrolls to the order; order comments whose item is unresolved or whose attachment expired are listed under "Awaiting you", with that attachment's frozen candidates when there are any, and count in its number; a queue card shows the total at the entered unit price; the secondary buttons move into a "More actions" menu; the top bar stays in place on narrow screens. Five new tests in `tests/console_attachment_ui.mjs` and `tests/console_decision_ui.mjs`; no server, contract or rule change |

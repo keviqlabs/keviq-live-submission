@@ -5,21 +5,18 @@ each with its command and output below: read-only `SELECT` queries on the ledger
 recount of the data files in this repository, the offline `measure` run on a stored events export, and the
 clean-clone log in this folder. No model was called for this NOTE. Times are in ICT.
 
-The run notes of `c5-paid-1102-1532` and `c5-paid-1102-1709` and the "Later run" sections of
-`docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md` cited here are added by pull request #104; until it is
-merged, those pointers do not resolve on `main`.
-
 ## Files
 | File | Bytes | sha256 |
 |---|---|---|
 | `cleanclone-1103.log` | 2827 | `b3f0335f47bb8fcf66d0c6fe22ba3fc51bbd35f10911d7c8e7a1ff3e8a4fe706` |
-| `cleanclone-1103.sh` | 1608 | `7732d001e0ca508dd9999e3af9510e0f4e9fa657d89e89b5c18ac4aac4e1cc77` |
+| `cleanclone-1103.sh` | 1656 | `0a00ff8144cf1e457e50bb7351cb4c3551f1050704fd9d03eb89dd23bd5b4a8e` |
 
 Both are copies of files kept outside the repository (log sha256
 `f42ca3cdc5dcff882b1694a2cfbddd01760d0dbf50ca58c3fc0c8426d654058d`, script sha256
-`745c1d1eae84c4905a1dcae5ca51384070b473ac31cd40a36d77b81bcb8a91bf`). The only change is that machine paths are
-replaced by `<clone>`, `<uv-cache>`, `<log>`, `<app-log>` and `<python3.12>`; the rest is verbatim. With those
-placeholders the script does not run as stored.
+`745c1d1eae84c4905a1dcae5ca51384070b473ac31cd40a36d77b81bcb8a91bf`). In both, machine paths are replaced by
+`<clone>`, `<uv-cache>`, `<log>`, `<app-log>` and `<python3.12>`. In the script, the repository name on line 16 is
+also replaced by `<repo>`, with a comment saying it is the working repository, and the header comment on line 3 is
+reworded; the rest of both files is verbatim. With those placeholders the script does not run as stored.
 
 ## Clean clone (one run)
 - Code: `2a3ba2e30efa03ac592370b6aa612ce8297ba1c6` (log line 5). Start 2026-11-03 00:54:33 ICT (epoch 1793642073).
