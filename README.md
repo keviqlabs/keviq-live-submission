@@ -24,7 +24,7 @@ Everything in this repository was made during the event, from 26 October 2026 23
 - All code, contracts, tests, data and docs in this repository. The first commit is dated 27 October 10:22 ICT, and no commit is older than the event start: `git log --format=%aI%n%cI | sort | head -1`.
 - Outside this repository: the test1 recording (27 October, kept local and out of Git), the project brief with criteria C1–C11 and the day-1 prompt (27 October morning), and a private UI mock-up (27 October) that is kept apart; nothing from the mock-up was copied here.
 
-AI coding assistants were used as tools. The entrant is the author, working alone. As of 2 November, GitHub records a review on 75 of the 94 merged pull requests (as a pull request review, or as a comment that gives the review or its verdict); not every review was posted on the pull request, and #73, #74, #78 and #79 went into main on the author's tests, with no verdict posted on the pull request. Some branch names carry an assistant's default prefix: `claude/` on 19 merged PRs (all within #2–#29 and #62–#67) and on closed draft PR #71, and `codex/` on PR #47 and on draft PRs #48–#50, which were closed unmerged and reopened on tool-free branches as #53–#55 (#53 was merged; #54 and #55 were closed). Those prefixes are the default branch names of the coding tools used during the hackathon. The current convention: a pull request is merged under its written title, and commits carry the author's private GitHub address.
+AI coding assistants were used as tools. The entrant is the author, working alone. As of 2 November, GitHub records a review on 75 of the 94 merged pull requests (as a pull request review, or as a comment that gives the review or its verdict); not every review was posted on the pull request, and #73, #74, #78 and #79 went into main on the author's tests, with no verdict posted on the pull request. Some branch names carry an assistant's default prefix: `claude/` on 19 merged PRs (all within #2–#29 and #62–#67) and on closed draft PR #71, and `codex/` on PR #47 and on draft PRs #48–#50, which were closed unmerged and reopened on tool-free branches as #53–#55 (#53 was merged; #54 and #55 were closed). Those prefixes are the default branch names of the coding tools used during the hackathon. The current convention: a pull request is merged under its written title, and commits carry the author's private GitHub address. The public copy of this repository, `keviqlabs/keviq-live-submission`, is made from the working repository at the annotated tag `submission-2026-11-03`. In the copy only some commits are changed: an author or committer address that is not a GitHub noreply address is replaced by the author's private GitHub address, and the tool names, internal role labels, decision codes and attribution lines that `make hygiene` rejects are removed from some messages. Commit signatures are not kept; trees and commit dates are the same, and the tag annotation gives the counts. Nine early merge commits (#1–#8 and #10) keep GitHub's default subject, which names the branch, and in six of them the assistant prefix is removed from the branch name. A changed commit gets a new id, and so does every commit built on it: [`docs/evidence/commit-ids.md`](docs/evidence/commit-ids.md) maps each commit id cited in the repository's Markdown files to its id in the copy. Pull request numbers refer to the working repository, which is private; each commit that merged a pull request into `main` names it, except #53, which went into `main` inside the merge of #61 (`f2c2dba`).
 
 ## Run it yourself
 
@@ -36,7 +36,7 @@ Everything below runs on one machine from a fresh clone, in three modes. Modes 1
 
 | Mode | Models called | Recorded, drawn or simulated | Time |
 |---|---|---|---|
-| 1. Replay the judge1 session | none | product sightings, cards, comment labels, orders and Messenger messages are recorded stand-ins; product pictures drawn by this repository; synthetic comments | about 5 min from a clone |
+| 1. Replay the judge1 session | none | product sightings, cards, comment labels, orders and Messenger messages are recorded stand-ins; product pictures drawn by this repository; synthetic comments | 77 s measured once from the clone (timed with `gh repo clone`) to the console page, with the PostgreSQL image and Python 3.12 already on the machine; downloading them adds time (`docs/RESULTS.md`, "Clean clone") |
 | 2. Play the judge1 video, no key | none | video drawn by this repository; synthetic comments and seller speech, typed in on the video's clock; with no key nothing is recognised, so no card or order is made | about 2 min more |
 | 3. Real models | muse-spark-1.3, sam-3.1 (muse-voice-transcribe-1.0 for a video with sound) | recorded or drawn video, synthetic comments, simulated Messenger; the cards, labels and orders are model and rule output | the length of the video, plus setup |
 
@@ -46,10 +46,11 @@ Everything below runs on one machine from a fresh clone, in three modes. Modes 1
 | Docker with Compose v2 | Docker 29.5.2, Compose v5.1.4 | PostgreSQL 17 (`deploy/compose.yml`) |
 | git, make | git 2.54, GNU Make 3.81 | the commands below |
 | ffmpeg and ffprobe | 9.0.2 | modes 2 and 3 only (drawing and playing a video) |
+| Node.js | 26.0.0 | `make check` (the console UI tests, `node --test`) |
 
 The app listens on 127.0.0.1:8000 and PostgreSQL on 127.0.0.1:55433; if a port is taken, `docs/RUN.md` ("Other ports") has the overrides. Modes 1 and 2 need no `.env` file. If you copy `deploy/.env.example` to `.env`, its placeholder `MODEL_API_KEY=replace-me` counts as no key (`meta/transport.py`), so no request is sent to the Model API.
 
-### Mode 1: replay judge1, no API key (about 5 minutes)
+### Mode 1: replay judge1, no API key (about 1.3 minutes, measured once)
 
 ```bash
 git clone https://github.com/keviqlabs/keviq-live-event.git
@@ -108,6 +109,8 @@ With a key, the workers read the product in each frame (muse-spark-1.3), cut it 
 ### Evidence of real model calls
 
 Each row comes from the stored `model_call` events of one run with a key.
+
+The full-size C5 runs and the judge1 runs side by side, with what limits their numbers: [docs/RESULTS.md](docs/RESULTS.md).
 
 | Run | Date | Model calls | Cost by the event ledger | Evidence |
 |---|---|---|---|---|

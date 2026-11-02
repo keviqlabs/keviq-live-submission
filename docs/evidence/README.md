@@ -1,6 +1,6 @@
 # Evidence index
 
-One row per NOTE under `docs/evidence/2026-10-27` to `docs/evidence/2026-11-02`. Each NOTE names its run, its
+One row per NOTE under `docs/evidence/2026-10-27` to `docs/evidence/2026-11-03`. Each NOTE names its run, its
 commit and its files; the numbers here are copied from the NOTE and are not re-measured. Cost is the USD the
 NOTE states from the ledger (`model_call` events); "not stated" means the NOTE gives no USD figure.
 
@@ -20,7 +20,6 @@ NOTE states from the ledger (`model_call` events); "not stated" means the NOTE g
 | 2026-10-28 | baseline `650fe39` | [sku-ambiguity-NOTE.md](2026-10-28/sku-ambiguity-NOTE.md) | Acceptance baseline for SKU ambiguity and uncertain identity, on recorded input | 1 failed, 19 passed (the failure is the intended acceptance evidence) | 0 USD |
 | 2026-10-28 | PR #45 at `0f08af4` | [slow-vision-integration-NOTE.md](2026-10-28/slow-vision-integration-NOTE.md) | Scheduling and shield regression with synthetic slow vision service times, serial failure reproduced on `bf620a4` | Compressed checks pass on PR #45; full-speed 1:1 rerun 5 passed, 2 xfailed in 364.50 s | 0 USD |
 | 2026-10-28 | baseline `650fe39` | [written-phone-NOTE.md](2026-10-28/written-phone-NOTE.md) | Acceptance baseline for spelled-out phone numbers against the existing shield `scan()` | 39 failed, 514 passed on the baseline; misses all five written-number positives | 0 USD |
-
 | 2026-10-29 | `e2e-main-1029-2140` / `-2140s` | [e2e-main-1029-2140-NOTE.md](2026-10-29/e2e-main-1029-2140-NOTE.md) | Unpaid end-to-end check of the C5 scenario on main `f2c2dba` (merge of PR #61): a dry run and a run against a stand-in app; both sessions unbound (legacy order flow) | Situations 3 and 4 FAIL on both runs (3: 16/28 dry, 16/26 stand-in; 4: 0/4); scripted interventions 22 (208.89 per hour) and 20 (199.59 per hour) | 0 USD |
 | 2026-10-29 | `rescore-base-1029-194618` | [rescore-base-1029-194618-NOTE.md](2026-10-29/rescore-base-1029-194618-NOTE.md) | Unpaid replay of the stored `diag-test1x1-1028-1531` observations on main `a767f02`, the baseline before PR #61 | References right 8/28 (0.286); receipts with the right item 0/2; 19 scripted interventions (178.7 per hour) | 0 USD |
 | 2026-10-29 | `rescore-main-1029-2128` | [rescore-main-1029-2128-NOTE.md](2026-10-29/rescore-main-1029-2128-NOTE.md) | The same replay on main `f2c2dba` (PR #61, media-time attachment binding) | Same numbers as the baseline (references 8/28); the session was unbound, so PR #61's flow did not run | 0 USD |
@@ -49,9 +48,12 @@ NOTE states from the ledger (`model_call` events); "not stated" means the NOTE g
 | 2026-11-02 | `c5-paid-1102-1532` | [c5-paid-1102-1532-NOTE.md](2026-11-02/c5-paid-1102-1532-NOTE.md) | Full-size paid C5 run, 5 loops, 500 comments, on main `767f7fe` (after the revert in PR #102) | 137 of 151 comment attachments ready; right item 90 of 150; 93 orders, 6 confirmed; receipts 6, 0 with the card image | 3.97704250 USD (2484 calls) |
 | 2026-11-02 | `c5-paid-1102-1709` | [c5-paid-1102-1709-NOTE.md](2026-11-02/c5-paid-1102-1709-NOTE.md) | Full-size paid C5 run, 5 loops, 500 comments, on main `31e7d8a` (after PRs #100 and #103) | Receipts 9, 9 with the card image; 9 confirmed; but 97 of 151 comment attachments ready (137 in c5-paid-1102-1532), right item 72 of 150, 72 orders | 4.25326475 USD (2536 calls) |
 | 2026-11-03 | `judge-paid-1103-0019` (and `judge-paid-1102-2131`, recorded with it) | [judge1-demo1-paid-1102-NOTE.md](2026-11-02/judge1-demo1-paid-1102-NOTE.md) (sections "Later run: judge-paid-1102-2131" and "Later run: judge-paid-1103-0019") | The judge1 video test flow with real models on main `2a3ba2e` (after PR #108, D-042), compared with the run on `1a886f6` | FAIL: of 7 order comments 5 as expected and 2 on the right card in another state (right card 7 of 7; 6 of 7 in 2131, cause not established, n=1 each); only one of four items priced, no card image, no reply to two questions, no receipt | 0.06761595 USD (46 calls); 2131: 0.06632745 USD (44 calls) |
+| 2026-11-03 | results recount and clean clone | [results-1103-NOTE.md](2026-11-03/results-1103-NOTE.md) | Ledger `SELECT` and data-file recounts behind `docs/RESULTS.md`, and one timed clean clone of mode 1 on main `2a3ba2e` | Ledger and file recounts equal the figures in the run notes and D-042; in `c5-paid-1102-1709` 2 of the 9 confirmed orders followed a plain-text reply the script expects to end in NEEDS_SELLER; clean clone to the judge1 console page 77 s, n = 1, with the PostgreSQL image and Python 3.12 already on the machine | 0 USD (no model call) |
 | 2026-10-30 | `page-test-1030` | [facebook-readonly-1030-NOTE.md](2026-11-02/facebook-readonly-1030-NOTE.md) | Read-only Facebook comment source, one poll, on an already-ended live video of the author's Page, at `e18c5f9` (merge of PR #69) | rc 0; 1 comment, 0 cards, 0 orders; not run on a live broadcast in progress | 0 USD (model key empty) |
 
 The Facebook row is dated by its run (30 October); its NOTE was written on 2 November.
+
+Commit ids cited in these NOTEs and in the other Markdown files refer to the working repository; [commit-ids.md](commit-ids.md) gives the id of each one in the public copy.
 
 ## Ledger note: `rescore-paid-1031-1615`
 
