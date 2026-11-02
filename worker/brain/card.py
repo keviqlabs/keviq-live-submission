@@ -22,9 +22,14 @@
   provenance lists the speech event ids (C4).
 - A version another writer already took (409, D-024: the seller's price route) is applied on top of the card's
   highest version once, or dropped; the number is never reused. product_seen's versions go the same way.
-- When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background, one card at a
-  time per session, so a slow cut-out never holds up the next line's decision; the frame cut to SAM's box with
-  SAM's mask as alpha (real pixels, nothing retouched, D-020) arrives as the next version's image_url.
+- A card's cut-out starts when its draft is opened (or its frame is first cached): SAM 3.1 finds the product in
+  the frame (cut to SAM's box with SAM's mask as alpha: real pixels, nothing retouched, D-020) and the result stays
+  in the session; nothing is posted then, so every version citing a product_seen is stored before its handler
+  returns. When the price makes the card live and the cut-out is ready, the live version carries its image_url.
+  Otherwise the image arrives as the next version, caused by the event that made the card live (the speech, or
+  the seller's priced version) and the frame. One SAM call per card at most; one card at a time per session, a
+  live card's cut-out before any card that is not live yet, and a waiting cut-out of a card that was retired or
+  is no longer the current one is skipped. A slow cut-out never holds up the next line's decision.
 - product_seen replayed from a file (no `caused_by`) opens cards only with CARDS_FROM_REPLAY=1, so a replay that
   still carries fixture cards does not get a second set (docs/DECISIONS.md D-017).
 - runner.stats() has the lines and cut-outs waiting and in flight (BACKLOGS), so a measure barrier waits for them.
@@ -222,7 +227,11 @@ class Session:
     last_frame_ts: int | None = None  # frame_ts_ms of the newest product_seen taken
     speech: deque = field(default_factory=deque)  # (event, ctx, line) of lines waiting for a read slot
     reading: int = 0  # lines between their read and their decision, at most SPEECH_READS
-    cutouts: deque = field(default_factory=deque)  # (event, ctx, card_id) of live cards waiting for SAM
+    cutouts: deque = field(default_factory=deque)  # (event, ctx, card_id) of live cards waiting for an image
+    prefetches: deque = field(default_factory=deque)  # (event, ctx, card_id) of drafts waiting for SAM
+    # card_id -> its one SAM call: (image_url, infer, frame event id), or None when SAM found nothing
+    cuts: dict[str, asyncio.Future] = field(default_factory=dict)
+    attaching: set[str] = field(default_factory=set)  # cards whose image is queued or came with going live
     cutting: bool = False  # the session's SAM consumer is running
 
     def bump(self, card_id: str, **changes) -> dict:
@@ -315,6 +324,7 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
             # SKU, price, status, span and current item stay as they are.
             log.info("product_seen %s repeats %s %s of unidentified card %s: same item", event["event_id"],
                      category, color, prev["card_id"])  # fmt: skip
+            shown = prev["card_id"]
             prov = {**prev["provenance"], "frame_ts_ms": event["frame_ts_ms"]}
             s.meta[prev["card_id"]] = {**last, "frame_ts_ms": event["frame_ts_ms"],
                                        "frame_event_id": (event.get("caused_by") or [None])[0]}  # fmt: skip
@@ -370,11 +380,12 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
                 "frame_ts_ms": event["frame_ts_ms"],
                 "frame_event_id": (event.get("caused_by") or [None])[0],
             }
-            s.current = card["card_id"]
+            s.current = shown = card["card_id"]
             out.append((card, changes))
     infer = (start, now_ms())
     for new, changes in out:  # one at a time, outside the lock: a 409 reads the store and takes the lock
         await post_version(event, ctx, s, new, changes, infer)
+    prefetch(event, ctx, s, shown)
     return []
 
 
@@ -455,6 +466,7 @@ async def apply_speech(event: dict, ctx, s: Session, line: Line) -> None:
 async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, infer) -> None:
     eid = event["event_id"]
     proposal, changed, live = None, {}, None  # changed: card_id -> its changes
+    frame_of = {}  # card_id -> the frame event of the cut-out its live version carries
     async with s.lock:
         s.lines.remove(line)
         cands = {
@@ -516,6 +528,12 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
                     changes["variants"], changes["stock"] = variants, sum(v["stock"] for v in variants)
             if card["status"] == "draft" and changes.get("price") is not None:
                 changes["status"], live = "live", cid
+                cut = s.cuts.get(cid)
+                if cut and cut.done() and cut.result() and not card["image_url"]:
+                    # the cut-out made while the card was a draft goes live with the price, in the same version
+                    changes["image_url"], _, frame_event = cut.result()
+                    frame_of[cid] = [frame_event] if frame_event else []
+                    s.attaching.add(cid)
             if changes:
                 changed[cid] = changes
         for cid in cands:  # switched away while this line was undecided, and still no price
@@ -530,53 +548,111 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
     if proposal:
         await ctx.runner.post([build(event, proposal, ctx.received_ms)])
     for new, changes in news:
-        new = await post_version(event, ctx, s, new, changes, infer)
+        new = await post_version(event, ctx, s, new, changes, infer, frame_of.get(new["card_id"]))
         if new and new["card_id"] == live and not new["image_url"]:
             queue_cutout(event, ctx, s, live)
 
 
+def prefetch(event: dict, ctx, s: Session, cid: str) -> None:
+    """Start the cut-out of a draft whose frame is cached; it posts nothing, the live version takes the result."""
+    from worker.vision import frames
+
+    card = s.cards[cid]
+    if card["status"] != "draft" or card["image_url"] or cid in s.cuts:
+        return
+    if any(c == cid for _, _, c in s.prefetches):
+        return
+    if not frames.get(event["session_id"], s.meta[cid]["frame_ts_ms"]):
+        return
+    s.prefetches.append((event, ctx, cid))
+    start_cutting(s)
+
+
 def queue_cutout(event: dict, ctx, s: Session, cid: str) -> None:
-    """The cut-out waits for the session's SAM consumer, which takes one card at a time."""
+    """A live card's image version waits for the session's SAM consumer, ahead of every draft's cut-out."""
+    if cid in s.attaching:
+        return
+    s.attaching.add(cid)
     s.cutouts.append((event, ctx, cid))
+    start_cutting(s)
+
+
+def start_cutting(s: Session) -> None:
     if not s.cutting:
         s.cutting = True
         s.spawn(cut_out_all(s))
 
 
 async def cut_out_all(s: Session) -> None:
+    """One SAM call at a time per session: live cards' images first, then the drafts' cut-outs in order."""
     try:
-        while s.cutouts:
-            event, ctx, cid = s.cutouts.popleft()
+        while s.cutouts or s.prefetches:
+            if s.cutouts:
+                event, ctx, cid = s.cutouts.popleft()
+                job = attach_cutout(event, ctx, s, cid)
+            else:
+                event, ctx, cid = s.prefetches.popleft()
+                job = prefetch_cutout(event, ctx, s, cid)
             try:
-                await attach_cutout(event, ctx, s, cid)
+                await job
             except Exception as exc:  # e.g. its version refused; the card stays without an image (C7)
                 log.exception("cut-out for %s failed: %s", cid, exc)
     finally:
         s.cutting = False
 
 
-async def attach_cutout(event: dict, ctx, s: Session, cid: str) -> None:
-    """SAM 3.1 cut-out of the card's frame -> next version with image_url (caused by the speech and frame)."""
+async def prefetch_cutout(event: dict, ctx, s: Session, cid: str) -> None:
+    """A draft's cut-out, when its turn comes; a card retired or switched away from meanwhile is skipped."""
+    card = s.cards[cid]
+    skip = (
+        "retired" if card["status"] == "retired"
+        else "no longer current" if cid != s.current
+        else "not a draft" if card["status"] != "draft" or card["image_url"]
+        else "cut already" if cid in s.cuts
+        else None
+    )  # fmt: skip
+    if skip:
+        log.info("cut-out of %s before it goes live skipped: %s", cid, skip)
+        return
+    await cut(event, ctx, s, cid)
+
+
+async def cut(event: dict, ctx, s: Session, cid: str) -> tuple | None:
+    """The card's one SAM call, on its frame now, kept in the session: (image_url, infer, frame event id), or None.
+    A card already cut out gets that result, not a second call. No cached frame: no call and nothing kept."""
     from worker.vision import frames, sam
 
+    if cid in s.cuts:
+        return await s.cuts[cid]
     meta = s.meta[cid]
     frame = frames.get(event["session_id"], meta["frame_ts_ms"])
     if not frame:
-        return
+        return None
+    done, out = asyncio.get_running_loop().create_future(), None
+    s.cuts[cid], frame_event = done, meta["frame_event_id"]
     try:
-        res = await sam.cut_out(ctx.client(), frame, meta["category"])
+        res = await sam.cut_out(ctx.client(), frame, sam.subject(meta["category"], meta.get("kind")))
+        if res:
+            out = (res[0], res[1], frame_event)
     except Exception as exc:  # the card stays without an image; the stream goes on (C7)
         log.warning("sam cut-out for %s failed: %s", cid, exc)
-        return
+    finally:
+        done.set_result(out)
+    return out
+
+
+async def attach_cutout(event: dict, ctx, s: Session, cid: str) -> None:
+    """A live card's cut-out (made before it went live, else now) -> next version with image_url, caused by the
+    event that made it live and the frame the cut-out came from."""
+    res = await cut(event, ctx, s, cid)
     if not res:
         return
-    url, infer = res
+    url, infer, frame_event = res
     async with s.lock:
         if s.cards[cid]["status"] == "retired" or s.cards[cid]["image_url"]:
             return
         new = s.bump(cid, image_url=url)
-    extra = [meta["frame_event_id"]] if meta["frame_event_id"] else []
-    await post_version(event, ctx, s, new, {"image_url": url}, infer, extra)
+    await post_version(event, ctx, s, new, {"image_url": url}, infer, [frame_event] if frame_event else [])
 
 
 async def post_version(event, ctx, s: Session, new: dict, changes: dict, infer, extra=None) -> dict | None:
@@ -613,11 +689,15 @@ async def post_version(event, ctx, s: Session, new: dict, changes: dict, infer, 
 
 async def on_card(event: dict, ctx) -> list[dict]:
     """Follow versions made elsewhere (console edits) so the next version number is right. A stored version with
-    the number the worker holds wins: the worker's own comes back unchanged, another writer's took the number."""
+    the number the worker holds wins: the worker's own comes back unchanged, another writer's took the number.
+    A card the seller priced (status edited) without an image gets its cut-out as the next version, caused by
+    that priced version; the seller's version itself is the app's, so the image cannot ride on it."""
     s = SESSIONS.get(event["session_id"])
     cid = event["card_id"]
     if s and cid in s.cards and event["version"] >= s.cards[cid]["version"]:
         s.follow(event)
+        if event["status"] == "edited" and event["price"] is not None and not event["image_url"]:
+            queue_cutout(event, ctx, s, cid)
     return []
 
 
@@ -630,7 +710,7 @@ def speech_backlog() -> dict:
 
 def cutout_backlog() -> dict:
     return {
-        "waiting": sum(len(s.cutouts) for s in SESSIONS.values()),
+        "waiting": sum(len(s.cutouts) + len(s.prefetches) for s in SESSIONS.values()),
         "in_flight": sum(s.cutting for s in SESSIONS.values()),
     }
 

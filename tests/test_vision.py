@@ -193,3 +193,27 @@ async def test_reply_without_a_box_leaves_the_card_without_one():
 
 async def _ignore(fields: dict) -> None:
     pass
+
+
+@pytest.mark.parametrize(
+    ("category", "kind", "asked"),
+    [
+        ("other", "bàn phím", "keyboard"),
+        ("other", "tay cầm", "game controller"),
+        ("other", " Tay  Cầm ", "game controller"),  # normalised as vn.tokens reads it
+        ("other", "loa", "other"),  # a kind the table does not name keeps today's noun
+        ("other", None, "other"),
+        ("bag", "bàn phím", "handbag"),  # only an 'other' item is asked for by its kind
+        ("heels", None, "high heel shoe"),
+    ],
+)
+def test_sam_is_asked_for_an_other_items_kind_in_english(category, kind, asked):
+    assert sam.noun(category, kind) == asked
+    assert sam.noun(sam.subject(category, kind)) == asked  # the one-argument form measure/c5_offline calls
+
+
+async def test_an_other_items_cut_out_names_its_kind():
+    transport = FakeTransport([responses_reply("<0f>0")])
+    client = MetaClient(transport, Meter(memory_spend([])), emit=_ignore)
+    assert await sam.cut_out(client, JPEG, sam.subject("other", "tay cầm")) is None
+    assert transport.requests[0][1]["input"][0]["content"][0]["text"] == "game controller"

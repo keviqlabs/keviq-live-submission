@@ -18,6 +18,7 @@ from meta_sam_parser import InvalidSegmentationMaskError, SegmentationMask, deco
 
 from worker.media.extract import jpeg_size
 from worker.vision import frames
+from worker.voice import vn
 
 log = logging.getLogger("worker.sam")
 CARD_WIDTH = 360
@@ -45,9 +46,22 @@ NOUNS = {
     "tshirt": "t-shirt",
 }
 
+# An 'other' item's catalog kind -> the English noun SAM is asked for; asked for "other", SAM often finds
+# nothing (D-039).
+KINDS = {" ".join(vn.tokens(k)): v for k, v in {"tay cầm": "game controller", "bàn phím": "keyboard"}.items()}
 
-def noun(category: str) -> str:
-    return NOUNS.get(category, category.replace("_", " "))
+
+def subject(category: str, kind: str | None = None) -> str:
+    """What a card asks SAM to find, as cut_out's category: an 'other' item's kind when the table names it (the
+    kind normalised as vn.tokens reads it), otherwise the category itself."""
+    if category == "other" and isinstance(kind, str):
+        return KINDS.get(" ".join(vn.tokens(kind)), category)
+    return category
+
+
+def noun(category: str, kind: str | None = None) -> str:
+    c = subject(category, kind)
+    return NOUNS.get(c, c.replace("_", " "))
 
 
 def has_box(rec: dict) -> bool:
