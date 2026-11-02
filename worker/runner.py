@@ -37,7 +37,7 @@ log = logging.getLogger("worker")
 Handler = Callable[[dict, "Ctx"], Awaitable[list[dict]]]
 SLOW = frozenset({"frame"})  # event types read by the vision model: the vision lanes
 VISION_TIMEOUT_S = 10.0  # a frame's handlers past it are cancelled and the frame is failed
-VISION_READERS = int(os.environ.get("VISION_READS_PER_SESSION", "4"))  # concurrent reads of a bound session
+VISION_READERS = int(os.environ.get("VISION_READS_PER_SESSION", "8"))  # concurrent reads of a bound session
 OUTCOMES = ("done", "skipped", "stale", "failed")
 # name -> {waiting, in_flight}: work handlers keep in the background (registered by their modules)
 BACKLOGS: dict[str, Callable[[], dict]] = {}

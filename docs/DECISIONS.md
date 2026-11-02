@@ -2,6 +2,30 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-02 — Eight concurrent vision reads per bound session by default
+
+**D-042 A bound session reads up to eight frames at once by default (`VISION_READS_PER_SESSION`, was 4); the read
+timeout stays 10 s (`VISION_TIMEOUT_S`) and recognitions are still posted in frame order.** With four, frames of a paid
+C5 run waited much longer for a read to start than one read may take. Replayed through the worker's own runner and
+bound lane with the recorded read times (`tests/test_worker_vision_readers_replay.py`; the fixture
+`tests/fixtures/c5_vision_reads.csv` holds only the arrival, read time and failed flag of each of the 1755 frames of
+`c5-paid-1102-1709`), the longest wait is 96.6 s (p95 42.3 s) with four readers, 22.6 s with six and 7.9 s (p95
+2.0 s) with eight. The test fails on the old default and passes on the new one. The environment variable still
+overrides the default. No contract, schema, catalog or rule changes; `v` unchanged.
+
+Before (four readers, `c5-paid-1102-1709`, head `31e7d8a`): p95 frame to product event 56.4 s (p50 5.3 s), right
+item for 72 of 140 order comments (reference accuracy 0.514), latest attachment expired 54 of 151 times, 129 of 1755
+product reads cancelled at 10 s (read p50 2.4 s), ledger 4.253265 USD for 2536 calls, 34 seller interventions (61.4
+per hour), 9 receipts.
+After (eight readers, `c5-paid-1102-2141-r8`, same head, only `VISION_READS_PER_SESSION` changed): p95 frame to
+product event 11.7 s (p50 4.7 s), right item for 86 of 140 (0.614), expired 23 of 152, 176 of 1755 reads cancelled
+(read p50 2.9 s), ledger 4.365958 USD for 2552 calls, 49 seller interventions (91.7 per hour), 7 receipts.
+One run per configuration, no control run at the same time, synthetic comments. Reference accuracy (target 0.9) and
+the C5 seller-intervention rate (target 10 per hour) fail in both runs. Why cancellations, cost and interventions rose
+is not established; the replay covers the queue only, not slower reads under more load. The run's comparison file is
+kept outside the repository (`COMPARISON.json`, sha256
+`020a589fd2d94b3b4ce97a806b3b487744d991b454fff8e6f1234830f46875a4`).
+
 ## 2026-11-02 — A draft replaced within seconds, never priced, is not "the one before"
 
 **D-041 Without an attachment binding, a retired item is "the one before" unless it was a misread: none of its
@@ -90,13 +114,14 @@ media-time pair, as before. The prompt text, model, schema and catalog are uncha
 An explicit product name that is not the current or previous card still gets no card; that binding is not part of
 this entry.
 
-Before (judge1 replay with the model, main `aa457d9`): correct orders 2/7, wrong card 3, no order 2.
-After: _to be filled from the next paid run on main after this change._
+Before (judge1 replay with the model, main `aa457d9`, session `judge-paid-1102-1109`,
+`docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`): correct orders 2/7, wrong card 3, no order 2.
+After: not measured yet; the next paid run on main after this change gives it. <!-- run pending -->
 
 ## 2026-11-02 — C9 delivery and C11 current state
 
 **D-037 C9 delivery definition and C11 current-state wording.**
-Decided by the Founder on 2 November 2026 (07:03 ICT). C9: the judges' entry point is the public repository run from
+Decided by the author on 2 November 2026 (07:03 ICT). C9: the judges' entry point is the public repository run from
 the README; a hosted URL is optional. C11: the sentence that implied an RTMP input is replaced by the current state (the
 media worker reads recorded files; live RTMP input is not implemented). The README line on the hosted demo now says to
 include a link and access instructions only if one is deployed. No metric, threshold, event or schema changes; `v`
@@ -104,8 +129,8 @@ unchanged.
 
 ## 2026-11-01 — Wonder exception for the model comparison measurement
 
-**D-036 (provisional number) Muse Wonder may be called only inside the product-identification model comparison, which is a measurement, with a 5.00 USD cap for the whole experiment that sits outside the D-006 meter. Nothing reaches production.**
-The number is provisional: D-031 is held by #77 and D-032 by PR #82. Whoever merges later renumbers.
+**D-036 Muse Wonder may be called only inside the product-identification model comparison, which is a measurement, with a 5.00 USD cap for the whole experiment that sits outside the D-006 meter. Nothing reaches production.**
+Number assigned at merge on 2 November 2026.
 
 Founder authorization, 2026-11-01, verbatim:
 
@@ -220,6 +245,10 @@ free objects in `message_out.schema.json`. Chosen by the product owner on 31 Oct
   the seller).
 - Not done here: a price set in the console makes an `edited` version and queues no cut-out, so such cards still
   get no image (backlog, worker change). The acceptance wording for C5 is a separate contracts change.
+
+## Number D-031
+
+**D-031 — not issued (number skipped in the 2 November merge sequence).**
 
 ## 2026-10-28 — attachment reference eligibility
 
@@ -357,9 +386,19 @@ owner decision before implementing those cases. This contract alone does not ope
 
 **D-026 `CATALOG_PATH` changes only the items on sale; the vision and speech prompts keep the words of `data/catalog.json`. An item may list `categories`, and a label plus colour that names exactly one SKU opens that SKU's card.** No contract change: no new field or event, no API change, `v` stays 1. Coordinator decision, notes 417 and 423.
 
-The coordinator's decision, quoted (the two role names generalised):
+The decision, in English (it was given in Vietnamese; the role names are generalised):
 
-> "D-026 đêm nay thu hẹp: (1) CATALOG_PATH chỉ đổi dữ liệu món/size/tồn/giá/tên và mục catalog trong prompt nhãn; từ vựng vision và màu bộ đọc giá giữ từ catalog demo; test hash prompt vision và prompt giá không đổi so với main. (2) Category list theo membership, tương thích ngược. (3) Khớp SKU: nhãn+màu ra đúng một SKU → gán; còn lại → NEEDS_SELLER như hiện tại. Không thêm trường nào vào event/API, không contracts. (4) Trong measure/NOTE: phân rã đơn NEEDS_SELLER theo 'giá thẻ khớp đúng một giá catalog' (would-be candidate) / không, tính ngoại tuyến từ event. Một người viết, người kia review, vào main trước 13:00. Candidate UI/contract để Founder quyết ban ngày."
+1. `CATALOG_PATH` changes only the item, size, stock, price and name data and the catalog section of the label
+   prompt. The vision vocabulary and the price reader's colours stay those of the demo catalog; tests check by hash
+   that the vision prompt and the price prompt are unchanged from main.
+2. Category lists work by membership and stay backward compatible.
+3. SKU match: a label plus colour that gives exactly one SKU assigns it; anything else goes to NEEDS_SELLER, as now.
+   No new field in any event or API, no contract change.
+4. In `measure/` and the run note, NEEDS_SELLER orders are split offline from the events by whether the card price
+   matches exactly one catalog price (a would-be candidate) or not.
+
+One person writes and another reviews; the change goes into main before 13:00. The candidate UI or contract is left
+for the author to decide during the day.
 
 - `CATALOG_PATH` (`app/settings.py` `catalog_path()`): a path relative to the repo root, or absolute; unset or empty means `data/catalog.json`. It is read once, when `worker/brain/card.py` is imported and when a `Labeler` is built.
 - From `CATALOG_PATH`: `card.CATALOG` (`match`, `item_by_sku`, `variants_of`, so the SKU, name, sizes, stock and price on a card) and the catalog in the label prompt (`labels.load_catalog`).
