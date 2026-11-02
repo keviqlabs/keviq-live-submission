@@ -152,7 +152,11 @@ function rerender() {
 
 document.addEventListener("input", (ev) => {
   const id = ev.target.dataset?.price, cid = ev.target.dataset?.cardPrice;
-  if (id) prices.set(id, ev.target.value);
+  if (id) {
+    prices.set(id, ev.target.value);
+    const output = document.querySelector(`[data-price-total="${CSS.escape(id)}"]`);
+    if (output && orders.has(id)) output.textContent = proposedTotal(orders.get(id), ev.target.value);
+  }
   if (cid) typed.set(cid, ev.target.value);
   if (ev.target.dataset?.cardSku) itemCodes.set(ev.target.dataset.cardSku, ev.target.value);
 });
@@ -189,6 +193,10 @@ document.addEventListener("click", async (ev) => {
     if (act === "overlay-hide") overlayHidden.add(b.dataset.cid); else overlayHidden.delete(b.dataset.cid);
     saveHidden();
     renderCards();
+    return;
+  }
+  if (act === "open-order") {
+    document.querySelector(`[data-order-id="${CSS.escape(oid)}"]`)?.scrollIntoView?.({ behavior: "smooth", block: "center" });
     return;
   }
   if (act === "log") {

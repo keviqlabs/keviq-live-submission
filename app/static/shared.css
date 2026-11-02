@@ -315,3 +315,15 @@ dialog::backdrop { background: #090d12b5; backdrop-filter: blur(3px); }
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
+
+/* Keep the mobile section links available during a live session. */
+@media (max-width: 620px) {
+  .topbar { position: sticky; top: 0; z-index: 20; }
+  .column { scroll-margin-top: 130px; }
+}
+.comment-status { color: var(--warning); margin-top: 6px; font-size: 12px; font-weight: 650; }
+.comment-detail, .proposed-total { color: var(--muted); margin: 6px 0; font-size: 12px; }
+
+.more-actions { position: relative; }
+.more-actions summary { cursor: pointer; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+.more-actions .btn { margin: 6px 0 0; width: 100%; }

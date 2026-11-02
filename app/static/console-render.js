@@ -172,15 +172,42 @@ function attachmentHtml(commentId) {
   if (!a.candidates.length) note = t("attachment.noCandidates");
   const pending = !(hasOrder || a.action === "reject");
   const choices = a.outcome === "expired" && !a.selected_card_id ? a.candidates.map((c) =>
-    `<button type="button" class="btn primary small" data-act="attachment-select" data-aid="${aid}" data-choice="${esc(c.card_id)}">${esc(t("attachment.select", { name: cardNameFor(c.card_id) }))}</button>`).join("") : "";
-  const controls = pending ? `<div class="candidates">${choices}
-    <button type="button" class="btn small" data-act="attachment-keep" data-aid="${aid}">${esc(t("attachment.keep"))}</button>
-    <button type="button" class="btn danger small" data-act="attachment-reject" data-aid="${aid}">${esc(t("attachment.reject"))}</button></div>` : "";
+    `<button type="button" class="btn primary small" data-act="attachment-select" data-aid="${aid}" data-choice="${esc(c.card_id)}">${esc(t("attachment.select", { name: cardNameFor(c.card_id) }))}</button>`) : [];
+  const other = [`<button type="button" class="btn small" data-act="attachment-keep" data-aid="${aid}">${esc(t("attachment.keep"))}</button>`,
+    `<button type="button" class="btn danger small" data-act="attachment-reject" data-aid="${aid}">${esc(t("attachment.reject"))}</button>`];
+  const buttons = [...choices, ...other];
+  const controls = pending ? `<div class="candidates">${buttons[0]}<details class="more-actions"><summary aria-label="${esc(t("comment.more"))}">⋯</summary>${buttons.slice(1).join("")}</details></div>` : "";
   return `<div class="${pending ? "question" : "card-note"}">${esc(note)} <span class="muted">${esc(t("attachment.meta", { version: a.version, time: time(a.deadline_ms) }))}</span>${controls}</div>`;
+}
+
+// Only a proven comment-to-order relation can supply an order status or action.
+function commentOrder(commentId) {
+  const matches = [...orderComments.entries()].filter(([, cid]) => cid === commentId).map(([oid]) => orders.get(oid)).filter(Boolean);
+  return matches.length === 1 ? matches[0] : null;
+}
+function commentAttachment(commentId) {
+  return [...attachments.values()].find((a) => a.comment_id === commentId);
+}
+function unresolvedComment(row) {
+  if (!row.comment || row.labeled?.label !== "order") return false;
+  if ([...orderComments.values()].includes(row.comment.comment_id)) return false;
+  const a = commentAttachment(row.comment.comment_id);
+  if (a?.action === "reject" || a?.selected_card_id) return false;
+  return a?.outcome === "expired" || row.labeled?.order_draft?.reference_kind === "unresolved";
+}
+function proposedTotal(order, raw) {
+  const price = /^\d+$/.test(String(raw).trim()) ? Number(raw) : NaN;
+  const qty = order.lines.reduce((sum, line) => sum + line.qty, 0);
+  const amount = price * qty;
+  return price > 0 && Number.isSafeInteger(price) && Number.isSafeInteger(amount) ? vnd(amount) : "—";
 }
 
 function commentHtml({ comment: c, labeled: l }) {
   const chip = l ? l.label : "unlabeled", d = l?.order_draft;
+  const order = commentOrder(c.comment_id), attachment = commentAttachment(c.comment_id);
+  const status = order ? tEnum("order.state", order.state) : attachment?.outcome === "expired" ? t("comment.expired") : "";
+  const openOrder = order ? `<button type="button" class="btn small" data-act="open-order" data-oid="${esc(order.order_id)}">${esc(t("comment.openOrder"))}</button>` : "";
+  const details = order ? order.lines.map((line) => [lineText(line), [line.variant?.size, line.variant?.color].filter(Boolean).join(" · ")].filter(Boolean).join(" · ")).join("; ") : [d?.variant?.size, d?.variant?.color].filter(Boolean).join(" · ");
   const action = l && l.action !== "none"
     ? `<div class="action-line ${l.action === "hide" ? "danger" : "warning"}">${esc(tEnum("comment.action", l.action))}</div>` : "";
   const draft = d ? `<span class="muted">${esc(d.referenced_card_id && cards.has(d.referenced_card_id)
@@ -190,13 +217,25 @@ function commentHtml({ comment: c, labeled: l }) {
     <div class="comment-top"><span class="avatar">${esc(initial(c.user_ref))}</span><strong>${esc(c.user_ref)}</strong><time>${esc(time(c.ts_ms))}</time></div>
     <div class="comment-text">${esc(c.text)}</div>
     <div class="comment-footer"><span class="label-chip ${esc(chip)}">${esc(l ? tEnum("label", l.label) : t("comment.unlabeled"))}</span>${draft}</div>
-    ${action}${attachmentHtml(c.comment_id)}${source}</div>`;
+    ${status ? `<div class="comment-status">${esc(status)}</div>` : ""}${details ? `<div class="comment-detail">${esc(details)}</div>` : ""}${openOrder}${action}${attachmentHtml(c.comment_id)}${source}</div>`;
 }
 
 function renderComments() {
   const list = [...comments.values()].filter((r) => r.comment).sort((a, b) => b.comment.ts_ms - a.comment.ts_ms).slice(0, 200);
   $("comments").innerHTML = list.length ? list.map(commentHtml).join("") : emptyHtml("…", "comments.empty.title", "comments.empty.body");
   $("comments-count").textContent = String(list.length);
+  renderUnresolved();
+  updateQueueCount();
+}
+
+let lastUnresolvedHtml = null;
+function renderUnresolved() {
+  const list = [...comments.values()].filter(unresolvedComment).sort((a, b) => b.comment.ts_ms - a.comment.ts_ms);
+  const html = list.length ? `<h3 class="label">${esc(t("queue.unresolved"))} (${list.length})</h3>` + list.map((row) => {
+    const attachment = commentAttachment(row.comment.comment_id);
+    return `<div class="approval-card"><strong>${esc(row.comment.user_ref)}</strong> · ${esc(time(row.comment.ts_ms))}<p>${esc(row.comment.text)}</p><div>${esc(t("comment.unresolvedQueue"))}</div>${attachment ? attachmentHtml(row.comment.comment_id) : `<small>${esc(t("comment.noSelection"))}</small>`}</div>`;
+  }).join("") : "";
+  if (html !== lastUnresolvedHtml) { $("unresolved").innerHTML = html; lastUnresolvedHtml = html; }
 }
 
 // ---- approval queue, recent orders, source log --------------------------------------------------
@@ -212,16 +251,18 @@ function approvalHtml(o) {
   const candidates = o.lines.find((line) => line.candidates)?.candidates;
   const value = prices.get(o.order_id) ?? (ask?.kind === "target" ? ask.value : "");
   const reject = `<button type="button" class="btn danger full" data-act="reject" data-oid="${id}">${esc(t("queue.reject"))}</button>`;
-  const actions = candidates
-    ? candidates.map((cid) => `<button type="button" class="btn primary" data-act="choose-order" data-oid="${id}" data-choice="${esc(cid)}">${esc(t("queue.choose", { name: cardNameFor(cid) }))}</button>`).join("") + reject
-    : `<button type="button" class="btn primary" data-act="price" data-oid="${id}">${esc(t("queue.approvePrice"))}</button>
-       <button type="button" class="btn" data-act="card" data-oid="${id}">${esc(t("queue.keepCardPrice"))}</button>${reject}`;
+  const buttons = candidates
+    ? [...candidates.map((cid) => `<button type="button" class="btn primary" data-act="choose-order" data-oid="${id}" data-choice="${esc(cid)}">${esc(t("queue.choose", { name: cardNameFor(cid) }))}</button>`), reject]
+    : [`<button type="button" class="btn primary" data-act="price" data-oid="${id}">${esc(t("queue.approvePrice"))}</button>`,
+       `<button type="button" class="btn" data-act="card" data-oid="${id}">${esc(t("queue.keepCardPrice"))}</button>`, reject];
+  const actions = `${buttons[0]}<details class="more-actions"><summary aria-label="${esc(t("comment.more"))}">⋯</summary>${buttons.slice(1).join("")}</details>`;
   return `<div class="approval-card" data-order-id="${id}">
     <div class="approval-title"><strong>${esc(o.customer_ref)}</strong><span class="wait mono">${esc(time(o.ts_ms))}</span></div>
     <div class="approval-reason">${esc(t(candidates ? "queue.pickItem" : "queue.needsDecision"))}</div>
     <div class="approval-detail">${o.lines.map((l) => `<div class="order-line">${moneyHtml(lineText(l))}</div>`).join("")}<div class="order-reason">${moneyHtml(reasonText(o.reason))}</div>${ask ? ` · ${esc(t("log.asked"))}: “${esc(ask.phrase)}”${ask.value != null ? ` → <span class="money">${esc(vnd(ask.value))}</span>` : ""}` : ""}</div>
     <div class="approval-money"><div><span>${esc(t("queue.amount"))}</span><strong class="mono money">${esc(vnd(o.amount))}</strong></div>
       <div class="final"><span>${esc(t("queue.unitPrice"))}</span><input type="number" min="1" step="1000" inputmode="numeric" data-price="${id}" value="${esc(value)}" placeholder="${esc(t(candidates ? "queue.unitPriceOptional" : "queue.unitPrice"))}" aria-label="${esc(t("queue.unitPriceAria", { id: o.customer_ref }))}"></div></div>
+    <div class="proposed-total">${esc(t("queue.proposedTotal"))}: <strong data-price-total="${id}">${esc(proposedTotal(o, value))}</strong></div>
     <div class="approve-actions">${actions}</div>
     <div class="row approval-foot"><button type="button" class="btn soft small" data-act="log" data-oid="${id}">${esc(t("order.source"))}</button></div>
   </div>`;
@@ -264,12 +305,19 @@ function renderLog() {
   if (!dlg.open) dlg.showModal?.();
 }
 
+function updateQueueCount() {
+  const ordersWaiting = [...orders.values()].filter((o) => o.state === "NEEDS_SELLER").length;
+  const unresolved = [...comments.values()].filter(unresolvedComment).length;
+  $("queue-count").textContent = String(ordersWaiting + unresolved);
+  if (!ordersWaiting) $("queue").innerHTML = unresolved ? "" : emptyHtml("✓", "queue.empty.title", "queue.empty.body");
+}
+
 function renderOrders() {
   const focused = document.activeElement?.dataset?.price;
   const list = [...orders.values()].sort((a, b) => b.ts_ms - a.ts_ms);
   const queue = list.filter((o) => o.state === "NEEDS_SELLER"), rest = list.filter((o) => o.state !== "NEEDS_SELLER");
   $("queue").innerHTML = queue.length ? queue.map(approvalHtml).join("") : emptyHtml("✓", "queue.empty.title", "queue.empty.body");
-  $("queue-count").textContent = String(queue.length);
+  updateQueueCount();
   $("orders").innerHTML = rest.map(orderRowHtml).join("");
   renderLog();
   focusBack("data-price", focused);

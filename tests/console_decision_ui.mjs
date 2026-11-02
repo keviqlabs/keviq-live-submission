@@ -130,3 +130,18 @@ test("recent orders use the pinned item name and keep reason, activity and money
   assert.match(html, /data-act="no" data-oid="o1"/);
   assert.doesNotMatch(html.replace(/<[^>]+>/g, ""), /\bo1\b|\bc v2\b/);
 });
+
+test("proposed total uses entered unit price and every line quantity", () => {
+  const ui = setup();
+  ui.run(`orders.get("o1").lines[0].qty = 2; prices.set("o1", "400000"); renderOrders()`);
+  assert.match(ui.nodes.get("queue").innerHTML, /data-price-total="o1">800\.000 ₫/);
+  assert.equal(ui.run('proposedTotal(orders.get("o1"), "12k")'), "—");
+  assert.equal(ui.run('proposedTotal(orders.get("o1"), "99999999999999999999")'), "—");
+});
+
+test("new comments do not rebuild the order queue while the seller is deciding", () => {
+  const ui = setup();
+  ui.nodes.get("queue").innerHTML = "seller controls intact";
+  ui.run(`handlers.comment({ comment_id: "new", event_id: "cm", user_ref: "buyer", text: "hi", ts_ms: 10 });`);
+  assert.equal(ui.nodes.get("queue").innerHTML, "seller controls intact");
+});
