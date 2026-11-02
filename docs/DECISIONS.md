@@ -2,6 +2,27 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-02 — A draft replaced within seconds, never priced, is not "the one before"
+
+**D-041 Without an attachment binding, a retired item is "the one before" unless it was a misread: none of its
+versions known at the comment time was live or edited, and it was put away within 5 s (`QUICK_SWITCH_MS`) of its
+first version.** This narrows D-040 in `live_cards_at` (`worker/brain/labels.py`); current is unchanged. An item put
+away after it had a price (the demo's card-03) stays previous. An item shown a while whose spoken price was missed also
+stays previous: the card brain retires every unpriced draft when the next item opens, so status alone cannot tell a
+presented item from a misread. A draft replaced by another item within seconds is skipped. `live` and `edited` are the
+statuses a priced card has (`app/store.py` `LIVE_STATUSES`). The 5 s window comes from the recorded paid-test runs: of
+364 retired drafts that never had a price, 249 were put away within 5 s; the three in the judge1 and demo replays
+below were put away after 2.0, 2.0 and 2.5 s. No contract, schema, catalog or rule changes; `v` unchanged.
+
+Before (judge1 replay with the model, main `137ffca`, `judge-paid-1102-2006`): right card 4 of 7 order comments, wrong
+card 2 (cm-08 on BOOT-02, a draft put away 2.5 s after it opened; cm-09), no order 1 (cm-14).
+After: not a new paid run. A 0 USD rebinding of the recorded order labels with the new pair over seven recorded
+sessions (`judge-paid-1102-1109`, `-1459`, `-1605`, `-1644`, `-2006`, `demo-paid-1102-1112r`, `-1646r`) changes
+exactly 6 bindings, all to the expected TUI-03 (in each of `judge-paid-1102-2006`, `demo-paid-1102-1112r` and
+`demo-paid-1102-1646r`: cm-08 BOOT-02 → TUI-03 and cm-14 no card → TUI-03), and no other binding. The labeling
+prompt shows the same pair (D-038), so the model input changes for these comments; a paid run after this change gives
+the model's number.
+
 ## 2026-11-02 — "The one before" is the item shown before the one on screen
 
 **D-040 Without an attachment binding, the current item is the most recently shown item that is not retired, a draft
