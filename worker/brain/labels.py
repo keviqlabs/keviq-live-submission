@@ -32,9 +32,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from app.contracts import new_id, now_ms
-from app.current import appearances, current_at
+from app.current import appearance_ids, appearances, current_at
 from app.settings import catalog_path
-from app.store import live_cards_from
 from connectors.facebook.interface import CommentModerator
 from connectors.sim.moderator import SimModerator
 from orders.rules import authorize, can_message
@@ -125,31 +124,28 @@ def go_live_order(versions: list[dict]) -> list[dict]:
     return appearances(versions)
 
 
-def _first_versions(versions: list[dict]) -> list[dict]:
-    """First version of each card, in the order the cards appeared (the base go-live order)."""
-    first: dict[str, dict] = {}
-    for card in sorted(versions, key=lambda c: (c["ts_ms"], c["version"])):
-        first.setdefault(card["card_id"], card)
-    return sorted(first.values(), key=lambda c: c["ts_ms"])
-
-
 def live_cards_at(versions: list[dict], ts_ms: int) -> tuple[dict | None, dict | None]:
-    """(current, previous) from live/edited versions only, as before media-time binding: current = newest
-    live card at ts_ms; previous = the latest other card shown. Sessions without an attachment binding
-    order from this snapshot, so an unpriced draft never becomes an order line."""
-    live = live_cards_from(versions, ts_ms)
-    current = live[0] if live else None
-    others = [
-        c
-        for c in _first_versions(versions)
-        if c["ts_ms"] <= ts_ms and c["card_id"] != (current or {}).get("card_id")
-    ]
-    return current, others[-1] if others else None
+    """(current, previous) from the versions known at ts_ms, each card at its latest known version (a price set
+    after ts_ms is not used), ordered by frame time: the most recently shown card first, a card with no
+    frame-time appearance by ts_ms last. Sessions without an attachment binding order from this snapshot.
+    current is the first card whose latest known version is not retired; an unpriced draft on screen counts, so
+    "the one before" is the item shown before it, and an order on the draft is held for the seller by the order
+    rules. previous is the first card that is not current, retired or not: a retired card is never the current
+    item, but the item the seller just put away is still "the one before"."""
+    known = [c for c in versions if c["ts_ms"] <= ts_ms]
+    latest: dict[str, dict] = {}
+    for card in sorted(known, key=lambda c: (c["ts_ms"], c["version"])):
+        latest[card["card_id"]] = card
+    rank = {cid: i for i, cid in enumerate(appearance_ids(known, ts_ms))}
+    shown = sorted(latest.values(), key=lambda c: rank.get(c["card_id"], len(rank)))
+    current = next((c for c in shown if c["status"] != "retired"), None)
+    previous = next((c for c in shown if c is not current), None)
+    return current, previous
 
 
 def cards_at(versions: list[dict], ts_ms: int, *, live_only: bool = False) -> tuple[dict | None, dict | None]:
-    """Known current/previous identity at media time, including an unpriced draft; with live_only the
-    live/edited snapshot of live_cards_at."""
+    """Known current/previous identity at media time, including an unpriced draft, from each card's latest
+    supplied version; with live_only the snapshot of live_cards_at, from the versions known at ts_ms."""
     return live_cards_at(versions, ts_ms) if live_only else current_at(versions, ts_ms)
 
 

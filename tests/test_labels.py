@@ -19,6 +19,7 @@ from measure import labels as measure_labels
 from meta.client import MetaClient
 from meta.meter import Meter, memory_spend
 from meta.transport import FakeTransport, Reply, responses_reply
+from orders import handlers as orders_handlers
 from worker.brain import labels as labels_mod
 from worker.brain.labels import Labeler, cards_at, resolve
 from worker.brain.shield import first_label, scan
@@ -240,20 +241,21 @@ def ident(card):
     return card and (card["card_id"], card["version"])
 
 
-def test_live_snapshot_skips_an_unpriced_draft():
-    # The media-time snapshot knows the draft; the live snapshot (sessions without a binding) does not.
-    # (media-time identity carries each card's latest supplied version, so the prefix pins the draft version)
+def test_unbound_snapshot_takes_the_unpriced_draft_on_screen_as_current():
+    # Both snapshots know the draft on screen: it is the current item and "the one before" is the card shown
+    # before it. (media-time identity carries each card's latest supplied version, so the prefix pins the draft)
     current, previous = cards_at(DRAFT_THEN_LIVE, 12_500)
     assert (current["card_id"], previous["card_id"]) == ("card-B", "card-A")
     current, previous = cards_at(DRAFT_THEN_LIVE[:2], 12_500)
     assert (ident(current), ident(previous)) == (("card-B", 1), ("card-A", 1))
-    # Live current is card-A; previous is the latest other card shown, the draft's first version, as on the base.
+    # The unbound snapshot (sessions without a binding) takes each card at its version known at ts_ms, so the
+    # price set at 13 s is not used at 12.5 s.
     current, previous = cards_at(DRAFT_THEN_LIVE, 12_500, live_only=True)
-    assert (ident(current), ident(previous)) == (("card-A", 1), ("card-B", 1))
+    assert (ident(current), ident(previous)) == (("card-B", 1), ("card-A", 1))
     current, previous = cards_at(DRAFT_THEN_LIVE, 13_500, live_only=True)
     assert (ident(current), ident(previous)) == (("card-B", 2), ("card-A", 1))
     draft = resolve(item("current_card"), DRAFT_THEN_LIVE, 12_500, set(), live_only=True)
-    assert draft["referenced_card_id"] == "card-A"
+    assert draft["referenced_card_id"] == "card-B"
 
 
 class Binding:
@@ -264,11 +266,12 @@ class Binding:
 
 
 @pytest.mark.parametrize(
-    ("ctx", "pair"), [(None, ("card-A", "card-B")), (Ctx({}, Binding()), ("card-B", "card-A"))]
+    ("ctx", "pair"), [(None, ("card-B", "card-A")), (Ctx({}, Binding()), ("card-B", "card-A"))]
 )
-async def test_the_prompt_shows_the_pair_resolve_binds_from(ctx, pair):
-    """Without an attachment binding the model sees the live pair resolve() binds from, not the unpriced draft
-    that is newest at media time; a session with a binding keeps the media-time pair."""
+async def test_the_prompt_shows_the_draft_on_screen_with_or_without_a_binding(ctx, pair):
+    """The model sees the pair resolve() binds from: without an attachment binding the unbound snapshot, with
+    one the media-time pair. Both take the unpriced draft on screen as the current item and the card shown
+    before it as the previous one."""
     transport = FakeTransport([responses_reply("not json"), responses_reply("not json")])
 
     async def emit(fields):
@@ -614,7 +617,9 @@ def order_comment(sid, comment_id, ts_ms):
     )
 
 
-async def test_session_without_binding_orders_from_the_live_card_not_the_draft(mem_app, monkeypatch):
+async def test_session_without_binding_binds_the_draft_on_screen_and_holds_it_for_the_seller(
+    mem_app, monkeypatch
+):
     monkeypatch.setattr(labels_mod, "BATCH_WAIT_S", 0.01)
     _, store, client = mem_app
     sid = "nobinding1"
@@ -624,6 +629,19 @@ async def test_session_without_binding_orders_from_the_live_card_not_the_draft(m
     first += [card_event(sid, "card-B", 1, "draft", None, 12_000, 12_000), order_comment(sid, "nb-1", 12_500)]
     await feed(client, runner, [(0, e) for e in first])
     await drain(labeler)
+    # The order on the unpriced draft goes to the orders flow, whose rules hold it for the seller.
+    orders = Runner("http://test", orders_handlers.HANDLERS, http=client)
+    [nb1] = [e for e in await store.read(sid, 0, 100) if e["type"] == "comment_labeled"]
+    await orders.handle(nb1)
+    events_so_far = await store.read(sid, 0, 100)
+    states = [e for e in events_so_far if e["type"] == "order"]
+    assert [e["state"] for e in states] == ["DRAFT", "NEEDS_SELLER"]
+    [line] = states[-1]["lines"]
+    assert (line["card_id"], line["card_version"], line["unit_price"]) == ("card-B", 1, 0)
+    reasons = states[-1]["reason"].split("; ")
+    assert reasons[:2] == ["card-B v1 was draft when the comment was written", "card has no price yet"]
+    assert states[-1]["approval_needed"] is True
+    assert not [e for e in events_so_far if e["type"] == "message_out" and e["template"] == "confirm_order"]
     later = [
         card_event(sid, "card-B", 2, "live", 200_000, 13_000, 12_000),
         order_comment(sid, "nb-2", 13_500),
@@ -632,6 +650,6 @@ async def test_session_without_binding_orders_from_the_live_card_not_the_draft(m
     await drain(labeler)
     labeled = {e["comment_id"]: e for e in await store.read(sid, 0, 100) if e["type"] == "comment_labeled"}
     draft = labeled["nb-1"]["order_draft"]
-    assert (draft["referenced_card_id"], draft["reference_kind"]) == ("card-A", "current_card")
+    assert (draft["referenced_card_id"], draft["reference_kind"]) == ("card-B", "current_card")
     draft = labeled["nb-2"]["order_draft"]
     assert (draft["referenced_card_id"], draft["reference_kind"]) == ("card-B", "current_card")
