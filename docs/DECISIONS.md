@@ -2,6 +2,21 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-02 — The labeling prompt shows the cards orders bind to
+
+**D-038 The labeling prompt shows the current and previous card from the same snapshot that binds the order.**
+Without an attachment binding, `resolve()` binds "this one" and "the previous one" from the live snapshot at the
+comment time (`cards_at(..., live_only=True)`), but the prompt showed the model the media-time pair, which can include a
+draft card that is not live yet. The model could then name a card the order is not bound to. The prompt now uses the
+same snapshot as `resolve()` (`worker/brain/labels.py`, `_ask`); a session with an attachment binding keeps the
+media-time pair, as before. The prompt text, model, schema and catalog are unchanged; `v` unchanged.
+
+An explicit product name that is not the current or previous card still gets no card; that binding is not part of
+this entry.
+
+Before (judge1 replay with the model, main `aa457d9`): correct orders 2/7, wrong card 3, no order 2.
+After: _to be filled from the next paid run on main after this change._
+
 ## 2026-11-02 — C9 delivery and C11 current state
 
 **D-037 C9 delivery definition and C11 current-state wording.**
