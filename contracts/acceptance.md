@@ -1,4 +1,4 @@
-# Acceptance criteria C1–C11 (v1, 27 October 2026; C4 and C9 amended 31 October, D-031)
+# Acceptance criteria C1–C11 (v1, 27 October 2026; C4 and C9 amended 31 October, D-033)
 
 These criteria define "done" for this hackathon entry. They are written against the problem statement **Build for Your World** ("bring Meta's models into your domain; solve a problem you know firsthand; free up time and mental space; make something possible that wasn't before") and the judging rubric announced at kickoff: Impact 30 · Use of Meta AI tooling 25 · Technical depth 20 · Demo 25.
 
