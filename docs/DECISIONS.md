@@ -2,6 +2,26 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-01 — Wonder exception for the model comparison measurement
+
+**D-036 (provisional number) Muse Wonder may be called only inside the product-identification model comparison, which is a measurement, with a 5.00 USD cap for the whole experiment that sits outside the D-006 meter. Nothing reaches production.**
+The number is provisional: D-031 is held by #77 and D-032 by PR #82. Whoever merges later renumbers.
+
+Founder authorization, 2026-11-01, verbatim:
+
+- Question: "Luật 5 cấm dùng Muse Wonder tuần này. Anh có cho phép ngoại lệ dùng Wonder chỉ trong thử nghiệm so sánh model này, trần tổng 5 USD, không đưa vào sản phẩm không? Câu trả lời của anh sẽ được trích nguyên văn vào hồ sơ."
+- Founder: "Cho phép, trần 5 USD"
+
+Scope and limits:
+
+- Only `measure/model_compare.py` calls Wonder. `meta/pricing.py` still lists it in `BLOCKED`. No production schema, prompt, model setting or price changed.
+- Inside that module, Wonder is priced at 4.00 USD input and 20.00 USD output per million tokens. This price is an assumption with no cited source in the repo (`meta/pricing.py` lists no Wonder price). No cached input price is known, so cached input is charged as full input.
+- The 5.00 USD cap covers all three configurations together (Spark minimal, Spark high, Wonder). The experiment's own meter enforced it before each call. The runner wires that meter (`CapMeter`) into the client in place of the project `Meter` (`measure/model_compare.py:268-271`), so `Meter.check` never ran: the D-006 caps of 30 USD/day and 300 USD total were not checked for these 560 calls. Their `model_call` events also went to a JSONL file, not to PostgreSQL. 3.7242853 USD must be added to the 2026-11-01 meter by hand.
+
+Spend from the `model_call` ledger, not reconciled with Billing: 3.7242853 USD over 560 calls. By configuration: spark-minimal 0.27568665, spark-high 0.98927865, wonder-high 2.45932. The 5.00 USD is the cap, not an amount spent. Add 3.7242853 USD to the 2026-11-01 model spend by hand.
+
+Evidence: `docs/evidence/2026-11-01/model-compare-NOTE.md`. No contract change; `v` is unchanged.
+
 ## 2026-11-01 — optional catalog kind evidence
 
 **D-035 Prepared candidate: use explicit catalog kinds only to refine a new `other` card.**

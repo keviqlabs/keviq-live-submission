@@ -1,0 +1,1544 @@
+{
+ "session_id": "model-compare-1101",
+ "code_commit": "3aeb64c1e1f0c06dd9765959cf64cf7e26f32a2a",
+ "gold": "data/local/test1/labels.json (local, not in git); frames f_{t:05d}.jpg 360x640",
+ "catalog": "data/comments/c5/catalog.json",
+ "category_map": {
+  "giày": [
+   "sneaker",
+   "boot",
+   "loafer",
+   "heels",
+   "sandal"
+  ],
+  "áo": [
+   "shirt",
+   "tshirt",
+   "sweater",
+   "jacket"
+  ],
+  "tay cầm": [
+   "other"
+  ],
+  "bàn phím": [
+   "other"
+  ]
+ },
+ "price_changes": [
+  {
+   "sku": "SP01",
+   "from_s": 37.5,
+   "to_s": 50.4,
+   "new_price": 220000
+  },
+  {
+   "sku": "SP04",
+   "from_s": 152.9,
+   "to_s": 159.3,
+   "new_price": 160000
+  },
+  {
+   "sku": "SP09",
+   "from_s": 286.1,
+   "to_s": 292.2,
+   "new_price": 600000
+  }
+ ],
+ "no_card_comments": [
+  {
+   "comment_id": "c5-1-029",
+   "ts_ms": 103600,
+   "text": "size 41 1 đôi cho mình nha",
+   "order": {
+    "product": "SP03",
+    "size": "41",
+    "color": null,
+    "qty": 1,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-031",
+   "ts_ms": 107550,
+   "text": "Shop ơi đôi vừa nãy cho em 1 size 40",
+   "order": {
+    "product": "SP02",
+    "size": "40",
+    "color": null,
+    "qty": 1,
+    "reference_kind": "previous_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-032",
+   "ts_ms": 109000,
+   "text": "Em đặt 1 đôi trên tay shop",
+   "order": {
+    "product": "SP03",
+    "size": null,
+    "color": null,
+    "qty": 1,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "ask_customer"
+  },
+  {
+   "comment_id": "c5-1-035",
+   "ts_ms": 112950,
+   "text": "Cho em 1 đôi size 42 ạ",
+   "order": {
+    "product": "SP03",
+    "size": "42",
+    "color": null,
+    "qty": 1,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-045",
+   "ts_ms": 147050,
+   "text": "Món vừa nãy size 41 chốt 1 nha",
+   "order": {
+    "product": "SP03",
+    "size": "41",
+    "color": null,
+    "qty": 1,
+    "reference_kind": "previous_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-071",
+   "ts_ms": 235500,
+   "text": "Chốt 1 cái này nha shop",
+   "order": {
+    "product": "SP07",
+    "size": null,
+    "color": null,
+    "qty": 1,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-074",
+   "ts_ms": 240300,
+   "text": "Lấy cái này cho em",
+   "order": {
+    "product": "SP07",
+    "size": null,
+    "color": null,
+    "qty": 1,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-078",
+   "ts_ms": 258600,
+   "text": "Em lấy 1 cái nhé",
+   "order": {
+    "product": "SP08",
+    "size": null,
+    "color": null,
+    "qty": 1,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-082",
+   "ts_ms": 277075,
+   "text": "Cho mình 1 cái này ạ",
+   "order": {
+    "product": "SP09",
+    "size": null,
+    "color": null,
+    "qty": 1,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-085",
+   "ts_ms": 286225,
+   "text": "Mình chốt cái đang giới thiệu nha",
+   "order": {
+    "product": "SP09",
+    "size": null,
+    "color": null,
+    "qty": 1,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-091",
+   "ts_ms": 320050,
+   "text": "Đặt 1 cái nha shop ơi",
+   "order": {
+    "product": "SP10",
+    "size": null,
+    "color": null,
+    "qty": 1,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-095",
+   "ts_ms": 335825,
+   "text": "40 một đôi nha",
+   "order": {
+    "product": "SP01",
+    "size": "40",
+    "color": null,
+    "qty": 1,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "confirm_order"
+  },
+  {
+   "comment_id": "c5-1-098",
+   "ts_ms": 339875,
+   "text": "Lấy 3 đôi size 40 nha shop",
+   "order": {
+    "product": "SP01",
+    "size": "40",
+    "color": null,
+    "qty": 3,
+    "reference_kind": "current_card"
+   },
+   "expected_action": "needs_seller"
+  }
+ ],
+ "selection": "Clear: 4 non-boundary seconds per item, evenly spaced over its non-boundary seconds. Boundary: the second nearest each product change's cue (boundary=True). No product: 6 non-boundary empty seconds, evenly spaced. Order comments: the comment's second (current card) or the last clear second of the gold item before the comment (previous card), tagged with the comment id. Strata: single_unique_colour (SP03 xám, SP06 xanh), same_colour_fashion (SP01, SP02, SP04, SP05: đen/trắng shared by shoes and shirts), same_colour_other (SP07-SP10: production can only call them other), boundary, no_product. Run order interleaves the groups so a prefix stays balanced.",
+ "configs": {
+  "spark-minimal": {
+   "model": "muse-spark-1.3",
+   "effort": "minimal"
+  },
+  "spark-high": {
+   "model": "muse-spark-1.3",
+   "effort": "high"
+  },
+  "wonder-high": {
+   "model": "muse-wonder-1.0",
+   "effort": "high"
+  }
+ },
+ "wonder_effort_note": "Wonder runs at effort high, the same as the Spark high arm, so the two differ by model only; fallback if the effort parameter is refused (HTTP 400): the model's default, said in the NOTE.",
+ "schemas": {
+  "A": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "has_product",
+    "category",
+    "color",
+    "size",
+    "material",
+    "confidence"
+   ],
+   "properties": {
+    "has_product": {
+     "type": "boolean"
+    },
+    "category": {
+     "type": "string",
+     "enum": [
+      "bag",
+      "belt",
+      "boot",
+      "dress",
+      "hat",
+      "heels",
+      "jacket",
+      "jeans",
+      "loafer",
+      "sandal",
+      "shirt",
+      "skirt",
+      "sneaker",
+      "sweater",
+      "trousers",
+      "tshirt",
+      "other",
+      "none"
+     ]
+    },
+    "color": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "size": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "material": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "confidence": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    }
+   }
+  },
+  "B0": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "state",
+    "kind",
+    "color",
+    "confidence"
+   ],
+   "properties": {
+    "state": {
+     "type": "string",
+     "enum": [
+      "one_product",
+      "no_product",
+      "unclear"
+     ]
+    },
+    "kind": {
+     "type": "string",
+     "enum": [
+      "giày",
+      "áo",
+      "tay cầm",
+      "bàn phím",
+      "khác",
+      "none"
+     ]
+    },
+    "color": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "confidence": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    }
+   }
+  },
+  "B": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "state",
+    "kind",
+    "color",
+    "sku",
+    "confidence"
+   ],
+   "properties": {
+    "state": {
+     "type": "string",
+     "enum": [
+      "one_product",
+      "no_product",
+      "unclear"
+     ]
+    },
+    "kind": {
+     "type": "string",
+     "enum": [
+      "giày",
+      "áo",
+      "tay cầm",
+      "bàn phím",
+      "khác",
+      "none"
+     ]
+    },
+    "color": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "sku": {
+     "type": "string",
+     "enum": [
+      "SP01",
+      "SP02",
+      "SP03",
+      "SP04",
+      "SP05",
+      "SP06",
+      "SP07",
+      "SP08",
+      "SP09",
+      "SP10",
+      "unsure",
+      "none"
+     ]
+    },
+    "confidence": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    }
+   }
+  }
+ },
+ "prompts": {
+  "A": "Đây là một khung hình từ livestream bán hàng. Món người bán đang cầm hoặc giới thiệu là gì? category chọn trong danh sách; danh sách không đầy đủ: món không có trong danh sách (ví dụ đồ điện tử, đồ gia dụng, phụ kiện) thì chọn 'other'; chỉ chọn 'none' khi người bán không cầm và không giới thiệu món nào. Quần áo người bán đang mặc trên người không phải sản phẩm đang giới thiệu. color: tiếng Việt thường, chọn trong ['be', 'hồng', 'kem', 'nâu', 'trắng', 'xanh', 'xám', 'đen', 'đỏ'] nếu khớp. size/material: chỉ khi nhìn thấy rõ, không thì null. Món thấy ở khung trước: chưa có. Nếu món đang cầm vẫn là món ở khung trước thì giữ đúng category và color của khung trước. confidence: mức chắc chắn 0..1.",
+  "A_note": "worker/vision/spark.py frame_input(jpeg, None): no previous frame, never gold",
+  "B0": "Đây là một khung hình từ livestream bán hàng. Món người bán đang cầm hoặc giới thiệu là gì? state: 'one_product' khi người bán đang cầm hoặc giới thiệu một món và nhìn rõ đó là món gì; 'no_product' khi người bán không cầm và không giới thiệu món nào; 'unclear' khi không chắc (món bị che, mờ, đang đổi món, hoặc thấy nhiều món). Không chắc thì chọn 'unclear', đừng đoán. kind: loại món, chọn 'giày', 'áo', 'tay cầm' (tay cầm chơi game) hoặc 'bàn phím'; món khác thì 'khác'; không có món thì 'none'. Quần áo người bán đang mặc trên người không phải sản phẩm đang giới thiệu. color: tiếng Việt thường, chọn trong ['be', 'hồng', 'kem', 'nâu', 'trắng', 'xanh', 'xám', 'đen', 'đỏ'] nếu khớp; không rõ thì null. confidence: mức chắc chắn 0..1.",
+  "B": "Đây là một khung hình từ livestream bán hàng. Món người bán đang cầm hoặc giới thiệu là gì? state: 'one_product' khi người bán đang cầm hoặc giới thiệu một món và nhìn rõ đó là món gì; 'no_product' khi người bán không cầm và không giới thiệu món nào; 'unclear' khi không chắc (món bị che, mờ, đang đổi món, hoặc thấy nhiều món). Không chắc thì chọn 'unclear', đừng đoán. kind: loại món, chọn 'giày', 'áo', 'tay cầm' (tay cầm chơi game) hoặc 'bàn phím'; món khác thì 'khác'; không có món thì 'none'. Quần áo người bán đang mặc trên người không phải sản phẩm đang giới thiệu. color: tiếng Việt thường, chọn trong ['be', 'hồng', 'kem', 'nâu', 'trắng', 'xanh', 'xám', 'đen', 'đỏ'] nếu khớp; không rõ thì null. Các món bán trong phiên (mã: loại, màu): SP01: giày, đen; SP02: giày, trắng; SP03: giày, xám; SP04: áo, đen; SP05: áo, trắng; SP06: áo, xanh; SP07: tay cầm, đen; SP08: tay cầm, trắng; SP09: bàn phím, đen; SP10: bàn phím, trắng. sku: mã của món đang giới thiệu, chỉ khi cả loại và màu khớp đúng một mã trong danh sách và bạn chắc chắn; không chắc thì 'unsure'; không có món thì 'none'. Chọn 'unsure' tốt hơn chọn sai mã. confidence: mức chắc chắn 0..1."
+ },
+ "prompt_sha": {
+  "A": "6f00b39abb819af6",
+  "B0": "c5d058e5a78e490b",
+  "B": "411636d3b48de893"
+ },
+ "phases": {
+  "spark": "six Spark arms (2 efforts x A, B0, B), frame by frame in run order; cap 2.50 USD",
+  "wonder": "wonder-high on B for every frame, then B0 with what is left; total cap 5.00 USD for all arms. A is not run on Wonder: A cannot name SP07/SP09 or SP08/SP10 apart whatever the model sees."
+ },
+ "cap_rule": "Before a call: spent + unknown + held + 2 x worst-case POST <= cap, else stop. Before every POST (meter check): that POST is held. A logged POST releases its hold; a POST with no reply keeps its worst case as unknown. Worst-case POST = max(1500, 1.2 x max tokens_in seen) x input price + max(floor, 2 x max tokens_out seen) x output price; floors: spark-minimal 1000, spark-high 8000, wonder 8000. The client sends no output limit, so the worst case is an estimate, not a bound.",
+ "scoring": {
+  "A": "has_product false or category none -> abstain; else production match(category, colour) on the catalog: one item -> pick; several -> cannot_name (collision); none -> cannot_name (no_match)",
+  "B0": "state not one_product, or kind khác/none -> abstain; else the one item of that kind and colour",
+  "B": "sku SP01..SP10 -> pick (whatever the state); unsure / none -> abstain",
+  "verdict": "clear: pick == gold correct, other pick wrong; boundary: pick of either side of the change correct, else wrong; no_product: any pick wrong; abstain, cannot_name and error are counted apart",
+  "gated": "production gate shown apart: a pick with confidence < 0.5 becomes an abstain",
+  "best": "Among arms that read every manifest frame with at most 5% error rows and abstain or cannot name on at most half of the clear frames: the fewest wrong picks over all frames (ungated); ties -> more correct clear frames; then the lower USD."
+ },
+ "frames": [
+  {
+   "t": 13,
+   "frame": "f_00013.jpg",
+   "gold": "SP01",
+   "kind": "giày",
+   "color": "đen",
+   "stratum": "boundary",
+   "allowed": [
+    "SP01"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 0,
+   "jpeg_sha256": "0bfed998b099b60438bc48ecc759316d35aa5cc552404ab646eab33fe2910d7e"
+  },
+  {
+   "t": 97,
+   "frame": "f_00097.jpg",
+   "gold": "SP03",
+   "kind": "giày",
+   "color": "xám",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 1,
+   "jpeg_sha256": "a45cae6505235102fc509008dc04f1fa1877a50e5d45c75b15c1b2343ebf08aa"
+  },
+  {
+   "t": 21,
+   "frame": "f_00021.jpg",
+   "gold": "SP01",
+   "kind": "giày",
+   "color": "đen",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 2,
+   "jpeg_sha256": "75be714a4476e32057eea1499afd637bfe5416d98dbf57b50a68af37332b9fcc"
+  },
+  {
+   "t": 270,
+   "frame": "f_00270.jpg",
+   "gold": "SP09",
+   "kind": "bàn phím",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 3,
+   "jpeg_sha256": "be467dbf7d6e061d331efca8c169afe68ef28d994e6b2ef8e19741490c91ce82"
+  },
+  {
+   "t": 0,
+   "frame": "f_00000.jpg",
+   "gold": null,
+   "kind": null,
+   "color": null,
+   "stratum": "no_product",
+   "allowed": [],
+   "why": [
+    "no_product"
+   ],
+   "comments": [],
+   "order": 4,
+   "jpeg_sha256": "cd71e11bba0db2c14b5f550dc3a14a1debc97ef5b2ad07fcbf62ed956cc20c8b"
+  },
+  {
+   "t": 64,
+   "frame": "f_00064.jpg",
+   "gold": "SP02",
+   "kind": "giày",
+   "color": "trắng",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 5,
+   "jpeg_sha256": "15afd55a27f66f65f8e10ef37b5ae71e773d61abcecd9f138ab29b24cf06d62d"
+  },
+  {
+   "t": 230,
+   "frame": "f_00230.jpg",
+   "gold": "SP07",
+   "kind": "tay cầm",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 6,
+   "jpeg_sha256": "7a9932a9d39e7185b3ced5b0e425ded4f7b32929cd593dd61a4191ba8229bfaa"
+  },
+  {
+   "t": 253,
+   "frame": "f_00253.jpg",
+   "gold": "SP08",
+   "kind": "tay cầm",
+   "color": "trắng",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 7,
+   "jpeg_sha256": "907ce466b1e47232c9de478b13d277b26d77a2969ef3479e42f13acdfe9fc783"
+  },
+  {
+   "t": 59,
+   "frame": "f_00059.jpg",
+   "gold": "SP02",
+   "kind": "giày",
+   "color": "trắng",
+   "stratum": "boundary",
+   "allowed": [
+    "SP01",
+    "SP02"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 8,
+   "jpeg_sha256": "72b723829ed199a474b92c56a8458aa1e24033d9f12f140b4646e1b0e2478d0e"
+  },
+  {
+   "t": 131,
+   "frame": "f_00131.jpg",
+   "gold": "SP04",
+   "kind": "áo",
+   "color": "đen",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 9,
+   "jpeg_sha256": "256feaadf5a7f390a9a8de0199d9e9be2db1ca8e714fc6645d6811f40bfe4de7"
+  },
+  {
+   "t": 173,
+   "frame": "f_00173.jpg",
+   "gold": "SP05",
+   "kind": "áo",
+   "color": "trắng",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 10,
+   "jpeg_sha256": "f57b9a0deee2ef8657d2f327b8aa4b361569ec763bfe7c475bd86cb6c5cf45b6"
+  },
+  {
+   "t": 194,
+   "frame": "f_00194.jpg",
+   "gold": "SP06",
+   "kind": "áo",
+   "color": "xanh",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 11,
+   "jpeg_sha256": "8919553917af61787169511a5060981cd3c0c1c20a599c0b8c76d57f1ecaafa6"
+  },
+  {
+   "t": 315,
+   "frame": "f_00315.jpg",
+   "gold": "SP10",
+   "kind": "bàn phím",
+   "color": "trắng",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 12,
+   "jpeg_sha256": "77d51433e57e782cebc368e6f969b2046271bb7ca07b56387a3aca13be0f6345"
+  },
+  {
+   "t": 93,
+   "frame": "f_00093.jpg",
+   "gold": "SP03",
+   "kind": "giày",
+   "color": "xám",
+   "stratum": "boundary",
+   "allowed": [
+    "SP02",
+    "SP03"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 13,
+   "jpeg_sha256": "7353936b40cf0822dc8a6488df969962860901b9c6d7c37174dc7f74cac40bc6"
+  },
+  {
+   "t": 102,
+   "frame": "f_00102.jpg",
+   "gold": "SP03",
+   "kind": "giày",
+   "color": "xám",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 14,
+   "jpeg_sha256": "557d420b18bfbdf022811e61cb38aab4591026d9e34ea8cbe77d74ee4cfb1ed9"
+  },
+  {
+   "t": 35,
+   "frame": "f_00035.jpg",
+   "gold": "SP01",
+   "kind": "giày",
+   "color": "đen",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 15,
+   "jpeg_sha256": "1d6abf3f492d7baa71dd6c0124606ba4273892de454a39556b68b96c813388e0"
+  },
+  {
+   "t": 276,
+   "frame": "f_00276.jpg",
+   "gold": "SP09",
+   "kind": "bàn phím",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 16,
+   "jpeg_sha256": "5a504091611bee59d1d9285ac7b4df3ab8913298637634b7691746336a01bf8a"
+  },
+  {
+   "t": 119,
+   "frame": "f_00119.jpg",
+   "gold": null,
+   "kind": null,
+   "color": null,
+   "stratum": "boundary",
+   "allowed": [
+    "SP03",
+    "SP04"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 17,
+   "jpeg_sha256": "77f5af5134298b3222b62338a84d51cd9867557ac016e60f7fac344fcec05c6d"
+  },
+  {
+   "t": 2,
+   "frame": "f_00002.jpg",
+   "gold": null,
+   "kind": null,
+   "color": null,
+   "stratum": "no_product",
+   "allowed": [],
+   "why": [
+    "no_product"
+   ],
+   "comments": [],
+   "order": 18,
+   "jpeg_sha256": "56ee5df19c7c8874e3024e54b524781fdd47caa9933da275013968aec8870cd0"
+  },
+  {
+   "t": 70,
+   "frame": "f_00070.jpg",
+   "gold": "SP02",
+   "kind": "giày",
+   "color": "trắng",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 19,
+   "jpeg_sha256": "ca25e4b6196211cf0269d18e4ad93bd1f42a1f58e2b0583d26d9e6d8ba84b16b"
+  },
+  {
+   "t": 235,
+   "frame": "f_00235.jpg",
+   "gold": "SP07",
+   "kind": "tay cầm",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear",
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-071"
+   ],
+   "order": 20,
+   "jpeg_sha256": "d81c2f7a55d1290b90551d969a86ffbe377667b7cf75a31e43acc306ca252cf3"
+  },
+  {
+   "t": 256,
+   "frame": "f_00256.jpg",
+   "gold": "SP08",
+   "kind": "tay cầm",
+   "color": "trắng",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 21,
+   "jpeg_sha256": "d9e27b162adff88636c213b38ac19a3db96570902a0ab6d0a66c73050c6ab307"
+  },
+  {
+   "t": 125,
+   "frame": "f_00125.jpg",
+   "gold": "SP04",
+   "kind": "áo",
+   "color": "đen",
+   "stratum": "boundary",
+   "allowed": [
+    "SP04"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 22,
+   "jpeg_sha256": "d8285260df15aefeeb68b25ed844d9fb70f4d3caf936026728ca8516d74659e9"
+  },
+  {
+   "t": 103,
+   "frame": "f_00103.jpg",
+   "gold": "SP03",
+   "kind": "giày",
+   "color": "xám",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-029"
+   ],
+   "order": 23,
+   "jpeg_sha256": "64afc804e23d1a39523657d3864e1c4c2251106c81347b7240b75fadd474aaf5"
+  },
+  {
+   "t": 139,
+   "frame": "f_00139.jpg",
+   "gold": "SP04",
+   "kind": "áo",
+   "color": "đen",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 24,
+   "jpeg_sha256": "8ca652e668cc8002abb7e5c910df4273f497b4f8f701e401cec0bba59c5bff7e"
+  },
+  {
+   "t": 176,
+   "frame": "f_00176.jpg",
+   "gold": "SP05",
+   "kind": "áo",
+   "color": "trắng",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 25,
+   "jpeg_sha256": "217e078cb1d4cba13ab0caf6cf46ce31505624fee0a52bde167635f612bca675"
+  },
+  {
+   "t": 200,
+   "frame": "f_00200.jpg",
+   "gold": "SP06",
+   "kind": "áo",
+   "color": "xanh",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 26,
+   "jpeg_sha256": "4ba5d3a3b9729a095fb0c486bd77d5b909907e0a8ba1f765f579820f7bf42902"
+  },
+  {
+   "t": 317,
+   "frame": "f_00317.jpg",
+   "gold": "SP10",
+   "kind": "bàn phím",
+   "color": "trắng",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 27,
+   "jpeg_sha256": "2ee20cc0f1b3f3aace4e5d93c238374ca79b3e6d925da5e864dbdec0f5734991"
+  },
+  {
+   "t": 169,
+   "frame": "f_00169.jpg",
+   "gold": "SP04",
+   "kind": "áo",
+   "color": "đen",
+   "stratum": "boundary",
+   "allowed": [
+    "SP04",
+    "SP05"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 28,
+   "jpeg_sha256": "56fdc86309157a2165035941d859901230e46853f6d6096c093bd5d95a208b18"
+  },
+  {
+   "t": 48,
+   "frame": "f_00048.jpg",
+   "gold": "SP01",
+   "kind": "giày",
+   "color": "đen",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 29,
+   "jpeg_sha256": "83779bdbdff3b6775bd7871c66049e71d4045d4519f9e07de1527fd38583ac57"
+  },
+  {
+   "t": 277,
+   "frame": "f_00277.jpg",
+   "gold": "SP09",
+   "kind": "bàn phím",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-082"
+   ],
+   "order": 30,
+   "jpeg_sha256": "0e72edfe81a04957e4d8e378e063cfa0fe23da7d921bd7cd25bd06e843d32203"
+  },
+  {
+   "t": 4,
+   "frame": "f_00004.jpg",
+   "gold": null,
+   "kind": null,
+   "color": null,
+   "stratum": "no_product",
+   "allowed": [],
+   "why": [
+    "no_product"
+   ],
+   "comments": [],
+   "order": 31,
+   "jpeg_sha256": "814bd8bce901f471a98bb48cb3d815f37356369058e30ddae48ebe073280cb41"
+  },
+  {
+   "t": 190,
+   "frame": "f_00190.jpg",
+   "gold": "SP06",
+   "kind": "áo",
+   "color": "xanh",
+   "stratum": "boundary",
+   "allowed": [
+    "SP05",
+    "SP06"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 32,
+   "jpeg_sha256": "ac4db2353848dd20571056984e493124998ccd2a22e65a222c1bce34d444cc77"
+  },
+  {
+   "t": 77,
+   "frame": "f_00077.jpg",
+   "gold": "SP02",
+   "kind": "giày",
+   "color": "trắng",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 33,
+   "jpeg_sha256": "0eecab7b94e816cbc9265faa3a49a2097c195de876da3f00bf4c2b7304856f2b"
+  },
+  {
+   "t": 107,
+   "frame": "f_00107.jpg",
+   "gold": "SP03",
+   "kind": "giày",
+   "color": "xám",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 34,
+   "jpeg_sha256": "489dbd928853596d75e5a149498fe1da54200347d12c9cd5bf8d87bc927268e2"
+  },
+  {
+   "t": 240,
+   "frame": "f_00240.jpg",
+   "gold": "SP07",
+   "kind": "tay cầm",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-074"
+   ],
+   "order": 35,
+   "jpeg_sha256": "159a19acf49227db6744ebe738c2028ef6360044d816b0b6c72619e8a72b0a2c"
+  },
+  {
+   "t": 258,
+   "frame": "f_00258.jpg",
+   "gold": "SP08",
+   "kind": "tay cầm",
+   "color": "trắng",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-078"
+   ],
+   "order": 36,
+   "jpeg_sha256": "94f140248dff9ec42c6da229339d4feb8f6a51fed2a35f0aee65b4779130e619"
+  },
+  {
+   "t": 218,
+   "frame": "f_00218.jpg",
+   "gold": null,
+   "kind": null,
+   "color": null,
+   "stratum": "boundary",
+   "allowed": [
+    "SP06",
+    "SP07"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 37,
+   "jpeg_sha256": "21e443ba1f089fc2c7bd34ac29ce3d6734a641c419ba8ac47e66682e07e28a4d"
+  },
+  {
+   "t": 335,
+   "frame": "f_00335.jpg",
+   "gold": "SP01",
+   "kind": "giày",
+   "color": "đen",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-095"
+   ],
+   "order": 38,
+   "jpeg_sha256": "779c11bf56bc0d0bd3c8310c29da42af0b0692b2be1c0dfa4fddd962f785fe4f"
+  },
+  {
+   "t": 283,
+   "frame": "f_00283.jpg",
+   "gold": "SP09",
+   "kind": "bàn phím",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 39,
+   "jpeg_sha256": "69598de3c780e2b487ee4acb4f9690fcbd4529cffd1e1b71ca6bdf5941c06bd5"
+  },
+  {
+   "t": 5,
+   "frame": "f_00005.jpg",
+   "gold": null,
+   "kind": null,
+   "color": null,
+   "stratum": "no_product",
+   "allowed": [],
+   "why": [
+    "no_product"
+   ],
+   "comments": [],
+   "order": 40,
+   "jpeg_sha256": "297c828bcea17e0aff458f1422e8118c26f0845fec7b53dca484f5d3a494bf97"
+  },
+  {
+   "t": 225,
+   "frame": "f_00225.jpg",
+   "gold": null,
+   "kind": null,
+   "color": null,
+   "stratum": "boundary",
+   "allowed": [
+    "SP07"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 41,
+   "jpeg_sha256": "cfdaf559f465a40eb8fb76a99e9b9cb4a084adf96f61ce737561df1139df0d2b"
+  },
+  {
+   "t": 148,
+   "frame": "f_00148.jpg",
+   "gold": "SP04",
+   "kind": "áo",
+   "color": "đen",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 42,
+   "jpeg_sha256": "11f340adb98f048f8487c4dff78e6374335067cb3817b7c4f56f49be966d0975"
+  },
+  {
+   "t": 178,
+   "frame": "f_00178.jpg",
+   "gold": "SP05",
+   "kind": "áo",
+   "color": "trắng",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 43,
+   "jpeg_sha256": "e6b15b87a762f7b4bf7145d3a6cd8404282fac90ac6159179161af95cfcd5803"
+  },
+  {
+   "t": 205,
+   "frame": "f_00205.jpg",
+   "gold": "SP06",
+   "kind": "áo",
+   "color": "xanh",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 44,
+   "jpeg_sha256": "a36024624d652d1bb6b143fb5c4587f686229ebd40e244b49e4da831d59a30ab"
+  },
+  {
+   "t": 320,
+   "frame": "f_00320.jpg",
+   "gold": "SP10",
+   "kind": "bàn phím",
+   "color": "trắng",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear",
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-091"
+   ],
+   "order": 45,
+   "jpeg_sha256": "15007e9515695bbb3994f6aec7e9bf00d630fd09f26e11dea6e37badd8533066"
+  },
+  {
+   "t": 109,
+   "frame": "f_00109.jpg",
+   "gold": "SP03",
+   "kind": "giày",
+   "color": "xám",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-032"
+   ],
+   "order": 46,
+   "jpeg_sha256": "db133c15bc391a440e3f8eaae6823dc948d091f05066ead11e037ba6defa1aff"
+  },
+  {
+   "t": 250,
+   "frame": "f_00250.jpg",
+   "gold": "SP08",
+   "kind": "tay cầm",
+   "color": "trắng",
+   "stratum": "boundary",
+   "allowed": [
+    "SP07",
+    "SP08"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 47,
+   "jpeg_sha256": "a06d8b201c5bc4f41d93dbfa6794fb4c4a36772c085c66db0664bed6ddb287d7"
+  },
+  {
+   "t": 83,
+   "frame": "f_00083.jpg",
+   "gold": "SP02",
+   "kind": "giày",
+   "color": "trắng",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 48,
+   "jpeg_sha256": "2d72722d32741b29c3deb493be0e5a21005129678c585db824145c1463f6b208"
+  },
+  {
+   "t": 241,
+   "frame": "f_00241.jpg",
+   "gold": "SP07",
+   "kind": "tay cầm",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 49,
+   "jpeg_sha256": "55f653bfaf780051a6c9e365ba606fd0991e50ea6fc210e6f54ce82b7cb6c6b1"
+  },
+  {
+   "t": 259,
+   "frame": "f_00259.jpg",
+   "gold": "SP08",
+   "kind": "tay cầm",
+   "color": "trắng",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 50,
+   "jpeg_sha256": "59d4df669b1c5d96b2bf492de5fb82940dad9ffcdb8ac49a5ed47eeb148f6dd1"
+  },
+  {
+   "t": 339,
+   "frame": "f_00339.jpg",
+   "gold": "SP01",
+   "kind": "giày",
+   "color": "đen",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-098"
+   ],
+   "order": 51,
+   "jpeg_sha256": "7735b3620806c0b14b2e1752f0c6143dadcd240dc594eefb19c68d3c16fbdaa4"
+  },
+  {
+   "t": 286,
+   "frame": "f_00286.jpg",
+   "gold": "SP09",
+   "kind": "bàn phím",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-085"
+   ],
+   "order": 52,
+   "jpeg_sha256": "67ba6f5b33caf3f6c8422f35db7a82c231751e74eed6702a54fa1867c91f3f39"
+  },
+  {
+   "t": 265,
+   "frame": "f_00265.jpg",
+   "gold": "SP09",
+   "kind": "bàn phím",
+   "color": "đen",
+   "stratum": "boundary",
+   "allowed": [
+    "SP08",
+    "SP09"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 53,
+   "jpeg_sha256": "82c7ba05ced3eb07d930b6d3df3650875bde76d6ce63389c6ed14a3a6d375f60"
+  },
+  {
+   "t": 7,
+   "frame": "f_00007.jpg",
+   "gold": null,
+   "kind": null,
+   "color": null,
+   "stratum": "no_product",
+   "allowed": [],
+   "why": [
+    "no_product"
+   ],
+   "comments": [],
+   "order": 54,
+   "jpeg_sha256": "538f9a4386254a2388ad4e49b3da24a11af1af29b565dde9f26c87ba32887b86"
+  },
+  {
+   "t": 112,
+   "frame": "f_00112.jpg",
+   "gold": "SP03",
+   "kind": "giày",
+   "color": "xám",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "clear",
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-035"
+   ],
+   "order": 55,
+   "jpeg_sha256": "32449b97c73db526bfdd0c1457c22d4f2bc72f57a11aea2252821a01c396c011"
+  },
+  {
+   "t": 311,
+   "frame": "f_00311.jpg",
+   "gold": "SP09",
+   "kind": "bàn phím",
+   "color": "đen",
+   "stratum": "boundary",
+   "allowed": [
+    "SP09",
+    "SP10"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 56,
+   "jpeg_sha256": "8b361f057de3200925cb17ff0d40feeb8e062b2df0775d3c03ed4f23aacdc913"
+  },
+  {
+   "t": 156,
+   "frame": "f_00156.jpg",
+   "gold": "SP04",
+   "kind": "áo",
+   "color": "đen",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 57,
+   "jpeg_sha256": "6ef5ffc8a8471017072a098bcc37e0574c824cd2f68c7445ab4f6d646e66cfff"
+  },
+  {
+   "t": 181,
+   "frame": "f_00181.jpg",
+   "gold": "SP05",
+   "kind": "áo",
+   "color": "trắng",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 58,
+   "jpeg_sha256": "14b85777be66b6e1fe5dbbeee87eb73523e19142b395194a94d0026d6f46eda2"
+  },
+  {
+   "t": 211,
+   "frame": "f_00211.jpg",
+   "gold": "SP06",
+   "kind": "áo",
+   "color": "xanh",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 59,
+   "jpeg_sha256": "10eb1c92d5392b067d6c357c34f60853efa1c781f9d1891d8b18336889412935"
+  },
+  {
+   "t": 322,
+   "frame": "f_00322.jpg",
+   "gold": "SP10",
+   "kind": "bàn phím",
+   "color": "trắng",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 60,
+   "jpeg_sha256": "5a1fcca2e7a37094685aa703da78272b6f70d784d47c026abd5af067172a399d"
+  },
+  {
+   "t": 326,
+   "frame": "f_00326.jpg",
+   "gold": "SP01",
+   "kind": "giày",
+   "color": "đen",
+   "stratum": "boundary",
+   "allowed": [
+    "SP01",
+    "SP10"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 61,
+   "jpeg_sha256": "d9991afc51413b562c503be7851c2898133a50129a334fca24a0a4bb61484eac"
+  },
+  {
+   "t": 86,
+   "frame": "f_00086.jpg",
+   "gold": "SP02",
+   "kind": "giày",
+   "color": "trắng",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-031"
+   ],
+   "order": 62,
+   "jpeg_sha256": "f2af79af32fe83c5fb2b0c2b2ec2ed6ede5069839f7a7816bbd36e9af93b6492"
+  },
+  {
+   "t": 246,
+   "frame": "f_00246.jpg",
+   "gold": "SP07",
+   "kind": "tay cầm",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 63,
+   "jpeg_sha256": "344f91202be60e357e435059d1ae008ba0f9fdd36b0b947f7f84998e4aec8295"
+  },
+  {
+   "t": 262,
+   "frame": "f_00262.jpg",
+   "gold": "SP08",
+   "kind": "tay cầm",
+   "color": "trắng",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 64,
+   "jpeg_sha256": "f2d1032a0b50dff1d5a081989c9161a1998064d30b72d8e637d5ceb8d4452df3"
+  },
+  {
+   "t": 340,
+   "frame": "f_00340.jpg",
+   "gold": "SP01",
+   "kind": "giày",
+   "color": "đen",
+   "stratum": "same_colour_fashion",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 65,
+   "jpeg_sha256": "cb9a885878c73f9f21cd09e9750005bf88ea0f6bd2d4dce7d0211a335f30d8be"
+  },
+  {
+   "t": 289,
+   "frame": "f_00289.jpg",
+   "gold": "SP09",
+   "kind": "bàn phím",
+   "color": "đen",
+   "stratum": "same_colour_other",
+   "allowed": [],
+   "why": [
+    "clear"
+   ],
+   "comments": [],
+   "order": 66,
+   "jpeg_sha256": "ffc9c16e8f3a375dd93c90fe83ebb04aeb3c38b6ec32772e2ff4da8c43f82d9d"
+  },
+  {
+   "t": 9,
+   "frame": "f_00009.jpg",
+   "gold": null,
+   "kind": null,
+   "color": null,
+   "stratum": "no_product",
+   "allowed": [],
+   "why": [
+    "no_product"
+   ],
+   "comments": [],
+   "order": 67,
+   "jpeg_sha256": "37447d423f585792d7320d5f9c9d749a1e2ee8c88880a57e0133cb9717080890"
+  },
+  {
+   "t": 114,
+   "frame": "f_00114.jpg",
+   "gold": "SP03",
+   "kind": "giày",
+   "color": "xám",
+   "stratum": "single_unique_colour",
+   "allowed": [],
+   "why": [
+    "order_comment"
+   ],
+   "comments": [
+    "c5-1-045"
+   ],
+   "order": 68,
+   "jpeg_sha256": "921842af809c41f141c1f601388a47a4d95003a7b08d2249a3c32a0b3c4ee0bd"
+  },
+  {
+   "t": 349,
+   "frame": "f_00349.jpg",
+   "gold": null,
+   "kind": null,
+   "color": null,
+   "stratum": "boundary",
+   "allowed": [
+    "SP01"
+   ],
+   "why": [
+    "boundary"
+   ],
+   "comments": [],
+   "order": 69,
+   "jpeg_sha256": "90662528002c15097acad9d05bf339024b1cfcc27dbd9def0fba34e63647cdec"
+  }
+ ]
+}
