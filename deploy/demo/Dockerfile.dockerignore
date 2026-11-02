@@ -8,6 +8,7 @@
 !pyproject.toml
 !uv.lock
 !.python-version
+!answers
 !app
 !connectors
 !contracts

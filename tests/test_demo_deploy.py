@@ -162,8 +162,9 @@ def test_demo_reads_the_compose_override_from_the_env_file_and_the_shell(tmp_pat
 
 # Everything the image runs: the lock files, the code, the migrations and the synthetic data the replay reads.
 BUILD_ALLOWLIST = {
-    "pyproject.toml", "uv.lock", ".python-version", "app", "connectors", "contracts", "data/catalog.json",
-    "data/comments", "data/sessions", "deploy/demo", "measure", "meta", "migrations", "orders", "worker",
+    "pyproject.toml", "uv.lock", ".python-version", "answers", "app", "connectors", "contracts",
+    "data/catalog.json", "data/comments", "data/sessions", "deploy/demo", "measure", "meta", "migrations",
+    "orders", "worker",
 }  # fmt: skip
 
 
@@ -188,7 +189,7 @@ def dockerignore_includes() -> list[str]:
 
 
 def imported_top_level_names(source: str) -> set[str]:
-    """Top-level module names of the absolute imports in one source file; relative imports stay inside a package."""
+    """Top-level module names of the absolute imports in one source file; relative imports are skipped."""
     names = set()
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.Import):
