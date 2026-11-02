@@ -135,7 +135,7 @@ make media SESSION=judge1-paid VIDEO=data/local/judge1/judge1.mp4 MEDIA_ARGS=--n
 make judge-feed SESSION=judge1-paid
 ```
 
-This has not been run with a key on the judge1 video, so its cost and what the models make of the drawn pictures are not measured. The same `curl` shows the spend afterwards.
+This was run once with a key on the judge1 video, on 2 November 2026: session `judge-paid-1102-1109` on main `aa457d9`, 51 model calls, 0.0879 USD. It made 4 cards; of the 7 comments meant to become orders, 2 did as expected, 3 went to a wrong card and 2 made no order; no receipt was produced. The result is FAIL (`docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`). The change made after it (decision D-038) has not been measured on this video yet. <!-- run pending --> The same `curl` shows the spend afterwards.
 
 ## 6. The paid run on the test1 recording
 
@@ -160,6 +160,29 @@ uv run python -m measure.c5 --base-url http://127.0.0.1:8000 --loops 1 --seconds
 ```
 
 It writes `<run>.json`, `<run>-scenarios.json` and `<run>-comments.jsonl` to its `--out` folder and prints the `model_call` ledger of the session. At the end it runs each situation's test files with pytest on the test database. The measured run used the wrapper `docs/evidence/2026-10-29/rescore-paid-run.sh`, which also binds the run's events to generated tokens (`measure/c5_bind.py`) and watches for the card picture; its exact output is in the note. Neither command was run from a fresh clone for this guide.
+
+### The full-size paid run (5 loops, 500 comments)
+
+The full-size run on 2 November (`c5-paid-1102-1028`, `docs/evidence/2026-11-02/c5-paid-1102-1028-NOTE.md`) used the wrapper `scripts/c5_paid_run.sh`. It plays all five streams of `data/comments/c5/` over five loops of the test1 recording (about 33 minutes) with `CATALOG_PATH=data/comments/c5/catalog.json` and a session cap of 8 USD (warn 6). The scripts are stored without the executable bit, so call them with `bash`, from the repository root:
+
+```bash
+MAIN_ENV=<path of the .env holding MODEL_API_KEY> OTHER_TODAY_USD=<spend today not in the database> OTHER_TOTAL_USD=<total spend not in the database> \
+  bash scripts/c5_paid_run.sh c5-paid-MMDD-HHMM <out folder> <database>_test [port]
+```
+
+- The run id starts with `c5-paid-` and is new for every attempt; the wrapper refuses an id whose `<run>.json` already exists in the out folder.
+- The database name ends in `_test` and is never `keviq_test` (the one `make check` uses); it is created and migrated if missing. The port defaults to 8040.
+- The wrapper sets the app's day and total caps from `OTHER_TODAY_USD` and `OTHER_TOTAL_USD` and refuses to start with less than 8 USD left under them. `PREFLIGHT_ONLY=1` stops after the database, migration, app and caps checks, with no model call. `PR81_HEAD` is optional (see the comment at the top of the script).
+- It needs the test1 files listed above and refuses to run when tracked files differ from `HEAD`.
+- Stop it with Ctrl-C or `kill -TERM <wrapper pid>`; its trap stops the runner, the per-loop children and the app.
+
+In a second terminal, the watcher starts nothing and sends SIGTERM to the wrapper on its stop rules (expired attachments, 401/422 on the system attachment route, failed seller decisions, spend at the warn line or over 0.25 USD per minute):
+
+```bash
+bash scripts/c5_paid_watch.sh c5-paid-MMDD-HHMM <out folder> <database>_test [port] [postgres container]
+```
+
+These commands are copied from the scripts' own usage lines; they were not run from a fresh clone for this guide.
 
 ## 7. Other ports
 
