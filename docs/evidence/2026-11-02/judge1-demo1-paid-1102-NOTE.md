@@ -8,7 +8,7 @@ Vietnamese comment and speech texts are replaced by English glosses, and times a
 - Code: origin/main aa457d98785a51320aa80a62c25744941b946afc (tree 6b7da8f), a clean clone outside the working copy, no local change.
 - Caps as coded: session 1.5 / warn 1.2, daily 30 / warn 20, total 285. Port 8040. Database `keviq_paid_test`. The model key was read from a local `.env` and never printed.
 - Two sessions as specified, plus one diagnostic extra (labeled below). All three stayed far under 1.5 USD per session.
-- **Video test flow result: FAIL.** Cards appear in judge1, but 3 of 6 order comments bind to the wrong card, 2 order comments get no order and no reply, one card carries another item's spoken price, no receipt in either specified session, and no receipt anywhere carries an image.
+- **Video test flow result: FAIL.** Cards appear in judge1, but 3 of 7 order comments bind to the wrong card, 2 order comments get no order and no reply, one card carries another item's spoken price, no receipt in either specified session, and no receipt anywhere carries an image.
 
 ## Sessions
 | session | kind | start ICT | end ICT | events posted | rc | session USD |
@@ -85,7 +85,7 @@ Each cause below is reproduced from stored events or logs. No fix was started in
 - The judge feed carries no customer replies. This is a property of the test data. No product fix.
 
 ## Files (outside Git, sha256)
-`run2-app-part1.log` and `run2-worker-part1.log` cover the specified sessions; `run2-app.log` and `run2-worker.log` cover the extra session. `run2-SHA256SUMS.txt` (1474 bytes, sha256 `58cb22efaf97569263fce028a2362be703d1da39d91ee54ed36275c66f2b8221`) lists every file below.
+`run2-app-part1.log` and `run2-worker-part1.log` cover the specified sessions; `run2-app.log` and `run2-worker.log` cover the extra session. `run2-SHA256SUMS.txt` (1474 bytes, sha256 `58cb22efaf97569263fce028a2362be703d1da39d91ee54ed36275c66f2b8221`) lists every file below. Later sessions on 2 November wrote to the same folder and overwrote `run2-app.log` and `run2-worker.log`, so the sizes and hashes listed for those two files describe them as first recorded and can no longer be reproduced.
 
 | File | Bytes | sha256 |
 |---|---|---|
