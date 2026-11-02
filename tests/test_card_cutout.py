@@ -251,3 +251,23 @@ async def test_a_card_whose_frame_was_never_cached_calls_no_sam(mem_app, monkeyp
         ("draft", None),
         ("live", None),
     ]
+
+
+async def test_an_other_card_asks_sam_for_its_kind(mem_app):
+    _, store, client = mem_app
+    runner, ts = runner_with(client, [responses_reply("<0f>0")]), now_ms()
+    frames.put(SID, ts, JPEG)
+    attributes = {
+        "color": "đen",
+        "size": None,
+        "material": None,
+        "kind": "bàn phím",
+        "identity_state": "one_product",
+    }
+    event = make_event(
+        "product_seen", SID, ts, "replay", event_id="ps-k", category="other", attributes=attributes,
+        confidence=0.9, is_new=True, frame_ts_ms=ts, caused_by=["fr-k"],
+    )  # fmt: skip
+    await run(client, runner, event)
+    await settle()
+    assert [r[1]["input"][0]["content"][0]["text"] for r in runner._meta[0].requests] == ["keyboard"]

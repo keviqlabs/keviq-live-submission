@@ -2,6 +2,29 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-02 — A card's cut-out is ready when it goes live
+
+**D-039 A card's SAM cut-out starts when its draft opens, so the version that makes it live carries the image, and
+an `other` item is asked for by the English noun of its catalog kind.**
+An order is locked to the card version live at the comment (D-032), and the cut-out used to start only when the card
+went live, so its image came as a later version that the quote and the receipt did not carry. In the paid C5 runs
+the receipt image tier was 0. Now the cut-out starts when the draft opens (or its frame is first cached) and nothing
+is posted then. When the price makes the card live and the cut-out is ready, the live version carries `image_url`;
+otherwise the image is the next version, caused by the event that made the card live (the speech, or the seller's
+priced version) and the frame. A version posted after a product_seen's handler returns never cites that product_seen,
+so the attachment evidence stays complete (#102). At most one SAM call per card, each with its `model_call`; one call
+at a time per session, live cards first; a waiting cut-out of a retired or no longer current card is skipped. A card
+whose frame is never cached behaves as before (`worker/brain/card.py`).
+
+Asked for the noun "other", SAM often finds nothing. For an `other` card, `sam.subject` maps its kind (normalised with
+`vn.tokens`) to an English noun: "tay cầm" to "game controller", "bàn phím" to "keyboard". An unknown kind and every
+other category keep today's noun (`worker/vision/sam.py`). No contract, schema, catalog or rule changes; `v`
+unchanged.
+
+Before (paid C5 runs on main): 17 of 48 `card_cutout` calls logged "sam found no other"; 21 of 48 live cards never
+got an image; receipts with an image 0 of 6.
+After: _to be measured by the next paid C5 run on main._
+
 ## 2026-11-02 — The labeling prompt shows the cards orders bind to
 
 **D-038 The labeling prompt shows the current and previous card from the same snapshot that binds the order.**

@@ -631,7 +631,7 @@ async def cut(event: dict, ctx, s: Session, cid: str) -> tuple | None:
     done, out = asyncio.get_running_loop().create_future(), None
     s.cuts[cid], frame_event = done, meta["frame_event_id"]
     try:
-        res = await sam.cut_out(ctx.client(), frame, meta["category"])
+        res = await sam.cut_out(ctx.client(), frame, sam.subject(meta["category"], meta.get("kind")))
         if res:
             out = (res[0], res[1], frame_event)
     except Exception as exc:  # the card stays without an image; the stream goes on (C7)
