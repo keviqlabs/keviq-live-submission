@@ -12,6 +12,8 @@ import json
 import logging
 from types import SimpleNamespace
 
+import pytest
+
 from app.contracts import make_event, now_ms
 from connectors.sim.moderator import SimModerator
 from meta.client import MetaClient
@@ -35,12 +37,13 @@ def clock() -> float:
 
 
 class GatedTransport:
-    """Labels a comment that starts with "chốt" as an order for the current card (size `size`, qty 1) and any
-    other comment as other. A call holding one of `held` sets `opened` and stays open until `release` is set.
-    `batches` has the comment ids of each answered call, in landing order."""
+    """Labels a comment that starts with "chốt" as an order for the current card (size `size`, qty 1), the
+    CANCEL comment as `cancel_label` and any other comment as other. A call holding one of `held` sets `opened`
+    and stays open until `release` is set. `batches` has the comment ids of each answered call, in landing
+    order."""
 
-    def __init__(self, held: set[str], size: str = "40"):
-        self.held, self.size = set(held), size
+    def __init__(self, held: set[str], size: str = "40", cancel_label: str = "other"):
+        self.held, self.size, self.cancel_label = set(held), size, cancel_label
         self.opened, self.release = asyncio.Event(), asyncio.Event()
         self.batches: list[list[str]] = []
 
@@ -57,7 +60,7 @@ class GatedTransport:
             items.append(
                 {
                     "comment_id": c["comment_id"],
-                    "label": "order" if order else "other",
+                    "label": "order" if order else self.cancel_label if c["text"] == CANCEL else "other",
                     "reference_kind": "current_card" if order else "none",
                     "sku": None,
                     "size": self.size if order else None,
@@ -140,14 +143,19 @@ async def test_a_customers_labels_post_in_cut_order_while_another_customers_post
     assert labeler.backlog() == {"waiting": 0, "in_flight": 0}
 
 
-async def test_unbound_order_then_cancel_landing_out_of_order_still_asks_to_cancel(mem_app, monkeypatch):
+@pytest.mark.parametrize(
+    "cancel_label", ["other", "complaint"]
+)  # the model may call a plain cancel a complaint
+async def test_unbound_order_then_cancel_landing_out_of_order_still_asks_to_cancel(
+    mem_app, monkeypatch, cancel_label
+):
     """Session without an attachment binding: the order comment's call is slow, the cancel comment's call is
     fast. The stored labels, replayed in order through the orders handlers as the worker does, give the order
     (DRAFT, CONFIRM_SENT, confirm_order) and then the cancel question; no order is CONFIRMED."""
     monkeypatch.setattr(labels_mod, "BATCH_WAIT_S", 0.05)
     _, store, client = mem_app
     sid, now = "causal-unbound", now_ms()
-    transport = GatedTransport({"c-order"})
+    transport = GatedTransport({"c-order"}, cancel_label=cancel_label)
     labeler, runner = wire(client, transport)
     assert await runner.attachment_enabled(sid) is False
     card = card_event(sid, "card-1", 1, "live", 150_000, now - 60_000, now - 60_000)
@@ -173,7 +181,10 @@ async def test_unbound_order_then_cancel_landing_out_of_order_still_asks_to_canc
     assert quick_replies(messages[1]) == [f"CANCEL:{oid}", f"KEEP:{oid}"]
     states = [(e["order_id"], e["state"]) for e in events if e["type"] == "order"]
     assert states == [(oid, "DRAFT"), (oid, "CONFIRM_SENT")]
-    assert [(e["comment_id"], e["label"]) for e in labels] == [("c-order", "order"), ("c-cancel", "other")]
+    assert [(e["comment_id"], e["label"]) for e in labels] == [
+        ("c-order", "order"),
+        ("c-cancel", cancel_label),
+    ]
 
 
 class ProvingRunner(Runner):
@@ -198,14 +209,19 @@ class ProvingRunner(Runner):
                 self.proofs.append(await self.w.system_request(await self.w.proof((source, label))))
 
 
-async def test_bound_order_then_cancel_landing_out_of_order_still_asks_to_cancel(world, monkeypatch):  # noqa: F811
+@pytest.mark.parametrize("cancel_label", ["other", "complaint"])
+async def test_bound_order_then_cancel_landing_out_of_order_still_asks_to_cancel(
+    world,  # noqa: F811
+    monkeypatch,
+    cancel_label,
+):
     """Session with an attachment binding: the order comment's call is slow, the cancel comment's call is fast.
     The order label's proof resolves the attachment and drafts the order (CONFIRM_SENT) before the cancel label
     is stored, so the next reconcile pass asks the customer; the cancel input is consumed only then."""
     monkeypatch.setattr(labels_mod, "BATCH_WAIT_S", 0.05)
     w = world
     await w.card(10, "GIAY-01", 150_000)
-    transport = GatedTransport({"c-order"}, size="38")
+    transport = GatedTransport({"c-order"}, size="38", cancel_label=cancel_label)
     holder = {}
 
     def client_for(ctx):

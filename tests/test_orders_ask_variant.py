@@ -92,9 +92,11 @@ async def play(client, events: list[dict]) -> tuple[Runner, list[dict]]:
     return runner, produced
 
 
-async def say(client, runner, thread: str, text: str, quick_reply: str | None = None) -> list[dict]:
+async def say(
+    client, runner, thread: str, text: str, quick_reply: str | None = None, ts: int | None = None
+) -> list[dict]:
     """A customer message through the sim Page webhook, handled as the worker would."""
-    body = webhook_body(thread, now_ms(), text=text, quick_reply=quick_reply)
+    body = webhook_body(thread, now_ms() if ts is None else ts, text=text, quick_reply=quick_reply)
     [mi] = (await client.post(f"/api/sessions/{SID}/sim/messenger", json=body)).json()["events"]
     out = await runner.handle(mi)
     assert runner.failures == 0
@@ -274,6 +276,16 @@ async def test_asks_at_most_three_times(c019):
 async def test_a_cancel_instead_of_a_size_is_not_asked_again(c019):
     runner, store, client, _ = c019
     assert await say(client, runner, "th-u064", "thôi không lấy nữa") == []
+    assert order_events(await stored(store)) == []
+
+
+@pytest.mark.parametrize("no", ["không", "ko", "thôi", "huỷ", "hủy", "no", "cancel", "Không!"])
+async def test_a_plain_no_with_no_open_order_then_ok_asks_the_size_again(c019, no):
+    # with no open order a plain "không" asks nothing, so the "ok" after it answers no cancel question
+    runner, store, client, _ = c019
+    t = now_ms()
+    assert await say(client, runner, "th-u064", no, ts=t) == []
+    assert sent(await say(client, runner, "th-u064", "ok", ts=t + 1)) == ["ask_variant"]
     assert order_events(await stored(store)) == []
 
 
