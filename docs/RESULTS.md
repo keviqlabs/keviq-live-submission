@@ -5,6 +5,12 @@ lists the work that is not merged. Every run here is one run (n = 1 per configur
 recounted on 3 November, with the command and output for each, are in
 `docs/evidence/2026-11-03/results-1103-NOTE.md`; the others are copied from the run notes named in each row.
 
+This page depends on pull request #104. The run notes `docs/evidence/2026-11-02/c5-paid-1102-1532-NOTE.md`,
+`c5-paid-1102-1709-NOTE.md` and `c5-paid-1102-1426-NOTE.md`, and the sections "Later run: judge-paid-1102-2131" and
+"Later run: judge-paid-1103-0019" of `docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`, are added by #104.
+Until #104 is merged, the pointers to them below do not resolve on `main`; the line numbers are those of #104's
+versions.
+
 ## The runs
 
 Two kinds of run:
@@ -14,15 +20,15 @@ Two kinds of run:
   simulated customer replies of `data/comments/c5/messenger-*.jsonl`. It is scored in five tiers: purchase intent →
   right item → order created → confirmed by the customer → receipt with the right card version and its image.
 - **judge1 with real models.** The judge1 video once, 14 synthetic comments of which 7 are order comments, no
-  customer replies, no seller action during the run (`docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`,
-  lines 211, 232 and 253).
+  customer replies, no seller action during the run (`docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`:
+  14 comments, line 211; 7 order comments, line 232; no seller acted, line 253; no customer replies, line 256).
 
 | Session | Code head | Configuration | Sample | Right item | Orders | Confirmed | Receipts | Expired attachments | Cancelled vision reads | Seller interventions | Ledger USD (calls) | Verdict | Evidence |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `c5-paid-1102-1532` | `767f7fe` | full-size C5; 4 vision reads at once (the default at this head, `worker/runner.py` line 40; the run does not record an override) | 150 order comments; right item counted over 140 | 90 of 140 (0.643) | 93 | 6 | 6, 0 with an image | 14 of 151 | 17 of 1755 | 47 = 87.90 / h | 3.97704250 (2484) | FAIL: situations 3, 4, 5; interventions above 10 / h | `docs/evidence/2026-11-02/c5-paid-1102-1532-NOTE.md`, lines 9-12, 40-41, 54-61, 65, 75; recount: `results-1103-NOTE.md`, "Ledger" |
+| `c5-paid-1102-1532` | `767f7fe` | full-size C5; 4 vision reads at once is the default at this head (`worker/runner.py` line 40); whether the run set the variable is not recorded | 150 order comments; right item counted over 140 | 90 of 140 (0.643) | 93 | 6 | 6, 0 with an image | 14 of 151 | 17 of 1755 | 47 = 87.90 / h | 3.97704250 (2484) | FAIL: situations 3, 4, 5; interventions above 10 / h | `docs/evidence/2026-11-02/c5-paid-1102-1532-NOTE.md`, lines 9-12, 40-41, 54-61, 65, 75; recount: `results-1103-NOTE.md`, "Ledger" |
 | `c5-paid-1102-1709` | `31e7d8a` | full-size C5; 4 vision reads at once (D-042, "Before") | as above | 72 of 140 (0.514) | 72 | 9 | 9, 9 with an image | 54 of 151 | 129 of 1755 | 34 = 61.37 / h | 4.25326475 (2536) | FAIL: situations 3, 4, 5; interventions above 10 / h | `docs/evidence/2026-11-02/c5-paid-1102-1709-NOTE.md`, lines 11-13, 46-58, 71-78, 82, 92; recount: `results-1103-NOTE.md`, "Ledger" |
 | `c5-paid-1102-2141-r8` | `31e7d8a` | full-size C5; `VISION_READS_PER_SESSION=8`, nothing else changed (D-042, "After") | as above | 86 of 140 (0.614), not re-derived | 85 distinct orders in the ledger | 7 | 7, 7 with an image | 23 of 152 | 176 of 1755 | 49 = 91.7 / h, not re-derived | 4.36595840 (2552) | FAIL: reference accuracy and intervention rate (D-042); the other situations are not in this repository | `docs/DECISIONS.md`, D-042 (lines 16-27); recount: `results-1103-NOTE.md`, "Ledger" and "Not re-derived here" |
-| `judge-paid-1102-2131` (context) | `1a886f6`, by the run record | judge1 video; 4 vision reads at once (the default at this head) | 7 order comments | right card 6 of 7, counted by hand | 5 | 0 | 0 | no attachment events | 0 of 24 | 0 (no seller acted) | 0.06632745 (44) | FAIL (video test flow) | `docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`, "Later run: judge-paid-1102-2131", lines 180-203; recount: `results-1103-NOTE.md`, "Ledger" |
+| `judge-paid-1102-2131` (context) | `1a886f6`, by the run record | judge1 video; 4 vision reads at once is the default at this head (`worker/runner.py` line 40); whether the run set the variable is not recorded | 7 order comments | right card 6 of 7, counted by hand | 5 | 0 | 0 | no attachment events | 0 of 24 | 0 (no seller acted) | 0.06632745 (44) | FAIL (video test flow) | `docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`, "Later run: judge-paid-1102-2131", lines 180-203; recount: `results-1103-NOTE.md`, "Ledger" |
 | `judge-paid-1103-0019` | `2a3ba2e`, by the run record | judge1 video; 8 vision reads at once is the default at this head; whether the run set the variable is not recorded | 7 order comments | right card 7 of 7, counted by hand | 6 | 0 | 0 | no attachment events | 1 of 27 | 0 (no seller acted) | 0.06761595 (46) | FAIL (video test flow) | `docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`, "Later run: judge-paid-1103-0019", lines 210-258; recount and offline `measure`: `results-1103-NOTE.md`, "Ledger" and "Offline measure" |
 
 Notes on the table:
@@ -49,12 +55,23 @@ Notes on the table:
   item is scored over those 140 (`counted()` in `measure/c5_score.py`, lines 42-45). The other 10 name no item
   (gold `reference_kind` unresolved, expected action `ask_customer`) and are not in that denominator. Recount:
   `results-1103-NOTE.md`, "Recount of the data files".
-- **Scripted ceiling.** The simulated customers have 20 scripted replies across the five streams: 15 wait for a
-  `confirm_order` message, and only 10 of those are the CONFIRM quick reply (the other 5 are expected to end in
-  NEEDS_SELLER); 5 wait for an `ask_cancel` message. No order is CONFIRMED without the customer's confirmation
-  (`AGENTS.md`, rule 6), so by the script at most 10 of the 150 order comments can reach confirmed and receipt. The
-  6, 9 and 7 above are out of those 10, not rates over 150. Recount: `results-1103-NOTE.md`, "Recount of the data
-  files"; the reply loop that waits for the shop's message: `measure/c5_shop.py`, lines 325-333.
+- **Scripted replies.** The simulated customers have 20 scripted replies across the five streams. 5 wait for an
+  `ask_cancel` message and are the CANCEL quick reply. 15 wait for a `confirm_order` message: 10 are the CONFIRM
+  quick reply, which the script expects to end in CONFIRMED (situation 12), and 5 are a plain-text yes sent after the
+  card's price changed, which the script expects to end in NEEDS_SELLER (situation 10). By the script's
+  expectations, 10 of the 150 order comments reach confirmed and receipt; no order is CONFIRMED without the
+  customer's confirmation (`AGENTS.md`, rule 6). The 6, 9 and 7 above are counts to set against those 10 expected,
+  not rates over 150.
+  Recount: `results-1103-NOTE.md`, "Recount of the data files"; the reply loop that waits for the shop's message:
+  `measure/c5_shop.py`, lines 325-333.
+- **Two plain-text confirmations in `c5-paid-1102-1709`.** In `c5-paid-1102-1532` (6) and `-2141-r8` (7) every
+  CONFIRMED order follows its own CONFIRM quick reply. In `-1709`, 7 of the 9 do. The other 2, `o-c5-3-083` and
+  `o-c5-4-005`, became CONFIRMED (actor customer, reason "customer confirmed in Messenger") right after the
+  plain-text replies `c5-3-m04` and `c5-4-m01`, two of the five that the script expects to end in NEEDS_SELLER. At
+  `31e7d8a` a plain-text yes confirms the thread's open order unless the card changed in price or SKU since the order
+  (`orders/flow.py`, `on_reply`, lines 705-766); why no change was found for these two orders is not established,
+  and whether this is a defect is not decided. In the other two runs `c5-4-m01` was sent and confirmed nothing, and
+  `c5-3-m04` was not sent. Queries and output: `results-1103-NOTE.md`, "Confirmations by reply".
 - **Cancel never fires.** In all five full-size runs of 2 November the shop sent no `ask_cancel` message, so the five
   scripted CANCEL replies (situation 8) were never sent. In the three C5 runs of the table the five cancel comments
   were labeled `complaint` (3 or 4 per run) or `other`, with action `none`. The shop asks only when the commenter
@@ -73,13 +90,16 @@ Notes on the table:
   card on either side matches. The by-item count (6 of 7, then 7 of 7) is a hand count in the judge1 NOTE, line 252.
   Rerun offline with no key: `results-1103-NOTE.md`, "Offline measure".
 - **Simulated parties.** The seller and the customers of the C5 runs are scripts; the comments are synthetic; the
-  test1 recording is not in this repository (`data/judge/README.md` says where it can be downloaded).
+  test1 recording is not in this repository, and where to download it is not given yet (`data/judge/README.md`,
+  line 22, "TO FILL").
 
 ## Clean clone
 
-One timed run, on 3 November at `2a3ba2e`, on one machine: from `git clone` to the console page of the replayed
+One timed run, on 3 November at `2a3ba2e`, on one machine: from the clone to the console page of the replayed
 judge1 session answering HTTP 200 with all 69 events stored took 77 s (clone 3 s, `uv sync` 1 s, `make infra-up`
-6 s, app ready 3 s, `make replay SESSION=judge1` 64 s). Evidence: `docs/evidence/2026-11-03/cleanclone-1103.log`
+6 s, app ready 3 s, `make replay SESSION=judge1` 64 s). The clone step was timed with an authenticated
+`gh repo clone` of the working repository (`docs/evidence/2026-11-03/cleanclone-1103.sh`, line 16), not with the
+`git clone` the README shows; `git clone` was not timed. Evidence: `docs/evidence/2026-11-03/cleanclone-1103.log`
 (timing stamps on lines 2, 4, 59, 71, 72, 77 and 78) and `results-1103-NOTE.md`, "Clean clone (one run)".
 
 What the 77 s does not include:
@@ -96,13 +116,14 @@ judge1 events on their own 61.8 s clock.
 ## Work in progress
 
 Branches not merged into `main` on 3 November. None of them is part of the results above, and nothing here claims
-they work. Not listed: the branches of open pull requests #68, #84, #104 and #107.
+they work. Not listed: the branches of open pull requests #68, #84, #104 and #107. "Last commit" is the date of the
+branch's tip; on three branches that tip, of 3 November, only rewords comments, docstrings and notes.
 
 | Branch | Last commit | What it changes |
 |---|---|---|
 | `test/console-ui-gate` (PR #109) | 3 November | `Makefile`: a `ui-test` target (`node --test tests/console_*_ui.mjs`) and its addition to `make check` |
-| `measure-first-hide` | 27 October | `measure/core.py`: the C5 phone-visible time ends at the comment's first hide, not its latest label; a test in `tests/test_measure.py` |
-| `returning-card-current` | 28 October | `worker/brain/labels.py`: the current card is the live card shown last, so a product shown again becomes current again; a test in `tests/test_labels.py` |
-| `test/sku-ambiguity` | 28 October | Tests, specs and an evidence note for ambiguous catalog matches and card separation, including a deliberately failing reproduction of a priced card reused after a changed observation; no runtime change |
-| `test/written-phone-shield` | 28 October | Acceptance tests, a spec and an evidence note for phone numbers written in words, with dots or in mixed forms; no change to the shield |
+| `measure-first-hide` | 27 October | `measure/core.py`: the C5 phone-visible time ends at the comment's first hide, not its latest label; `measure/labels.py`: the report line says "measured at the first hide"; a test in `tests/test_measure.py` |
+| `returning-card-current` | 3 November (wording only; code and test of 28 October) | `worker/brain/labels.py`: the current card is the live card shown last, so a product shown again becomes current again; a test in `tests/test_labels.py`; reworded comments in `worker/brain/card.py` and `tests/test_catalog_path.py`, and reworded D-026 text in `docs/DECISIONS.md` |
+| `test/sku-ambiguity` | 3 November (wording only; tests, specs and note of 28 October) | Tests, specs and an evidence note for ambiguous catalog matches and card separation, including a deliberately failing reproduction of a priced card reused after a changed observation; no runtime change. The 3 November commit rewords comments and docstrings in `measure/`, tests, `worker/brain/card.py`, earlier evidence notes and scripts, and `docs/DECISIONS.md` |
+| `test/written-phone-shield` | 3 November (wording only; tests, spec and note of 28 October) | Acceptance tests, a spec and an evidence note for phone numbers written in words, with dots or in mixed forms; no change to the shield. The acceptance tests fail on purpose (39 failed, 514 passed on `650fe39`, by its note) and the branch is not to be merged alone. The 3 November commit rewords the same files as on `test/sku-ambiguity` |
 | `speech-leads-prep` | 27 October | `docs/speech-leads-prep.md`: a preparation draft, not a decision, for letting a spoken product switch trigger a one-frame vision check before a new card opens |

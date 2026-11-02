@@ -5,6 +5,10 @@ each with its command and output below: read-only `SELECT` queries on the ledger
 recount of the data files in this repository, the offline `measure` run on a stored events export, and the
 clean-clone log in this folder. No model was called for this NOTE. Times are in ICT.
 
+The run notes of `c5-paid-1102-1532` and `c5-paid-1102-1709` and the "Later run" sections of
+`docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md` cited here are added by pull request #104; until it is
+merged, those pointers do not resolve on `main`.
+
 ## Files
 | File | Bytes | sha256 |
 |---|---|---|
@@ -60,7 +64,7 @@ $ jq -s '[.[].ts_ms] | {n: length, span_s: ((max - min)/1000)}' data/sessions/ju
 ## Ledger (read-only `SELECT` on `keviq_paid_test`)
 Run with `docker exec -i <postgres container> psql -U keviq -d keviq_paid_test < <file>.sql`, rc 0 each.
 
-Full-size runs 4, 5 and 6:
+Full-size runs `c5-paid-1102-1532`, `c5-paid-1102-1709` and `c5-paid-1102-2141-r8`:
 
 ```sql
 SELECT session_id, count(*) AS calls, sum((body->>'cost_usd')::numeric) AS usd FROM events
@@ -287,6 +291,120 @@ So 15 replies wait for a `confirm_order` message and 10 of them are the `CONFIRM
 The five `ask_cancel` rows are `c5-1-m04`, `c5-2-m02`, `c5-3-m02`, `c5-4-m03` and `c5-5-m02`; their comments are
 `c5-1-068`, `c5-2-038`, `c5-3-032`, `c5-4-038` and `c5-5-039`.
 
+The five plain-text replies (situation 10), each sent after a price change of the named item:
+
+```
+$ cat data/comments/c5/messenger-*.jsonl | jq -r 'select(.situation==10) | [.msg_id, .comment_id, (.quick_reply // "none"), .after, (.after_price_change // "none"), .expect] | @tsv'
+c5-1-m01	c5-1-006	none	confirm_order	SP01	NEEDS_SELLER
+c5-2-m03	c5-2-039	none	confirm_order	SP04	NEEDS_SELLER
+c5-3-m04	c5-3-083	none	confirm_order	SP09	NEEDS_SELLER
+c5-4-m01	c5-4-005	none	confirm_order	SP01	NEEDS_SELLER
+c5-5-m03	c5-5-037	none	confirm_order	SP04	NEEDS_SELLER
+```
+
+## Confirmations by reply (read-only `SELECT` on `keviq_paid_test`)
+For each CONFIRMED order event of the three full-size runs, the customer message stored just before it. Run as
+above, rc 0:
+
+```sql
+SELECT o.session_id, o.body->>'order_id' AS order_id, o.body->>'actor' AS actor, m.event_id AS reply_before,
+       coalesce(m.body->'payload'->>'quick_reply', 'plain text') AS reply_kind
+  FROM events o
+  LEFT JOIN LATERAL (SELECT * FROM events m WHERE m.session_id=o.session_id AND m.type='message_in' AND m.seq<o.seq ORDER BY m.seq DESC LIMIT 1) m ON true
+ WHERE o.session_id IN ('c5-paid-1102-1532','c5-paid-1102-1709','c5-paid-1102-2141-r8') AND o.type='order' AND o.body->>'state'='CONFIRMED'
+   AND m.body->'payload'->>'quick_reply' IS NULL ORDER BY o.session_id, o.seq;
+SELECT o.session_id, count(*) AS confirmed_events,
+       count(*) FILTER (WHERE m.body->'payload'->>'quick_reply' = 'CONFIRM:' || (o.body->>'order_id')) AS after_its_confirm_button,
+       count(*) FILTER (WHERE m.body->'payload'->>'quick_reply' IS NULL) AS after_plain_text
+  FROM events o
+  LEFT JOIN LATERAL (SELECT * FROM events m WHERE m.session_id=o.session_id AND m.type='message_in' AND m.seq<o.seq ORDER BY m.seq DESC LIMIT 1) m ON true
+ WHERE o.session_id IN ('c5-paid-1102-1532','c5-paid-1102-1709','c5-paid-1102-2141-r8') AND o.type='order' AND o.body->>'state'='CONFIRMED'
+ GROUP BY 1 ORDER BY 1;
+SELECT session_id, count(*) FILTER (WHERE body->'payload'->>'quick_reply' LIKE 'CONFIRM:%') AS confirm_buttons, count(*) AS message_in FROM events
+ WHERE session_id IN ('c5-paid-1102-1532','c5-paid-1102-1709','c5-paid-1102-2141-r8') AND type='message_in' GROUP BY 1 ORDER BY 1;
+```
+
+```
+    session_id     |  order_id  |  actor   |          reply_before           | reply_kind 
+-------------------+------------+----------+---------------------------------+------------
+ c5-paid-1102-1709 | o-c5-3-083 | customer | mi.m-c5-paid-1102-1709-c5-3-m04 | plain text
+ c5-paid-1102-1709 | o-c5-4-005 | customer | mi.m-c5-paid-1102-1709-c5-4-m01 | plain text
+(2 rows)
+
+      session_id      | confirmed_events | after_its_confirm_button | after_plain_text 
+----------------------+------------------+--------------------------+------------------
+ c5-paid-1102-1532    |                6 |                        6 |                0
+ c5-paid-1102-1709    |                9 |                        7 |                2
+ c5-paid-1102-2141-r8 |                7 |                        7 |                0
+(3 rows)
+
+      session_id      | confirm_buttons | message_in 
+----------------------+-----------------+------------
+ c5-paid-1102-1532    |               6 |          9
+ c5-paid-1102-1709    |               7 |         11
+ c5-paid-1102-2141-r8 |               7 |         10
+(3 rows)
+```
+
+Both plain-text confirmations answer a reply the script expects to end in NEEDS_SELLER (`c5-3-m04` after a price
+change of SP09, `c5-4-m01` after one of SP01). The state path of the two orders and the next shop message:
+
+```sql
+SELECT seq, type, body->>'order_id' AS order_id, body->>'state' AS state, body->>'prev_state' AS prev, body->>'template' AS template
+  FROM events WHERE session_id='c5-paid-1102-1709' AND seq IN (29462,29463,29881,29882);
+SELECT seq, body->>'state' AS state FROM events WHERE session_id='c5-paid-1102-1709' AND type='order' AND body->>'order_id' IN ('o-c5-3-083','o-c5-4-005') ORDER BY seq;
+```
+
+```
+  seq  |    type     |  order_id  |   state   |     prev     | template 
+-------+-------------+------------+-----------+--------------+----------
+ 29462 | order       | o-c5-3-083 | CONFIRMED | CONFIRM_SENT | 
+ 29463 | message_out |            |           |              | receipt
+ 29881 | order       | o-c5-4-005 | CONFIRMED | CONFIRM_SENT | 
+ 29882 | message_out |            |           |              | receipt
+(4 rows)
+
+  seq  |    state     
+-------+--------------
+ 29375 | DRAFT
+ 29376 | CONFIRM_SENT
+ 29462 | CONFIRMED
+ 29833 | DRAFT
+ 29834 | NEEDS_SELLER
+ 29850 | CONFIRM_SENT
+ 29881 | CONFIRMED
+(7 rows)
+```
+
+(Rows 29375-29462 are `o-c5-3-083`, rows 29833-29881 are `o-c5-4-005`.) Both went from CONFIRM_SENT to CONFIRMED and
+the shop sent a receipt. Why the price change was not found when the yes was handled is not established here.
+
+The plain-text replies each run sent (the scripted reply id ends the event id):
+
+```sql
+SELECT session_id, event_id FROM events
+ WHERE session_id IN ('c5-paid-1102-1532','c5-paid-1102-1709','c5-paid-1102-2141-r8') AND type='message_in' AND body->'payload'->>'quick_reply' IS NULL ORDER BY session_id, seq;
+```
+
+```
+      session_id      |              event_id              
+----------------------+------------------------------------
+ c5-paid-1102-1532    | mi.m-c5-paid-1102-1532-c5-2-m03
+ c5-paid-1102-1532    | mi.m-c5-paid-1102-1532-c5-4-m01
+ c5-paid-1102-1532    | mi.m-c5-paid-1102-1532-c5-5-m03
+ c5-paid-1102-1709    | mi.m-c5-paid-1102-1709-c5-1-m01
+ c5-paid-1102-1709    | mi.m-c5-paid-1102-1709-c5-2-m03
+ c5-paid-1102-1709    | mi.m-c5-paid-1102-1709-c5-3-m04
+ c5-paid-1102-1709    | mi.m-c5-paid-1102-1709-c5-4-m01
+ c5-paid-1102-2141-r8 | mi.m-c5-paid-1102-2141-r8-c5-2-m03
+ c5-paid-1102-2141-r8 | mi.m-c5-paid-1102-2141-r8-c5-4-m01
+ c5-paid-1102-2141-r8 | mi.m-c5-paid-1102-2141-r8-c5-5-m03
+(10 rows)
+```
+
+`c5-4-m01` was sent in all three runs and confirmed an order only in `c5-paid-1102-1709`; `c5-3-m04` was sent only
+in `c5-paid-1102-1709`.
+
 ## Offline measure on the judge-paid-1103-0019 export
 The export is kept outside the repository (173 rows, 80674 bytes, sha256
 `f28d4970d963db3d3a0e09c774619ced0fcb1954d76059e7dcdaa67df9abd726`, the same file as in
@@ -313,9 +431,9 @@ C3 compares `referenced_card_id` literally with the gold ids (`measure/core.py` 
 ## Not re-derived here
 - `c5-paid-1102-2141-r8`: right item 86 of 140 (0.614), 49 seller interventions (91.7 per hour) and the p95 times
   are copied from `docs/DECISIONS.md` (D-042). The run's score file is not in this repository and the run was not
-  re-scored. The orders figure for it (85) is the ledger's distinct `order_id` count; for Runs 4 and 5 the same
+  re-scored. The orders figure for it (85) is the ledger's distinct `order_id` count; for `-1532` and `-1709` the same
   ledger count equals the score's "order created" tier (93 and 72), which was not checked for this run.
-- Runs 4 and 5: the five tiers, interventions and runner wall times are copied from their NOTEs,
+- `c5-paid-1102-1532` and `-1709`: the five tiers, interventions and runner wall times are copied from their NOTEs,
   `docs/evidence/2026-11-02/c5-paid-1102-1532-NOTE.md` and `docs/evidence/2026-11-02/c5-paid-1102-1709-NOTE.md`.
 - Right card 6 of 7 (`judge-paid-1102-2131`) and 7 of 7 (`judge-paid-1103-0019`) are counted by hand in
   `docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`; not recounted here.

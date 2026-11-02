@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Clean-clone timing for README mode 1 (replay judge1, no key): clone -> uv sync (cold cache) -> infra-up (own compose
-# project on port 55499, so the shared keviq-live container is untouched) -> app -> replay judge1 -> console 200.
+# project on port 55499, so another database container on the machine is untouched) -> app -> replay judge1 -> console 200.
 set -u
 unset MODEL_API_KEY DATABASE_URL
 OUT=<log>; : > "$OUT"
@@ -13,7 +13,7 @@ rm -rf "$UV_CACHE_DIR" "$D"
 COMPOSE="docker compose -p $P -f deploy/compose.yml"
 echo "image cached: $(docker image inspect postgres:17-alpine --format '{{.Id}}' 2>/dev/null | cut -c1-19)" >>"$OUT"
 T start
-gh repo clone keviqlabs/keviq-live-event "$D" >>"$OUT" 2>&1; T "clone rc=$?"
+gh repo clone <repo> "$D" >>"$OUT" 2>&1; T "clone rc=$?"  # <repo>: the working repository, authenticated gh clone
 cd "$D" || exit 1
 git log -1 --format='head %H' >>"$OUT"
 uv sync >>"$OUT" 2>&1; T "uv-sync rc=$?"
