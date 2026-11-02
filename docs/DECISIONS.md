@@ -2,6 +2,15 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-02 — C9 delivery and C11 current state
+
+**D-037 C9 delivery definition and C11 current-state wording.**
+Decided by the Founder on 2 November 2026 (07:03 ICT). C9: the judges' entry point is the public repository run from
+the README; a hosted URL is optional. C11: the sentence that implied an RTMP input is replaced by the current state (the
+media worker reads recorded files; live RTMP input is not implemented). The README line on the hosted demo now says to
+include a link and access instructions only if one is deployed. No metric, threshold, event or schema changes; `v`
+unchanged.
+
 ## 2026-11-01 — Wonder exception for the model comparison measurement
 
 **D-036 (provisional number) Muse Wonder may be called only inside the product-identification model comparison, which is a measurement, with a 5.00 USD cap for the whole experiment that sits outside the D-006 meter. Nothing reaches production.**
