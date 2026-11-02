@@ -32,9 +32,9 @@ developers; on the hosted demo the operator replays sessions with `demo.sh seed`
   opens another slot sees that judge's state.
 - **demo1** shows four product cards, one of them retired (illustrations: this data set has no product photos),
   fourteen labelled comments and six orders: two confirmed with a receipt, two awaiting the customer, and two waiting
-  for the seller (a discount request, and a total above the approval limit). Approving one sends it to "awaiting customer". In demo1, the "Customer agrees
-  (sim)" button records the reply, but the order stays at "awaiting customer". demo1's orders come from the recorded
-  replay, and the worker does not act on recorded orders.
+  for the seller (a discount request, and a total above the approval limit). Approving one sends it to "awaiting
+  customer". In demo1, the "Customer agrees (sim)" button records the reply, but the order stays at "awaiting customer".
+  demo1's orders come from the recorded replay, and the worker does not act on recorded orders.
 - **ask-variant** shows orders that the worker builds from comments, without a model. One order is already confirmed
   with a receipt, and two are awaiting the customer. "Customer agrees (sim)" takes either of them to confirmed, with
   a receipt.
@@ -189,9 +189,9 @@ and removing the files the demo added.
 ### 7. No Docker on the host
 
 If `command -v docker` prints nothing, or `docker compose version` or `docker buildx version` fails, stop here.
-Nothing has been changed. Report "Docker (or its buildx plugin) is not installed on the host" to the Founder.
-Installing Docker on the shared host is the Founder's decision: it adds a daemon and its own firewall rules. This
-runbook does not install it.
+Nothing has been changed. Report "Docker (or its buildx plugin) is not installed on the host" to the project owner.
+Installing Docker on the shared host is the project owner's decision: it adds a daemon and its own firewall rules.
+This runbook does not install it.
 
 ## Operations
 
@@ -203,7 +203,7 @@ runbook does not install it.
 | watch one session arrive live | `deploy/demo/demo.sh replay demo1 demo1-live` (speed 1), then open `/console/demo1-live` |
 | update to a new commit | `git fetch && git checkout <commit> && deploy/demo/demo.sh reset` (rebuilds the image and wipes the data). `deploy/demo/demo.sh up` instead keeps the data. If `<checkout>` came from a `git archive`, unpack the new archive into a new folder, copy `deploy/demo/.env` across, run `deploy/demo/demo.sh reset` there, and point the periodic reset at the new folder. |
 | stop, keep the data | `deploy/demo/demo.sh down` |
-| uninstall | step 6, then `deploy/demo/demo.sh uninstall` (volume and image), `sudo rm <vhost-file> /etc/nginx/keviq-demo.htpasswd` (for `conf.d`, `<vhost-file>` is already gone), optionally `sudo certbot delete --cert-name <demo-host>`, and remove `<checkout>` |
+| uninstall | if the periodic reset was installed, first stop it: `sudo systemctl disable --now keviq-demo-reset.timer`, remove both unit files (`keviq-demo-reset.service` and `keviq-demo-reset.timer`) under `/etc/systemd/system/`, then `sudo systemctl daemon-reload`; or, for the cron variant, remove its line with `crontab -e`. Then step 6, then `deploy/demo/demo.sh uninstall` (volume and image), `sudo rm <vhost-file> /etc/nginx/keviq-demo.htpasswd` (for `conf.d`, `<vhost-file>` is already gone), optionally `sudo certbot delete --cert-name <demo-host>`, and remove `<checkout>` |
 
 ### Periodic reset
 
