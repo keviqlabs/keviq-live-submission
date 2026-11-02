@@ -1,0 +1,85 @@
+image cached: sha256:266d3c257594
+1793642073 start
+Cloning into '<clone>'...
+1793642076 clone rc=0
+head 2a3ba2e30efa03ac592370b6aa612ce8297ba1c6
+Using CPython 3.12.13 interpreter at: <python3.12>
+Creating virtual environment at: .venv
+Resolved 41 packages in 4ms
+Downloading pydantic-core (1.9MiB)
+Downloading pygments (1.2MiB)
+Downloading psycopg-binary (4.5MiB)
+Downloading uvloop (1.3MiB)
+Downloading ruff (9.0MiB)
+ Downloaded pygments
+ Downloaded uvloop
+ Downloaded pydantic-core
+ Downloaded psycopg-binary
+ Downloaded ruff
+Prepared 38 packages in 1.47s
+Installed 38 packages in 31ms
+ + annotated-doc==0.0.5
+ + annotated-types==0.8.0
+ + anyio==4.15.1
+ + attrs==26.1.0
+ + certifi==2026.10.23
+ + click==8.5.0
+ + fastapi==0.162.0
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httptools==0.9.0
+ + httpx==0.28.1
+ + idna==3.20
+ + iniconfig==2.3.1
+ + jsonschema==4.26.0
+ + jsonschema-specifications==2025.9.1
+ + meta-sam-parser==0.1.0
+ + opentelemetry-api==1.45.1
+ + packaging==26.3
+ + pluggy==1.7.0
+ + psycopg==3.3.6
+ + psycopg-binary==3.3.6
+ + pydantic==2.14.1
+ + pydantic-core==2.50.1
+ + pygments==2.21.0
+ + pytest==9.1.1
+ + pytest-asyncio==1.4.1
+ + python-dotenv==1.2.4
+ + pyyaml==6.0.3
+ + referencing==0.37.0
+ + rpds-py==2026.9.1
+ + ruff==0.17.3
+ + starlette==1.10.0
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.4
+ + uvicorn==0.54.0
+ + uvloop==0.23.0
+ + watchfiles==1.3.0
+ + websockets==17.3
+1793642077 uv-sync rc=0
+docker compose -p keviq-cleanclone-1103 -f deploy/compose.yml up -d --wait postgres
+ Volume keviq-cleanclone-1103_pgdata Creating 
+ Volume keviq-cleanclone-1103_pgdata Created 
+ Container keviq-cleanclone-1103-postgres-1 Creating 
+ Container keviq-cleanclone-1103-postgres-1 Created 
+ Container keviq-cleanclone-1103-postgres-1 Starting 
+ Container keviq-cleanclone-1103-postgres-1 Started 
+ Container keviq-cleanclone-1103-postgres-1 Waiting 
+ Container keviq-cleanclone-1103-postgres-1 Healthy 
+uv run python -m app.migrate
+migrations applied: 001_events.sql, 002_attachments.sql, 003_attachment_inputs.sql
+1793642083 infra-up rc=0
+1793642086 app-ready healthz={"ok":true,"store":"pg","head_seq":0}
+uv run python -m connectors.sim.replay --session judge1 --speed 1 --base-url http://127.0.0.1:8072
+replay data/sessions/judge1/events.jsonl: 69 events -> judge1-1103-005446
+console: http://127.0.0.1:8072/console/judge1-1103-005446
+done: 69 events posted
+1793642150 replay rc=0
+1793642150 console sid=judge1-1103-005446 http=200 healthz={"ok":true,"store":"pg","head_seq":69}
+ Container keviq-cleanclone-1103-postgres-1 Stopping 
+ Container keviq-cleanclone-1103-postgres-1 Stopped 
+ Container keviq-cleanclone-1103-postgres-1 Removing 
+ Container keviq-cleanclone-1103-postgres-1 Removed 
+ Volume keviq-cleanclone-1103_pgdata Removing 
+ Volume keviq-cleanclone-1103_pgdata Removed 
+1793642152 teardown rc=0
