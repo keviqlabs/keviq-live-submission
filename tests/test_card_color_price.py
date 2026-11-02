@@ -1,9 +1,11 @@
 """worker/brain/card.py: a heard price is not applied to a card when the line names colours, none of them the
 card's (`color_mismatch` price wait). A line that names the card's colour, or names none, is decided as before.
+Only the card's colours a line can name count, and a line about another colour leaves the card's sizes alone.
 Synthetic text only; the model reply is an error, so the rule reader reads the line.
 """
 
 import logging
+import unicodedata
 
 from app.contracts import now_ms
 from tests.test_card import SID, cards_in, fresh, hear, run, runner_with, said, seen  # noqa: F401
@@ -115,3 +117,76 @@ async def test_a_priced_card_gets_no_proposal_from_another_colours_price(mem_app
     assert await proposals(store) == []
     assert card.SESSIONS[SID].waits == {"color_mismatch": 1}
     assert (await latest(store))["card-a"]["price"] == 450000
+
+
+async def test_a_vision_colour_in_other_letters_does_not_hold_the_price(mem_app):
+    """Vision spelt white with a Cyrillic "т" and "р": no line can name that, so it is no known colour."""
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(1))
+    ts = now_ms()
+    await run(client, runner, seen("ps-c", "sneaker", "\u0442\u0440\u1eafng", ts))
+    [live] = await hear(client, store, runner, said("sp-1", "đôi trắng 450 nghìn", ts + 800))
+    assert (live["card_id"], live["sku"], live["status"], live["price"]) == ("card-c", None, "live", 450000)
+    assert not card.SESSIONS[SID].waits
+
+
+async def test_a_vision_colour_in_decomposed_form_is_the_spoken_colour(mem_app):
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(1))
+    ts = now_ms()
+    await run(client, runner, seen("ps-g", "sneaker", unicodedata.normalize("NFD", "xám"), ts))
+    [live] = await hear(client, store, runner, said("sp-1", "đôi xám 450 nghìn", ts + 800))
+    assert (live["card_id"], live["sku"], live["status"], live["price"]) == ("card-g", None, "live", 450000)
+    assert not card.SESSIONS[SID].waits
+
+
+async def test_one_colour_of_a_two_colour_vision_reading_takes_the_price(mem_app):
+    """Vision saw a black and white sneaker; the seller names only the black."""
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(1))
+    ts = now_ms()
+    await run(client, runner, seen("ps-b", "sneaker", "đen trắng", ts))
+    [live] = await hear(client, store, runner, said("sp-1", "đôi đen 450 nghìn", ts + 800))
+    assert (live["card_id"], live["sku"], live["status"], live["price"]) == ("card-b", None, "live", 450000)
+    assert not card.SESSIONS[SID].waits
+
+
+async def test_a_catalog_colour_no_line_can_name_means_no_colour_check(mem_app, monkeypatch):
+    """A seller catalog has a yellow sneaker; yellow is not a colour the speech side reads."""
+    _, store, client = mem_app
+    giay = card.item_by_sku("GIAY-01")
+    yellow = {**giay, "sku": "GIAY-09", "variants": [{"size": "38", "color": "vàng", "stock": 1}]}
+    monkeypatch.setattr(card, "CATALOG", [*card.CATALOG, yellow])
+    runner = runner_with(client, model_down(1))
+    ts = now_ms()
+    await run(client, runner, seen("ps-v", "sneaker", "vàng", ts))
+    [live] = await hear(client, store, runner, said("sp-1", "đôi đen 450 nghìn", ts + 800))
+    assert (live["sku"], live["status"], live["price"]) == ("GIAY-09", "live", 450000)
+    assert not card.SESSIONS[SID].waits
+
+
+async def test_sizes_said_with_another_colours_price_leave_the_card_as_it_is(mem_app):
+    """The white sneaker (GIAY-01: 38, 39, 40) is on screen; the seller prices a black pair and gives its size."""
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(1))
+    ts = now_ms()
+    [opened] = await hear(client, store, runner, seen("ps-a", "sneaker", "trắng", ts))
+    assert await hear(client, store, runner, said("sp-1", "đôi đen 450 nghìn, còn size 38", ts + 800)) == []
+    assert card.SESSIONS[SID].waits == {"color_mismatch": 1}
+    now = (await latest(store))["card-a"]
+    assert (now["version"], now["status"], now["price"], now["stock"]) == (1, "draft", None, 6)
+    assert now["variants"] == opened["variants"]
+    assert [v["size"] for v in now["variants"]] == ["38", "39", "40"]
+
+
+async def test_sizes_said_for_another_colour_without_a_price_leave_the_card_as_it_is(mem_app):
+    _, store, client = mem_app
+    runner = runner_with(client, model_down(1))
+    ts = now_ms()
+    [opened] = await hear(client, store, runner, seen("ps-a", "sneaker", "trắng", ts))
+    assert await hear(client, store, runner, said("sp-1", "đôi đen còn size 38", ts + 800)) == []
+    assert not card.SESSIONS[SID].waits  # no price heard, so no price wait
+    now = (await latest(store))["card-a"]
+    assert (now["version"], now["status"], now["price"], now["stock"]) == (1, "draft", None, 6)
+    assert now["variants"] == opened["variants"]
+    assert [v["size"] for v in now["variants"]] == ["38", "39", "40"]
