@@ -1,11 +1,13 @@
-"""Cancel requests: a comment (label other or order) or a plain "huỷ" leads to an ask_cancel question in the sim
-Messenger; only the customer's own CANCEL:<order_id> quick reply moves the order to CANCELLED."""
+"""Cancel requests: a comment (label order, other or complaint) or a plain "huỷ" leads to an ask_cancel question in
+the sim Messenger, once per comment; only the customer's own CANCEL:<order_id> quick reply moves the order to
+CANCELLED, and a plain yes to the question is asked again instead of confirming the order, also when another plain
+message comes between them or the yes follows the customer's own plain "huỷ" before its question is stored."""
 
 import json
 
 import pytest
 
-from app.contracts import now_ms
+from app.contracts import make_event, now_ms
 from app.settings import ROOT
 from connectors.sim import replay
 from connectors.sim.messenger import webhook_body
@@ -97,6 +99,17 @@ def message_scene(payload: dict, orders: list[dict], template=None, thread: str 
     return mi, flow.View.of([CARD, *orders, mi])
 
 
+def said(eid: str, text: str, ts: int, thread: str = "th-ux") -> dict:
+    return {
+        "event_id": eid,
+        "type": "message_in",
+        "ts_ms": ts,
+        "thread_ref": thread,
+        "template": None,
+        "payload": {"text": text},
+    }
+
+
 def quick_replies(event: dict) -> list[str]:
     return [q[1] for q in event["payload"]["quick_replies"]]
 
@@ -145,6 +158,17 @@ async def reply(client, runner, thread: str, quick_reply: str, ts: int) -> list[
     return await runner.handle(mi)
 
 
+async def stored(client, thread: str, text: str, ts: int) -> dict:
+    """A customer's text in the sim Messenger, stored but not handled yet."""
+    body = webhook_body(thread, ts, text=text)
+    [mi] = (await client.post(f"/api/sessions/{SID}/sim/messenger", json=body)).json()["events"]
+    return mi
+
+
+async def say(client, runner, thread: str, text: str, ts: int) -> list[dict]:
+    return await runner.handle(await stored(client, thread, text, ts))
+
+
 async def history(store, order_id: str) -> list[dict]:
     return [e for e in await store.read(SID, 0, 2000) if e["type"] == "order" and e["order_id"] == order_id]
 
@@ -159,9 +183,10 @@ async def played(mem_app, demo_events):
     return runner, store, client
 
 
-async def test_one_open_order_is_asked_then_cancelled_on_its_quick_reply(played):
+@pytest.mark.parametrize("label", ["other", "complaint"])  # the model may call a plain cancel a complaint
+async def test_one_open_order_is_asked_then_cancelled_on_its_quick_reply(played, label):
     runner, store, client = played
-    [ask] = await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop")
+    [ask] = await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label=label)
     assert (ask["type"], ask["template"], ask["thread_ref"]) == ("message_out", "ask_cancel", "th-u07")
     assert ask["payload"]["order_id"] == "o-07" and "o-07" in ask["payload"]["text"]
     assert ask["payload"]["send_api"]["recipient"] == {"comment_id": "cm-90"}  # private reply to the comment
@@ -180,9 +205,11 @@ async def test_one_open_order_is_asked_then_cancelled_on_its_quick_reply(played)
     assert msg["template"] == "order_cancelled" and msg["caused_by"][-1] == cancelled["event_id"]
 
 
-async def test_keep_changes_nothing(played):
+@pytest.mark.parametrize("label", ["other", "complaint"])
+async def test_keep_changes_nothing(played, label):
     runner, store, client = played
-    await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop")
+    [ask] = await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label=label)
+    assert ask["template"] == "ask_cancel"  # the question went out, so KEEP answers it
     before = await history(store, "o-07")
     assert await reply(client, runner, "th-u07", "KEEP:o-07", now_ms()) == []
     assert await history(store, "o-07") == before
@@ -279,6 +306,49 @@ async def test_order_label_with_cancel_text_makes_no_draft():
     assert ask["template"] == "ask_cancel" and quick_replies(ask) == ["CANCEL:o-1", "KEEP:o-1"]
 
 
+async def test_complaint_label_with_cancel_text_is_asked_and_changes_no_order():
+    label, view = comment_scene(
+        "huỷ đơn giúp mình nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint"
+    )
+    rec = Recorder()
+    [ask] = await flow.on_labeled(label, view, rec, now=6000)  # a question only: no order event
+    assert (ask["type"], ask["template"]) == ("message_out", "ask_cancel")
+    assert quick_replies(ask) == ["CANCEL:o-1", "KEEP:o-1"]
+    assert [template for _, template, _ in rec.sent] == ["ask_cancel"]
+    label, view = comment_scene("huỷ đơn giúp mình nha shop", [], label="complaint")
+    assert await flow.on_labeled(label, view, Recorder(), now=6000) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "đừng huỷ đơn nha shop",
+        "ko huỷ nha",
+        "có nên huỷ không ta",
+        "lần trước bị huỷ đơn rồi",
+        "giao chậm quá shop",
+    ],
+)
+async def test_complaint_label_without_a_clear_cancel_sends_nothing_and_never_drafts(text):
+    label, view = comment_scene(text, [order("o-1", "CONFIRM_SENT")], label="complaint")
+    label["order_draft"] = {
+        "variant": {"size": "39", "color": None},
+        "qty": 1,
+        "referenced_card_id": "card-x",
+    }
+    rec = Recorder()
+    assert await flow.on_labeled(label, view, rec, now=6000) == []
+    assert rec.sent == []
+
+
+@pytest.mark.parametrize("label", ["scam", "spam"])
+async def test_scam_or_spam_label_with_cancel_text_never_asks(label):
+    labeled, view = comment_scene("huỷ đơn giúp mình nha shop", [order("o-1", "CONFIRM_SENT")], label=label)
+    rec = Recorder()
+    assert await flow.on_labeled(labeled, view, rec, now=6000) == []
+    assert rec.sent == []
+
+
 @pytest.mark.parametrize(
     "text",
     ["Chốt 1 đôi size 39, ko huỷ nha", "chốt đôi 39 k huỷ nha", "không huỷ đâu", "lần trước bị huỷ đơn rồi"],
@@ -322,3 +392,317 @@ async def test_a_replayed_cancel_comment_is_asked_once():
     view.messages.append(ask)
     rec = Recorder()
     assert await flow.on_labeled(label, view, rec, now=7000) == [] and rec.sent == []
+
+
+async def test_a_second_label_of_the_same_comment_is_not_asked_again():
+    # The labeler may post an interim label and then the batch label of one comment: one question per comment.
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")])
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    view.messages.append(ask)
+    for second in ("complaint", "other", "order"):
+        relabeled = {**label, "event_id": f"lb-c-{second}", "label": second}
+        rec = Recorder()
+        assert await flow.on_labeled(relabeled, view, rec, now=7000) == [] and rec.sent == []
+    # a new comment is a new question
+    again = {**view.comments["cm-c"]["comment"], "event_id": "cm-d", "comment_id": "cm-d", "ts_ms": 6500}
+    view.comments["cm-d"] = {"comment": again, "labeled": None}
+    [ask] = await flow.on_labeled(
+        {**label, "event_id": "lb-d", "comment_id": "cm-d"}, view, Recorder(), now=7000
+    )
+    assert ask["template"] == "ask_cancel" and ask["payload"]["comment_id"] == "cm-d"
+
+
+@pytest.mark.parametrize("text", ["có", "ok"])
+async def test_a_plain_yes_to_the_cancel_question_is_asked_again(text):
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    mi = said("mi-c", text, 7000)
+    view.messages += [ask, mi]
+    rec = Recorder()
+    [again] = await flow.on_reply(mi, view, rec, now=7000)  # no order event: the order stays CONFIRM_SENT
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+    assert [template for _, template, _ in rec.sent] == ["ask_cancel"]
+
+
+@pytest.mark.parametrize("second", ["có", "ok"])
+async def test_two_plain_yeses_stored_before_either_is_handled_are_both_asked_again(second):
+    # "có có", or a worker behind: the question asked again for the first yes is stored after the second yes
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    first, then = said("mi-1", "có", 7000), said("mi-2", second, 7001)
+    view.messages += [ask, first, then]
+    for yes in (first, then):
+        [again] = await flow.on_reply(yes, view, Recorder(), now=7002)
+        assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+        view.messages.append(again)
+
+
+async def test_a_plain_yes_after_other_text_to_the_cancel_question_is_asked_again():
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    text, yes = said("mi-1", "sao vậy shop", 7000), said("mi-2", "có", 7001)
+    view.messages += [ask, text]
+    assert await flow.on_reply(text, view, Recorder(), now=7000) == []
+    view.messages.append(yes)
+    [again] = await flow.on_reply(yes, view, Recorder(), now=7001)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize("cancel", ["huỷ", "không"])
+async def test_a_plain_yes_stored_before_the_question_for_a_plain_cancel_is_asked_again(cancel):
+    # "huỷ" then "có" before the question for "huỷ" is stored: the yes does not confirm the order
+    mi, view = message_scene({"text": cancel}, [order("o-1", "CONFIRM_SENT")])
+    yes = said("mi-2", "có", 5001)
+    view.messages.append(yes)
+    [ask] = await flow.on_reply(mi, view, Recorder(), now=5002)
+    assert ask["template"] == "ask_cancel"
+    view.messages.append(ask)
+    [again] = await flow.on_reply(yes, view, Recorder(), now=5003)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+async def test_another_shop_message_after_the_cancel_question_lets_a_plain_yes_answer_it():
+    # a new order's confirm card sent after the cancel question is what the customer's "ok" answers
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    view.history["o-2"] = [order("o-2", "CONFIRM_SENT", ts=6500)]
+    card = {
+        "event_id": "mo-2",
+        "type": "message_out",
+        "ts_ms": 6500,
+        "thread_ref": "th-ux",
+        "template": "confirm_order",
+        "payload": {"order_id": "o-2"},
+    }
+    yes = said("mi-1", "ok", 7000)
+    view.messages += [ask, card, yes]
+    confirmed, receipt = await flow.on_reply(yes, view, Recorder(), now=7000)
+    assert (confirmed["order_id"], confirmed["state"], receipt["template"]) == ("o-2", "CONFIRMED", "receipt")
+
+
+@pytest.mark.parametrize("odd", [{"text": 5}, {"quick_reply": 7}, {"text": ["có"]}, {"text": ["không"]}])
+async def test_an_odd_earlier_message_does_not_stop_a_plain_yes_from_confirming(odd):
+    # the event schema lets a message payload hold any value; one that is not text answers no question
+    mi, view = message_scene(odd, [order("o-1", "CONFIRM_SENT")])
+    yes = said("mi-2", "có", 5001)
+    view.messages.append(yes)
+    confirmed, receipt = await flow.on_reply(yes, view, Recorder(), now=5002)
+    assert (confirmed["order_id"], confirmed["state"], receipt["template"]) == ("o-1", "CONFIRMED", "receipt")
+
+
+@pytest.mark.parametrize("odd", [{"text": 5}, {"quick_reply": 5}, {"text": 5, "quick_reply": 5}])
+async def test_a_no_button_with_an_odd_field_still_opens_the_cancel_question(odd):
+    # the template says no even when the text or quick reply beside it is not a string
+    mi, view = message_scene(odd, [order("o-1", "CONFIRM_SENT")], template="confirm_no")
+    yes = said("mi-2", "có", 5001)
+    view.messages.append(yes)
+    [ask] = await flow.on_reply(mi, view, Recorder(), now=5002)
+    assert ask["template"] == "ask_cancel"
+    view.messages.append(ask)
+    [again] = await flow.on_reply(yes, view, Recorder(), now=5003)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize(
+    "payload", [{"text": "không", "quick_reply": 1}, {"text": "huỷ", "quick_reply": None}]
+)
+async def test_a_plain_cancel_beside_an_odd_or_empty_quick_reply_still_opens_the_cancel_question(payload):
+    # the text is read even when the quick reply beside it is not a string, or is empty
+    mi, view = message_scene(payload, [order("o-1", "CONFIRM_SENT")])
+    yes = said("mi-2", "có", 5001)
+    view.messages.append(yes)
+    [again] = await flow.on_reply(yes, view, Recorder(), now=5002)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+NOT_A_BUTTON = [
+    {"text": 7, "order_id": "o-1"},
+    {"quick_reply": 7, "order_id": "o-1"},
+    {"text": "sao vậy shop", "order_id": "o-1"},
+    {"text": "sao vậy shop", "order_id": "o-zz"},
+]
+
+
+@pytest.mark.parametrize("between", NOT_A_BUTTON)
+async def test_plain_text_with_an_order_id_leaves_the_cancel_question_open(between):
+    # only a button names an order; an order_id in a plain text's payload does not answer "huỷ đơn ...?"
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    text = {**said("mi-1", "", 7000), "payload": between}
+    yes = said("mi-2", "có", 7001)
+    view.messages += [ask, text, yes]
+    [again] = await flow.on_reply(yes, view, Recorder(), now=7001)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize("between", NOT_A_BUTTON)
+async def test_plain_text_with_an_order_id_after_a_plain_cancel_leaves_it_open(between):
+    mi, view = message_scene({"text": "không"}, [order("o-1", "CONFIRM_SENT")])
+    text = {**said("mi-1", "", 5001), "payload": between}
+    yes = said("mi-2", "có", 5002)
+    view.messages += [text, yes]
+    [again] = await flow.on_reply(yes, view, Recorder(), now=5003)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize("template", [None, "unknown"])
+async def test_a_plain_yes_with_an_order_id_in_its_payload_is_asked_again(template):
+    # "có" is text, not the CONFIRM:o-1 button, even when its payload names the order
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    yes = {**said("mi-1", "có", 7000), "template": template, "payload": {"text": "có", "order_id": "o-1"}}
+    view.messages += [ask, yes]
+    [again] = await flow.on_reply(yes, view, Recorder(), now=7000)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+async def test_a_no_button_whose_order_id_is_not_a_string_still_opens_the_cancel_question():
+    mi, view = message_scene({"order_id": 5}, [order("o-1", "CONFIRM_SENT")], template="confirm_no")
+    yes = said("mi-2", "có", 5001)
+    view.messages.append(yes)
+    [again] = await flow.on_reply(yes, view, Recorder(), now=5002)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"text": 5, "order_id": "o-1", "quick_reply": "KEEP:o-1"},
+        {"text": "Giữ đơn", "order_id": "o-1", "quick_reply": 5},
+    ],
+)
+async def test_a_keep_button_with_an_odd_field_answers_the_cancel_question(payload):
+    # the keep_order template names the order even when the text or quick reply beside it is not a string
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRM_SENT")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    keep = {**said("mi-1", "", 7000), "template": "keep_order", "payload": payload}
+    yes = said("mi-2", "có", 7001)
+    view.messages += [ask, keep, yes]
+    assert await flow.on_reply(keep, view, Recorder(), now=7000) == []
+    confirmed, receipt = await flow.on_reply(yes, view, Recorder(), now=7001)
+    assert (confirmed["order_id"], confirmed["state"], receipt["template"]) == ("o-1", "CONFIRMED", "receipt")
+
+
+@pytest.mark.parametrize("template", ["keep_order", None])
+async def test_keep_all_answers_the_cancel_question_for_two_orders(template):
+    # "Giữ tất cả" names no single order (KEEP:all), yet it is a button and answers the question
+    mine = [order("o-1", "CONFIRM_SENT", ts=1000), order("o-2", "CONFIRM_SENT", ts=2000)]
+    label, view = comment_scene("huỷ đơn nha shop", mine, label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    assert quick_replies(ask) == ["CANCEL:o-1", "CANCEL:o-2", "KEEP:all"]
+    payload = {"text": "Giữ tất cả", "quick_reply": "KEEP:all"} | ({"order_id": "all"} if template else {})
+    keep = {**said("mi-1", "", 7000), "template": template, "payload": payload}
+    yes = said("mi-2", "có", 7001)
+    view.messages += [ask, keep, yes]
+    assert flow.answers_cancel_question(view, yes) is False
+
+
+async def test_a_plain_yes_to_the_cancel_question_for_a_confirmed_order_is_asked_again():
+    label, view = comment_scene("huỷ đơn nha shop", [order("o-1", "CONFIRMED")], label="complaint")
+    [ask] = await flow.on_labeled(label, view, Recorder(), now=6000)
+    assert quick_replies(ask) == ["CANCEL:o-1", "KEEP:o-1"]
+    yes = said("mi-c", "có", 7000)
+    view.messages += [ask, yes]
+    [again] = await flow.on_reply(yes, view, Recorder(), now=7000)
+    assert again["template"] == "ask_cancel" and quick_replies(again) == ["CANCEL:o-1", "KEEP:o-1"]
+
+
+@pytest.mark.parametrize("text", ["có", "ok"])
+@pytest.mark.parametrize("label", ["other", "complaint"])
+async def test_a_plain_yes_after_the_cancel_question_confirms_nothing(played, label, text):
+    runner, store, client = played
+    await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label=label)
+    [again] = await say(client, runner, "th-u07", text, now_ms())
+    assert again["template"] == "ask_cancel"
+    assert [q["payload"] for q in again["payload"]["send_api"]["message"]["quick_replies"]] == [
+        "CANCEL:o-07",
+        "KEEP:o-07",
+    ]
+    assert (await history(store, "o-07"))[-1]["state"] == "CONFIRM_SENT"
+
+
+@pytest.mark.parametrize("label", ["other", "complaint"])
+async def test_two_plain_yeses_stored_before_the_worker_handles_them_confirm_nothing(played, label):
+    runner, store, client = played
+    await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label=label)
+    t = now_ms()
+    first, then = await stored(client, "th-u07", "có", t), await stored(client, "th-u07", "ok", t + 1)
+    for yes in (first, then):
+        [again] = await runner.handle(yes)
+        assert again["template"] == "ask_cancel"
+    assert runner.failures == 0
+    assert (await history(store, "o-07"))[-1]["state"] == "CONFIRM_SENT"
+
+
+async def test_a_plain_yes_after_other_text_confirms_nothing(played):
+    runner, store, client = played
+    await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label="complaint")
+    assert await say(client, runner, "th-u07", "sao vậy shop", now_ms()) == []
+    [again] = await say(client, runner, "th-u07", "có", now_ms() + 5)
+    assert again["template"] == "ask_cancel"
+    assert (await history(store, "o-07"))[-1]["state"] == "CONFIRM_SENT"
+
+
+async def test_a_plain_yes_stored_with_a_plain_cancel_confirms_nothing(played):
+    runner, store, client = played
+    t = now_ms()
+    cancel, yes = await stored(client, "th-u07", "huỷ", t), await stored(client, "th-u07", "có", t + 1)
+    for mi in (cancel, yes):
+        [ask] = await runner.handle(mi)
+        assert ask["template"] == "ask_cancel"
+    assert runner.failures == 0
+    assert (await history(store, "o-07"))[-1]["state"] == "CONFIRM_SENT"
+
+
+async def test_the_confirm_button_still_confirms_after_the_cancel_question(played):
+    runner, store, client = played
+    await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label="complaint")
+    confirmed, msg = await reply(client, runner, "th-u07", "CONFIRM:o-07", now_ms())
+    assert (confirmed["state"], confirmed["actor"], msg["template"]) == ("CONFIRMED", "customer", "receipt")
+
+
+async def test_an_odd_earlier_message_does_not_stop_the_worker_confirming_a_plain_yes(played):
+    runner, store, client = played
+    odd = make_event(
+        "message_in", SID, now_ms(), "sim", thread_ref="th-u07", template=None, payload={"text": 5}
+    )
+    assert (await client.post(f"/api/sessions/{SID}/events", json=[odd])).status_code == 200
+    await runner.handle(odd)
+    before = runner.failures
+    confirmed, msg = await say(client, runner, "th-u07", "có", now_ms() + 5)
+    assert runner.failures == before
+    assert (confirmed["state"], confirmed["actor"], msg["template"]) == ("CONFIRMED", "customer", "receipt")
+
+
+async def test_a_plain_yes_after_keep_confirms(played):
+    runner, store, client = played
+    await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label="complaint")
+    assert await reply(client, runner, "th-u07", "KEEP:o-07", now_ms()) == []
+    confirmed, msg = await say(client, runner, "th-u07", "ok", now_ms() + 5)
+    assert (confirmed["state"], confirmed["actor"], msg["template"]) == ("CONFIRMED", "customer", "receipt")
+
+
+async def test_a_plain_yes_stored_with_a_no_button_with_odd_text_confirms_nothing(played):
+    runner, store, client = played
+    t = now_ms()
+    no = make_event(
+        "message_in", SID, t, "sim", thread_ref="th-u07", template="confirm_no", payload={"text": 5}
+    )
+    assert (await client.post(f"/api/sessions/{SID}/events", json=[no])).status_code == 200
+    yes = await stored(client, "th-u07", "có", t + 1)
+    for mi in (no, yes):
+        [ask] = await runner.handle(mi)
+        assert ask["template"] == "ask_cancel"
+    assert runner.failures == 0
+    assert (await history(store, "o-07"))[-1]["state"] == "CONFIRM_SENT"
+
+
+async def test_a_plain_yes_after_keep_with_odd_text_confirms(played):
+    # the sim webhook passes any text through; the KEEP:o-07 button beside it still answers the question
+    runner, store, client = played
+    await post_comment(client, runner, "u07", "huỷ đơn giúp mình nha shop", label="complaint")
+    body = webhook_body("th-u07", now_ms(), text=5, quick_reply="KEEP:o-07")
+    [keep] = (await client.post(f"/api/sessions/{SID}/sim/messenger", json=body)).json()["events"]
+    assert await runner.handle(keep) == []
+    confirmed, msg = await say(client, runner, "th-u07", "ok", now_ms() + 5)
+    assert (confirmed["state"], confirmed["actor"], msg["template"]) == ("CONFIRMED", "customer", "receipt")

@@ -1,0 +1,25 @@
+session e2e-main-1030-1852s events 764 orders 25 confirmed 2
+
+order o-c5-1-016 card card-1-00 item SP01
+ 1 proposal seq 497287 price_proposal_9f3dd823445648deaa0f heard 220000 current 250000 card_version 4
+ 2 card seq 497297 card-1-00 v5 price 220000 status edited edited_by seller caused_by_proposal True
+ - order seq 497323 DRAFT actor assistant reason drafted from comment c5-1-016 on card-1-00 v5 (220.000đ) line v5
+ - order seq 497324 NEEDS_SELLER actor assistant reason variant size 40 not on card-1-00 v5 line v5
+ 2 order seq 497335 CONFIRM_SENT actor seller reason seller approved: unit price 220000 = card price (was: variant size 40 not on card-1-00 v5) line v5
+ 3 order seq 497361 CONFIRMED actor customer reason customer confirmed in Messenger line v5
+ - message_out seq 497325 waiting_for_shop card_version None
+ - message_out seq 497336 confirm_order card_version 5
+ - message_out seq 497362 receipt card_version 5
+ 3 message_in seq 497360 mi.m-e2e-main-1030-1852s-c5-1-m02 template confirm_yes quick_reply CONFIRM:o-c5-1-016
+ 4 receipt seq 497361 card card-1-00 v5 price 220000 version_exists True price_matches_version True image False
+
+order o-c5-1-029 card card-1-01 item SP02
+ - order seq 497418 DRAFT actor assistant reason drafted from comment c5-1-029 on card-1-01 v3 (320.000đ) line v3
+ - order seq 497419 NEEDS_SELLER actor assistant reason variant size 41 not on card-1-01 v3 line v3
+ 2 order seq 497430 CONFIRM_SENT actor seller reason seller approved: unit price 320000 = card price (was: variant size 41 not on card-1-01 v3) line v3
+ 3 order seq 497453 CONFIRMED actor customer reason customer confirmed in Messenger line v3
+ - message_out seq 497420 waiting_for_shop card_version None
+ - message_out seq 497431 confirm_order card_version 3
+ - message_out seq 497454 receipt card_version 3
+ 3 message_in seq 497452 mi.m-e2e-main-1030-1852s-c5-1-m03 template confirm_yes quick_reply CONFIRM:o-c5-1-029
+ 4 receipt seq 497453 card card-1-01 v3 price 320000 version_exists True price_matches_version True image False

@@ -13,7 +13,7 @@
   <nav class="header-links" aria-label="pages">
     <a href="/" data-i18n="nav.sessions">Sessions</a>
     <a id="overlay-link" href="#" target="_blank" rel="noopener" data-i18n="nav.overlay">Overlay</a>
-    <a class="jump" href="#queue-column" data-i18n="nav.queue">Queue</a>
+    <a class="jump" href="#queue-column" data-i18n="nav.queue">Awaiting you</a>
     <a class="jump" href="#cards-column" data-i18n="nav.cards">Cards</a>
     <a class="jump" href="#comments-column" data-i18n="nav.comments">Comments</a>
   </nav>
@@ -24,12 +24,12 @@
 </header>
 
 <div class="statusbar">
-  <div class="status-time"><span class="session-clock mono" id="clock">--:--:--</span></div>
-  <div class="status-mode row">
+  <div class="status-time"><span class="label" data-i18n="status.localTime">Local time</span><span class="session-clock mono" id="clock">--:--:--</span></div>
+  <div class="status-mode row" id="mode-group" hidden>
     <span class="label" data-i18n="status.mode">Mode</span>
     <span class="pill" id="mode">—</span>
-    <small class="muted"><span data-i18n="status.source">source</span> <span class="mono" id="source">—</span></small>
   </div>
+  <small class="status-source muted"><span data-i18n="status.source">source</span> <span id="source">—</span></small>
   <div class="status-models" id="models"></div>
   <div class="cost" id="cost-box">
     <div class="cost-top"><span data-i18n="cost.today">Model cost today</span>
@@ -45,7 +45,7 @@
 
 <main class="workspace">
   <section class="column queue-column" id="queue-column">
-    <div class="column-header"><h2><span data-i18n="queue.title">Approval queue</span> <span class="count" id="queue-count">0</span></h2></div>
+    <div class="column-header"><h2><span data-i18n="queue.title">Awaiting you</span> <span class="count" id="queue-count">0</span></h2></div>
     <div class="column-body">
       <div class="queue-list" id="queue"></div>
       <div class="recent-orders">

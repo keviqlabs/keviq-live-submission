@@ -5,6 +5,7 @@ import hashlib
 
 from fastapi import HTTPException
 
+from answers.message import QUESTION_LABELS, on_question
 from app.contracts import make_event
 from connectors.sim.messenger import SimMessenger
 from orders import flow, rules, variants
@@ -198,7 +199,7 @@ async def draft_attachment(
             )
             if asked is not None:
                 return await append_partials(store, comment["session_id"], comment["source"], asked)
-        stock = 0
+        stock = card.get("stock") or 0
         blocking.append("variant is unavailable or unresolved on the selected card")
     partials = await flow.draft_order(
         attachment["event_id"],
@@ -215,6 +216,7 @@ async def draft_attachment(
         blocking,
         [attachment["event_id"], comment["event_id"], label["event_id"], card["event_id"]],
         reply_to=comment["comment_id"],
+        seller_picks_card=bool(candidates),
     )
     if candidates:
         for partial in partials:
@@ -227,6 +229,36 @@ async def draft_attachment(
     return await append_partials(
         store, comment["session_id"], comment["source"], partials, intent=(comment["comment_id"], oid)
     )
+
+
+def comment_positions(view):
+    """Each comment-born order's id to the stored position of the comment it comes from."""
+    return {
+        order_id_for(cid): row["comment"]["seq"]
+        for cid, row in view.comments.items()
+        if row.get("comment") and "seq" in row["comment"]
+    }
+
+
+async def unresolved_comments(store, sid, events, now):
+    """The comments whose canonical order label has no attachment yet and is still inside the binding's wait.
+    The app's own proof or expiry of each one ends in a reconcile pass, so an input deferred behind one of
+    them is judged again then, against the orders that attachment creates."""
+    from app.attachments import eligible_labels
+
+    attached = {e["comment_id"] for e in events if e["type"] == "comment_attachment"}
+    waiting = {cid: pair for cid, pair in eligible_labels(events).items() if cid not in attached}
+    if not waiting:
+        return {}
+    binding = await store.attachment_binding(sid)
+    if binding is None:
+        return {}
+    receipts = await store.source_receipts(sid)
+    return {
+        cid: comment
+        for cid, (comment, label) in waiting.items()
+        if label["event_id"] in receipts and now < comment["ingested_ms"] + binding["wait_ms"]
+    }
 
 
 async def reconcile(store, sid, now, events=None):
@@ -292,6 +324,8 @@ async def reconcile(store, sid, now, events=None):
     for event in events:
         if event["type"] == "message_in":
             inputs.append(event)
+        elif event["type"] == "comment_labeled" and event.get("label") in QUESTION_LABELS:
+            inputs.append(event)  # a price or stock question about the item on screen gets one private reply
         elif event["type"] == "comment_labeled" and event.get("label") in flow.TRIGGER_LABELS:
             cancellation = flow.cancel_request((source_comments.get(event["comment_id"]) or {}).get("text"))
             if cancellation and cancellation["kind"] == "cancel":
@@ -299,6 +333,7 @@ async def reconcile(store, sid, now, events=None):
     if not inputs:
         return out
     consumed = await store.consumed_attachment_inputs(sid)
+    waiting = None
     for event in inputs:
         if event["event_id"] in consumed:
             continue
@@ -307,15 +342,33 @@ async def reconcile(store, sid, now, events=None):
         view = flow.View.of(events)
         if event["type"] == "message_in":
             partials = await reply_partials(store, sid, event, view, events, now)
+        elif event.get("label") in QUESTION_LABELS:
+            partials, _ = await on_question(event, events, SimMessenger(), now)
         elif event.get("label") in flow.TRIGGER_LABELS:
             row = view.comments.get(event["comment_id"]) or {}
-            cancellation = flow.cancel_request((row.get("comment") or {}).get("text"))
+            comment = row.get("comment") or {}
+            cancellation = flow.cancel_request(comment.get("text"))
             if not cancellation or cancellation["kind"] != "cancel":
                 continue
+            if waiting is None:
+                waiting = await unresolved_comments(store, sid, events, now)
+            cancel_at = comment.get("seq")
+            if cancel_at is not None and any(
+                earlier["user_ref"] == comment.get("user_ref")
+                and earlier.get("seq", float("inf")) < cancel_at
+                for earlier in waiting.values()
+            ):
+                continue  # judged again once that attachment is proved or expires, against the orders it creates
+            # An order from an earlier comment counts even when it was stored after the cancel label.
+            origins = comment_positions(view)
             view.history = {
                 oid: history
                 for oid, history in view.history.items()
-                if history[0].get("seq", float("inf")) < event["seq"]
+                if (
+                    origins[oid] < cancel_at
+                    if oid in origins and cancel_at is not None
+                    else history[0].get("seq", float("inf")) < event["seq"]
+                )
             }
             partials = await flow.on_labeled(event, view, SimMessenger(), now)
         else:

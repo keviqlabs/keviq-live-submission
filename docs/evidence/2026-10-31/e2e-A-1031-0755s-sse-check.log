@@ -1,0 +1,55 @@
+DATABASE_URL name: /keviq_test
+MODEL_API_KEY set: no
+migrations applied: none (up to date)
+healthz: {"ok":true,"store":"pg","head_seq":570145}
+runner rc=0
+== four steps
+four steps rc=0
+session e2e-A-1031-0755s events 764 orders 25 confirmed 2
+
+order o-c5-1-016 card card-1-00 item SP01
+ 1 proposal seq 570249 price_proposal_5928eab96f2342ef9d8b heard 220000 current 250000 card_version 4
+ 2 card seq 570259 card-1-00 v5 price 220000 status edited edited_by seller caused_by_proposal True
+ - order seq 570285 DRAFT actor assistant reason drafted from comment c5-1-016 on card-1-00 v5 (220.000đ) line v5
+ - order seq 570286 NEEDS_SELLER actor assistant reason variant size 40 not on card-1-00 v5 line v5
+ 2 order seq 570297 CONFIRM_SENT actor seller reason seller approved: unit price 220000 = card price (was: variant size 40 not on card-1-00 v5) line v5
+ 3 order seq 570323 CONFIRMED actor customer reason customer confirmed in Messenger line v5
+ - message_out seq 570287 waiting_for_shop card_version None
+ - message_out seq 570298 confirm_order card_version 5
+ - message_out seq 570325 receipt card_version 5
+ 3 message_in seq 570322 mi.m-e2e-A-1031-0755s-c5-1-m02 template confirm_yes quick_reply CONFIRM:o-c5-1-016
+ 4 receipt seq 570323 card card-1-00 v5 price 220000 version_exists True price_matches_version True image False
+
+order o-c5-1-029 card card-1-01 item SP02
+ - order seq 570380 DRAFT actor assistant reason drafted from comment c5-1-029 on card-1-01 v3 (320.000đ) line v3
+ - order seq 570381 NEEDS_SELLER actor assistant reason variant size 41 not on card-1-01 v3 line v3
+ 2 order seq 570392 CONFIRM_SENT actor seller reason seller approved: unit price 320000 = card price (was: variant size 41 not on card-1-01 v3) line v3
+ 3 order seq 570415 CONFIRMED actor customer reason customer confirmed in Messenger line v3
+ - message_out seq 570382 waiting_for_shop card_version None
+ - message_out seq 570393 confirm_order card_version 3
+ - message_out seq 570416 receipt card_version 3
+ 3 message_in seq 570414 mi.m-e2e-A-1031-0755s-c5-1-m03 template confirm_yes quick_reply CONFIRM:o-c5-1-029
+ 4 receipt seq 570415 card card-1-01 v3 price 320000 version_exists True price_matches_version True image False
+== SSE close/reopen
+sse1: 764 ids, killed after 1 s, last id 570909
+healthz at once: 200
+healthz +5 s: 200
+sse2 reopened with Last-Event-ID 570909: first id none, last id none (0 ids in 3 s)
+healthz after: {"ok":true,"store":"pg","head_seq":570913}
+  mid: healthz: {"ok":true,"store":"pg","head_seq":570913}
+  mid: sse3 reopened with Last-Event-ID 570603: first id 570604, last id 570909 (306 ids in 3 s)
+  mid: same ids as the full stream after 570603 (no gap, no repeat): yes
+  mid: contiguous (+1 each): yes
+  mid: done rc=0
+== ledger
+DATABASE_URL name: /keviq_test
+SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd
+FROM events WHERE type = 'model_call' AND session_id = 'e2e-A-1031-0755s' GROUP BY session_id;
+session_id | n | usd
+(0 rows)
+model_call rows, session e2e-A-1031-0755s: 0
+events, session e2e-A-1031-0755s: 764 seq 570146..570909
+  by type: frame 330, comment_labeled 102, comment 92, order 71, speech 62, message_out 50, card 39, product_seen 11, message_in 4, price_proposal 3
+app stopped
+done rc=0
+rc=0

@@ -21,6 +21,10 @@ SOURCE_KINDS = frozenset(
 )
 
 
+# How long after its ingestion a comment waits for its attachment card before it expires.
+WAIT_MS = 10_000
+
+
 def token_digest(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
@@ -31,7 +35,7 @@ def bearer_digest(header: str | None):
     return token_digest(header[7:])
 
 
-def binding_definition(session_id, epoch, system_token, sources, *, wait_ms=4000, ordered_media=True):
+def binding_definition(session_id, epoch, system_token, sources, *, wait_ms=WAIT_MS, ordered_media=True):
     """Trusted provisioning API, not an HTTP route. Persist digests only; callers supply actual credentials."""
     if (
         not isinstance(epoch, str)

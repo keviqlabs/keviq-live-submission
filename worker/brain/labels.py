@@ -3,11 +3,19 @@
 Shield, on receipt: a phone number or a link in the text is hidden through the connector's CommentModerator
 (the simulator only logs it) and a comment_labeled with action `hide` goes out at once (C5: visible <= 5 s).
 
-Batch: every comment joins a per-session queue, labeled by the session's one consumer a batch at a time. A Spark
-call labels up to 20 comments, cut when 20 are queued or the oldest has waited 1 s; the next batch is cut from
-what queued meanwhile once that call is done, so a flood waits in the queue instead of opening calls at once.
-runner.stats() has the comments queued and those being labeled (BACKLOGS). The model sees the catalog, the card timeline and, per comment, the current and previous
-card at that comment's ts_ms. It says how the customer pointed at the product (reference_kind); code then
+Batch: every comment joins a per-session queue, which the session's consumer cuts into batches. A Spark call
+labels up to 20 comments, cut when 20 are queued or the oldest has waited 1 s, and each batch is labeled by its
+own task: a comment waits its own window, not the call an earlier batch of the session has open (the 4 s
+attachment deadline cannot afford that), so batches of one session overlap. At most BATCH_LANES calls are open
+per session; with all lanes busy the next batch waits for one to land, so a flood still queues instead of opening
+calls without bound. A comment is in exactly one batch, so overlapping batches never label it twice and the
+latest label a comment has is the one its batch gave, whichever batch lands first. A customer's labels post
+in cut order: when a batch lands, its labels of a customer who also has a comment in an earlier batch of the
+session that has not posted yet wait for that batch (an order and then its cancellation reach the orders flow in
+that order, whichever call ends first), while its labels of other customers post at once; a batch that fails
+releases what waited on it. runner.stats() has the comments queued and those being labeled (BACKLOGS). The
+model sees the catalog, the card timeline and, per comment, the current and previous card at that comment's
+ts_ms. It says how the customer pointed at the product (reference_kind); code then
 resolves referenced_card_id from the timeline by the comment's own ts_ms, so a late comment pins to the card
 that was live when it was written (C3, C7). The batch label is final (measure keeps the latest label). A batch
 whose output fails the schema twice labels its comments `other` and the stream goes on (C7).
@@ -24,9 +32,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from app.contracts import new_id, now_ms
-from app.current import appearances, current_at
+from app.current import appearance_ids, appearances, current_at
 from app.settings import catalog_path
-from app.store import live_cards_from
 from connectors.facebook.interface import CommentModerator
 from connectors.sim.moderator import SimModerator
 from orders.rules import authorize, can_message
@@ -34,13 +41,16 @@ from worker.brain.shield import first_label, scan
 from worker.runner import BACKLOGS, Ctx, build, parse_sse
 
 log = logging.getLogger("worker.labels")
-BATCH_MAX, BATCH_WAIT_S = 20, 1.0
+BATCH_MAX, BATCH_WAIT_S, BATCH_LANES = 20, 1.0, 4
 # Lowest effort Muse Spark accepts ("none" is refused, dev.meta.ai/docs/reasoning); reasoning tokens are most of
 # the latency and the output bill.
 EFFORT = "minimal"
 LABELS = ["order", "price_question", "stock_question", "complaint", "spam", "scam", "other"]
 KINDS = ["explicit_sku", "current_card", "previous_card", "unresolved"]
 SIGNALS = ["phone_number", "link"]
+# A draft put away this soon after it opened, without ever having a price, was a passing misread (one item replaced
+# by another), not an item the seller presented (D-041).
+QUICK_SWITCH_MS = 5_000
 
 SCHEMA = {
     "type": "object",
@@ -117,31 +127,44 @@ def go_live_order(versions: list[dict]) -> list[dict]:
     return appearances(versions)
 
 
-def _first_versions(versions: list[dict]) -> list[dict]:
-    """First version of each card, in the order the cards appeared (the base go-live order)."""
-    first: dict[str, dict] = {}
-    for card in sorted(versions, key=lambda c: (c["ts_ms"], c["version"])):
-        first.setdefault(card["card_id"], card)
-    return sorted(first.values(), key=lambda c: c["ts_ms"])
-
-
 def live_cards_at(versions: list[dict], ts_ms: int) -> tuple[dict | None, dict | None]:
-    """(current, previous) from live/edited versions only, as before media-time binding: current = newest
-    live card at ts_ms; previous = the latest other card shown. Sessions without an attachment binding
-    order from this snapshot, so an unpriced draft never becomes an order line."""
-    live = live_cards_from(versions, ts_ms)
-    current = live[0] if live else None
-    others = [
-        c
-        for c in _first_versions(versions)
-        if c["ts_ms"] <= ts_ms and c["card_id"] != (current or {}).get("card_id")
-    ]
-    return current, others[-1] if others else None
+    """(current, previous) from the versions known at ts_ms, each card at its latest known version (a price set
+    after ts_ms is not used), ordered by frame time: the most recently shown card first, a card with no
+    frame-time appearance by ts_ms last. Sessions without an attachment binding order from this snapshot.
+    current is the first card whose latest known version is not retired; an unpriced draft on screen counts, so
+    "the one before" is the item shown before it, and an order on the draft is held for the seller by the order
+    rules. previous is the first card that is not current and is not a misread: a card whose latest known version
+    is retired, none of whose versions known at ts_ms was live or edited (the statuses a priced card has), and that
+    was put away within QUICK_SWITCH_MS of its first version. A retired card is never the current item; the item
+    the seller put away after it had a price, or after it was shown a while with its price missed, is still "the
+    one before", but a draft replaced by another item within seconds is skipped."""
+    known = [c for c in versions if c["ts_ms"] <= ts_ms]
+    latest: dict[str, dict] = {}
+    opened: dict[str, int] = {}
+    priced: set[str] = set()
+    for card in sorted(known, key=lambda c: (c["ts_ms"], c["version"])):
+        latest[card["card_id"]] = card
+        opened.setdefault(card["card_id"], card["ts_ms"])
+        if card["status"] in ("live", "edited"):
+            priced.add(card["card_id"])
+
+    def misread(c: dict) -> bool:
+        return (
+            c["status"] == "retired"
+            and c["card_id"] not in priced
+            and c["ts_ms"] - opened[c["card_id"]] < QUICK_SWITCH_MS
+        )
+
+    rank = {cid: i for i, cid in enumerate(appearance_ids(known, ts_ms))}
+    shown = sorted(latest.values(), key=lambda c: rank.get(c["card_id"], len(rank)))
+    current = next((c for c in shown if c["status"] != "retired"), None)
+    previous = next((c for c in shown if c is not current and not misread(c)), None)
+    return current, previous
 
 
 def cards_at(versions: list[dict], ts_ms: int, *, live_only: bool = False) -> tuple[dict | None, dict | None]:
-    """Known current/previous identity at media time, including an unpriced draft; with live_only the
-    live/edited snapshot of live_cards_at."""
+    """Known current/previous identity at media time, including an unpriced draft, from each card's latest
+    supplied version; with live_only the snapshot of live_cards_at, from the versions known at ts_ms."""
     return live_cards_at(versions, ts_ms) if live_only else current_at(versions, ts_ms)
 
 
@@ -173,6 +196,12 @@ def resolve(item: dict, versions: list[dict], ts_ms: int, skus: set[str], *, liv
     }
 
 
+async def attached(ctx: Ctx | None, event: dict) -> bool:
+    """Whether the event's session binds orders through attachments; otherwise they bind from the live snapshot."""
+    runner = getattr(ctx, "runner", None)
+    return hasattr(runner, "attachment_enabled") and await runner.attachment_enabled(event["session_id"])
+
+
 def card_brief(card: dict | None) -> dict | None:
     return card and {"card_id": card["card_id"], "sku": card["sku"], "name": card["name"]}
 
@@ -184,6 +213,25 @@ class Pending:
     signals: list[str]
     action: str
     queued: float = field(default_factory=time.monotonic)
+
+
+def customer(event: dict) -> str:
+    return event.get("user_ref") or event["comment_id"]
+
+
+@dataclass
+class Batch:
+    """A cut batch of one session: its comments and, per customer (user_ref, or the comment_id of a comment
+    without one), how many of its labels are not posted yet and the labels waiting for an earlier batch."""
+
+    comments: list[Pending]
+    runner: object
+    pending: dict[str, int] = field(default_factory=dict)
+    held: dict[str, list[dict]] = field(default_factory=dict)
+
+    def __post_init__(self):
+        for p in self.comments:
+            self.pending[customer(p.event)] = self.pending.get(customer(p.event), 0) + 1
 
 
 class Labeler:
@@ -198,7 +246,9 @@ class Labeler:
         self.queues: dict[str, list[Pending]] = defaultdict(list)
         self.consumers: dict[str, asyncio.Task] = {}  # session_id -> its consumer, while it has comments
         self.full: dict[str, asyncio.Event] = {}  # session_id -> set when BATCH_MAX comments are queued
-        self.labeling: dict[str, int] = defaultdict(int)  # session_id -> comments in the batch being labeled
+        self.labeling: dict[str, int] = defaultdict(int)  # session_id -> comments in its open batches
+        self.open: dict[str, set[asyncio.Task]] = defaultdict(set)  # session_id -> its batches being labeled
+        self.cuts: dict[str, list[Batch]] = defaultdict(list)  # session_id -> unposted batches, in cut order
         self.tasks: set[asyncio.Task] = set()
 
     def handlers(self) -> dict:
@@ -270,28 +320,38 @@ class Labeler:
         return partial
 
     async def _consume(self, sid: str) -> None:
-        """Label the session's queue a batch at a time until it is empty."""
-        queue, full = self.queues[sid], self.full[sid]
+        """Cut the session's queue into batches until it is empty, each labeled by its own task: a batch is cut
+        when twenty are queued or the oldest has waited its window, whether or not an earlier batch of the
+        session is still being labeled; with BATCH_LANES batches open, the next waits for one to land."""
+        queue, full, open_ = self.queues[sid], self.full[sid], self.open[sid]
         try:
             while queue:
+                if len(open_) >= BATCH_LANES:
+                    await asyncio.wait(open_, return_when=asyncio.FIRST_COMPLETED)
+                    continue
                 wait = queue[0].queued + BATCH_WAIT_S - time.monotonic()
                 if len(queue) < BATCH_MAX and wait > 0:
                     full.clear()
                     with contextlib.suppress(TimeoutError):
                         await asyncio.wait_for(full.wait(), wait)
                     continue
-                batch = self._take(sid)
-                self.labeling[sid] = len(batch)
-                try:
-                    await self._label_batch(sid, batch)
-                except (
-                    Exception
-                ) as exc:  # e.g. the post refused: these labels are lost, the queue goes on (C7)
-                    log.exception("labels: batch of %d for %s failed: %s", len(batch), sid, exc)
-                finally:
-                    self.labeling[sid] = 0
+                comments = self._take(sid)
+                batch = Batch(comments, comments[0].ctx.runner)
+                self.cuts[sid].append(batch)
+                self.labeling[sid] += len(comments)
+                task = self._spawn(self._run_batch(sid, batch))
+                open_.add(task)
+                task.add_done_callback(open_.discard)
         finally:
             del self.consumers[sid]
+
+    async def _run_batch(self, sid: str, batch: Batch) -> None:
+        try:
+            await self._label_batch(sid, batch)
+        except Exception as exc:  # e.g. the post refused: its labels are lost, the stream goes on (C7)
+            log.exception("labels: batch of %d for %s failed: %s", len(batch.comments), sid, exc)
+            self._posted(sid, batch, [user for user in batch.pending if user not in batch.held])
+        await self._release(sid)  # what waited for this batch, and what it holds that can go now
 
     def _take(self, sid: str) -> list[Pending]:
         """Cut the next batch now, so a batch holds the comments queued before it and no later ones."""
@@ -300,17 +360,59 @@ class Labeler:
         del queue[:BATCH_MAX]
         return batch
 
-    async def _label_batch(self, sid: str, batch: list[Pending]) -> list[dict]:
-        if not batch:
-            return []
-        runner = batch[0].ctx.runner
-        versions = await self._versions(sid, runner)
-        items, infer = await self._ask(batch, versions)
+    async def _label_batch(self, sid: str, batch: Batch) -> list[dict]:
+        """Label the batch and post its labels, except those of a customer with a comment in an earlier batch of
+        the session that has not posted yet: those wait, and _release posts them once that batch has posted."""
+        versions = await self._versions(sid, batch.runner)
+        items, infer = await self._ask(batch.comments, versions)
+        labels: dict[str, list[dict]] = defaultdict(list)
+        for p in batch.comments:
+            labels[customer(p.event)] += await self._consequences(
+                p, items.get(p.event["comment_id"]), versions, infer
+            )
         events = []
-        for p in batch:
-            events += await self._consequences(p, items.get(p.event["comment_id"]), versions, infer)
-        await runner.post(events)
+        for user, user_events in labels.items():
+            if self._waits(sid, batch, user):
+                batch.held[user] = user_events
+            else:
+                events += user_events
+        await batch.runner.post(events)
+        self._posted(sid, batch, [user for user in labels if user not in batch.held])
         return events
+
+    def _waits(self, sid: str, batch: Batch, user: str) -> bool:
+        """Whether the customer's labels of the batch wait for an earlier batch of the session."""
+        for earlier in self.cuts[sid]:
+            if earlier is batch:
+                return False
+            if user in earlier.pending:
+                return True
+        return False
+
+    def _posted(self, sid: str, batch: Batch, users: list[str]) -> None:
+        """The batch's labels of these customers are posted (or lost): they are no longer being labeled, and
+        a batch with nothing left to post no longer holds anyone back."""
+        for user in users:
+            self.labeling[sid] -= batch.pending.pop(user, 0)
+        if not batch.pending and batch in self.cuts[sid]:
+            self.cuts[sid].remove(batch)
+
+    async def _release(self, sid: str) -> None:
+        """Post the labels that waited for a batch which has now posted, in cut order, until none can go."""
+        posted = True
+        while posted:
+            posted = False
+            for batch in list(self.cuts[sid]):
+                for user in [u for u in batch.held if not self._waits(sid, batch, u)]:
+                    events = batch.held.pop(user, None)
+                    if events is None:
+                        continue
+                    try:
+                        await batch.runner.post(events)
+                    except Exception as exc:  # these labels are lost, the stream goes on (C7)
+                        log.exception("labels: %d held labels for %s failed: %s", len(events), sid, exc)
+                    self._posted(sid, batch, [user])
+                    posted = True
 
     async def _versions(self, sid: str, runner) -> list[dict]:
         """Card versions of the session: those seen on the stream plus, once, the session's history.
@@ -335,9 +437,11 @@ class Labeler:
             log.warning("labels: card history for %s not loaded (%s)", sid, exc)
 
     async def _ask(self, batch: list[Pending], versions: list[dict]) -> tuple[dict, tuple | None]:
+        # The model sees the same current/previous pair resolve() binds from, so "this one" means the same card.
+        live_only = not await attached(batch[0].ctx, batch[0].event)
         comments = []
         for p in batch:
-            current, previous = cards_at(versions, p.event["ts_ms"])
+            current, previous = cards_at(versions, p.event["ts_ms"], live_only=live_only)
             comments.append(
                 {
                     "comment_id": p.event["comment_id"],
@@ -374,9 +478,7 @@ class Labeler:
 
     async def _consequences(self, p: Pending, item: dict | None, versions: list[dict], infer) -> list[dict]:
         event, ctx = p.event, p.ctx
-        attached_flow = hasattr(ctx.runner, "attachment_enabled") and await ctx.runner.attachment_enabled(
-            event["session_id"]
-        )
+        attached_flow = await attached(ctx, event)
         if item is None:
             label, draft, model_signals = "other", None, []
         else:

@@ -4,21 +4,32 @@
   previous card, if it never got a price and no undecided speech line overlaps it, is retired, so a quick switch
   (< 3 s) never merges two items (C7). A known card is reopened only when its observation still agrees and the
   current appearance has not lost identity. A changed coarse observation opens an independent unknown draft.
+  The same category and colour again while the current card has no SKU is that card, not a new one: two reads in
+  flight together both report the change from the item before (worker/vision/spark.py), so no card is opened,
+  retired or given a span for it. The kept card gets a version that only moves its frame to the repeat's
+  (caused by the repeat, so the repeat has a consequence of its own, D-009); SKU, price and status stay.
   A product_seen already handled (the same event id) or of a frame older than the last one taken is ignored.
 - A final `speech` goes to a card by media time, not by arrival (D-025, worker/brain/window.py). Spark reads
   price, sizes and colours in the background (D-018; the rule reader in worker/voice/vn.py when there is no key
   or the call fails), at most SPEECH_READS lines at a time from read to decision; the others wait their turn. The
   line is decided once its read is done and HOLD_MS after it arrived, in arrival order.
   A heard price goes to the one candidate card; with several, the kind of item the line names picks one. Any
-  other line leaves the price for the seller and counts as a wait by reason in the session (`price wait` log
-  lines). A price makes the card live. A card that already has a price keeps it (D-023): a
-  different spoken price becomes a `price_proposal` for the seller, once per heard price while the card's price
-  stays the same (D-024). Each change is a new version whose provenance lists the speech event ids (C4).
+  other line, or one that names only colours the card does not have (of the card's colours, only those a line can
+  name count), leaves the price for the seller and counts as a wait by reason in the session (`price wait` log
+  lines); a line about another colour does not change the card's sizes either. A price makes the card live. A
+  card that already has a price keeps it (D-023): a different spoken price becomes a `price_proposal` for the
+  seller, once per heard price while the card's price stays the same (D-024). Each change is a new version whose
+  provenance lists the speech event ids (C4).
 - A version another writer already took (409, D-024: the seller's price route) is applied on top of the card's
   highest version once, or dropped; the number is never reused. product_seen's versions go the same way.
-- When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background, one card at a
-  time per session, so a slow cut-out never holds up the next line's decision; the frame cut to SAM's box with
-  SAM's mask as alpha (real pixels, nothing retouched, D-020) arrives as the next version's image_url.
+- A card's cut-out starts when its draft is opened (or its frame is first cached): SAM 3.1 finds the product in
+  the frame (cut to SAM's box with SAM's mask as alpha: real pixels, nothing retouched, D-020) and the result stays
+  in the session; nothing is posted then, so every version citing a product_seen is stored before its handler
+  returns. When the price makes the card live and the cut-out is ready, the live version carries its image_url.
+  Otherwise the image arrives as the next version, caused by the event that made the card live (the speech, or
+  the seller's priced version) and the frame. One SAM call per card at most; one card at a time per session, a
+  live card's cut-out before any card that is not live yet, and a waiting cut-out of a card that was retired or
+  is no longer the current one is skipped. A slow cut-out never holds up the next line's decision.
 - product_seen replayed from a file (no `caused_by`) opens cards only with CARDS_FROM_REPLAY=1, so a replay that
   still carries fixture cards does not get a second set (docs/DECISIONS.md D-017).
 - runner.stats() has the lines and cut-outs waiting and in flight (BACKLOGS), so a measure barrier waits for them.
@@ -45,7 +56,7 @@ from worker.voice import vn
 
 log = logging.getLogger("worker.card")
 CATALOG: list[dict] = json.loads(catalog_path().read_text())  # the items on sale (ruling 417)
-# The words the vision and speech prompts and the transcriber use stay those of data/catalog.json (ruling 417)
+# Base words stay fixed; the optional other-item vision vocabulary uses explicit active-catalog kinds.
 WORDS: list[dict] = json.loads((ROOT / "data" / "catalog.json").read_text())
 CATEGORIES = sorted({i["category"] for i in WORDS})
 COLORS = sorted({v["color"] for i in WORDS for v in i["variants"]})
@@ -107,8 +118,85 @@ def match(category: str, color: str | None) -> dict | None:
     return same[0] if len(same) == 1 else None
 
 
+def other_items() -> list[dict]:
+    """Only explicit seller-catalog kinds can refine the coarse 'other' category."""
+    return [
+        i
+        for i in CATALOG
+        if "other" in (i.get("categories") or [i["category"]])
+        and isinstance(i.get("kind"), str)
+        and i["kind"].strip()
+    ]
+
+
+def kind_words() -> tuple[list[str], list[str]]:
+    items = other_items()
+    return sorted({i["kind"] for i in items}), sorted(
+        {v["color"] for i in items for v in i["variants"] if isinstance(v.get("color"), str)}
+    )
+
+
+def other_identity(attributes: dict, confidence) -> tuple[dict | None, dict]:
+    """Kind is visual evidence, never a price or an authority to change an existing card's SKU."""
+    kind, color = attributes.get("kind"), attributes.get("color")
+    kind = kind if isinstance(kind, str) else None
+    same = []
+    if (
+        attributes.get("identity_state") == "one_product"
+        and isinstance(confidence, (int, float))
+        and not isinstance(confidence, bool)
+        and 0.5 <= confidence <= 1
+        and isinstance(color, str)
+        and color
+        and kind
+    ):
+        same = [
+            i for i in other_items() if i["kind"] == kind and any(v["color"] == color for v in i["variants"])
+        ]
+    item = same[0] if len(same) == 1 else None
+    return item, {"kind": kind, "identity_state": "one_product" if item else "unclear"}
+
+
+def observation(meta: dict) -> tuple:
+    return tuple(meta.get(k) for k in ("category", "color", "kind", "identity_state"))
+
+
+def kind_price_reason(text: str, meta: dict) -> str | None:
+    """A refined identity needs the same explicit kind in the price line, not just 'other'."""
+    if "identity_state" not in meta:  # legacy cards retain the existing coarse speech decision
+        return None
+    if meta["identity_state"] != "one_product" or not meta.get("kind"):
+        return "kind_unclear"
+    target = tuple(vn.tokens(meta["kind"]))
+    words = {tuple(vn.tokens(i["kind"])) for i in other_items()}
+    words.update(kind for kind, categories in window.KINDS.items() if "other" in categories)
+    words.add(target)
+    tokens = vn.tokens(text)
+    mentioned = {
+        kind
+        for kind in words
+        if kind and any(tuple(tokens[i : i + len(kind)]) == kind for i in range(len(tokens)))
+    }
+    if mentioned == {target}:
+        return None
+    return "kind_mismatch" if mentioned else "kind_unclear"
+
+
 def item_by_sku(sku: str | None) -> dict | None:
     return next((i for i in CATALOG if i["sku"] == sku), None)
+
+
+def color_price_reason(colors: list[str], card: dict) -> str | None:
+    """A line that names colours, none of them the card's, is about another item: its price waits. The card's
+    colours are its catalog item's, each read as a spoken line is (vn.tokens), and only its COLORS words count,
+    since a line can name nothing else; no catalog item, or none left, means no check. The colour vision saw is not
+    used: vision can misread a product's colour on every frame, and a correct price would then wait."""
+    item = item_by_sku(card["sku"]) if card["sku"] else None
+    seen = [v.get("color") for v in item["variants"]] if item else []
+    known = {t for c in seen if isinstance(c, str) for t in vn.tokens(c) if t in COLORS}
+    if colors and known and not known.intersection(colors):
+        return "color_mismatch"
+    return None
 
 
 def variants_of(item: dict | None, color: str | None, sizes: list[str] | None = None) -> list[dict]:
@@ -139,7 +227,11 @@ class Session:
     last_frame_ts: int | None = None  # frame_ts_ms of the newest product_seen taken
     speech: deque = field(default_factory=deque)  # (event, ctx, line) of lines waiting for a read slot
     reading: int = 0  # lines between their read and their decision, at most SPEECH_READS
-    cutouts: deque = field(default_factory=deque)  # (event, ctx, card_id) of live cards waiting for SAM
+    cutouts: deque = field(default_factory=deque)  # (event, ctx, card_id) of live cards waiting for an image
+    prefetches: deque = field(default_factory=deque)  # (event, ctx, card_id) of drafts waiting for SAM
+    # card_id -> its one SAM call: (image_url, infer, frame event id), or None when SAM found nothing
+    cuts: dict[str, asyncio.Future] = field(default_factory=dict)
+    attaching: set[str] = field(default_factory=set)  # cards whose image is queued or came with going live
     cutting: bool = False  # the session's SAM consumer is running
 
     def bump(self, card_id: str, **changes) -> dict:
@@ -211,63 +303,89 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
                  event["frame_ts_ms"], s.last_frame_ts)  # fmt: skip
         return []
     s.last_frame_ts = event["frame_ts_ms"]
-    category, color = event["category"], (event.get("attributes") or {}).get("color")
-    item = match(category, color)
+    attrs = event.get("attributes") or {}
+    category, color = event["category"], attrs.get("color")
+    refined = category == "other" and ("kind" in attrs or "identity_state" in attrs)
+    item, identity = (
+        other_identity(attrs, event.get("confidence")) if refined else (match(category, color), {})
+    )
+    observed = {"category": category, "color": color, **identity}
     out = []  # (version, its changes), in posting order
     async with s.lock:
         prev = s.cards.get(s.current) if s.current else None
-        same = item and next(
-            (c for c in s.cards.values() if c["sku"] == item["sku"] and c["status"] != "retired"), None
-        )
-        if same:
-            prior = s.meta.get(same["card_id"], {})
-            agrees = prior.get("category") == category and prior.get("color") == color
-            if not agrees or (prev and prev["sku"] is None):
-                # A unique catalog candidate does not prove that this is the same physical item.
-                item, same = None, None
-        if prev and prev is not same:
-            window.close_span(s.spans.setdefault(prev["card_id"], []), event["frame_ts_ms"])
-            if prev["status"] == "draft" and not pending(s, prev["card_id"]):
-                out.append((s.bump(prev["card_id"], status="retired"), {"status": "retired"}))
-        if same:
-            prov = {**same["provenance"], "frame_ts_ms": event["frame_ts_ms"]}
-            card, changes = s.bump(same["card_id"], provenance=prov), {"provenance": prov}
+        last = s.meta.get(prev["card_id"], {}) if prev else {}
+        if (
+            prev
+            and prev["sku"] is None
+            and prev["status"] != "retired"
+            and observation(last) == observation(observed)
+        ):
+            # The same item read again: only the frame moves, so the repeat has its own version (C1) while the
+            # SKU, price, status, span and current item stay as they are.
+            log.info("product_seen %s repeats %s %s of unidentified card %s: same item", event["event_id"],
+                     category, color, prev["card_id"])  # fmt: skip
+            shown = prev["card_id"]
+            prov = {**prev["provenance"], "frame_ts_ms": event["frame_ts_ms"]}
+            s.meta[prev["card_id"]] = {**last, "frame_ts_ms": event["frame_ts_ms"],
+                                       "frame_event_id": (event.get("caused_by") or [None])[0]}  # fmt: skip
+            out.append((s.bump(prev["card_id"], provenance=prov), {"provenance": prov}))
         else:
-            cid = card_id_for(event["event_id"], s.cards)
-            variants = variants_of(item, color)
-            card = {
-                "card_id": cid,
-                "version": 1,
-                "sku": item["sku"] if item else None,
-                "name": item["name"]
-                if item
-                else f"{CATEGORY_VI.get(category, category)} {color or ''}".strip(),
-                "price": None,
-                "currency": "VND",
-                "variants": variants,
-                "stock": sum(v["stock"] for v in variants),
-                "image_url": None,
-                "status": "draft",
-                "provenance": {
-                    "frame_ts_ms": event["frame_ts_ms"],
-                    "speech_event_ids": [],
-                    "edited_by": None,
-                },
+            candidates = reversed(s.cards.values()) if refined else s.cards.values()
+            same = item and next(
+                (c for c in candidates if c["sku"] == item["sku"] and c["status"] != "retired"), None
+            )
+            if same:
+                prior = s.meta.get(same["card_id"], {})
+                agrees = observation(prior) == observation(observed)
+                if not agrees or (prev and prev["sku"] is None):
+                    # Clear kind evidence may open a fresh unpriced identity, never restore an old price.
+                    # The legacy coarse path still refuses a one-frame category jitter as before.
+                    same = None
+                    if not refined:
+                        item = None
+            if prev and prev is not same:
+                window.close_span(s.spans.setdefault(prev["card_id"], []), event["frame_ts_ms"])
+                if prev["status"] == "draft" and not pending(s, prev["card_id"]):
+                    out.append((s.bump(prev["card_id"], status="retired"), {"status": "retired"}))
+            if same:
+                prov = {**same["provenance"], "frame_ts_ms": event["frame_ts_ms"]}
+                card, changes = s.bump(same["card_id"], provenance=prov), {"provenance": prov}
+            else:
+                cid = card_id_for(event["event_id"], s.cards)
+                variants = variants_of(item, color)
+                card = {
+                    "card_id": cid,
+                    "version": 1,
+                    "sku": item["sku"] if item else None,
+                    "name": item["name"]
+                    if item
+                    else f"{CATEGORY_VI.get(category, category)} {color or ''}".strip(),
+                    "price": None,
+                    "currency": "VND",
+                    "variants": variants,
+                    "stock": sum(v["stock"] for v in variants),
+                    "image_url": None,
+                    "status": "draft",
+                    "provenance": {
+                        "frame_ts_ms": event["frame_ts_ms"],
+                        "speech_event_ids": [],
+                        "edited_by": None,
+                    },
+                }
+                s.cards[cid], changes = copy.deepcopy(card), {}
+            if not prev or prev is not same:
+                window.open_span(s.spans.setdefault(card["card_id"], []), event["frame_ts_ms"])
+            s.meta[card["card_id"]] = {
+                **observed,
+                "frame_ts_ms": event["frame_ts_ms"],
+                "frame_event_id": (event.get("caused_by") or [None])[0],
             }
-            s.cards[cid], changes = copy.deepcopy(card), {}
-        if not prev or prev is not same:
-            window.open_span(s.spans.setdefault(card["card_id"], []), event["frame_ts_ms"])
-        s.meta[card["card_id"]] = {
-            "category": category,
-            "color": color,
-            "frame_ts_ms": event["frame_ts_ms"],
-            "frame_event_id": (event.get("caused_by") or [None])[0],
-        }
-        s.current = card["card_id"]
-        out.append((card, changes))
+            s.current = shown = card["card_id"]
+            out.append((card, changes))
     infer = (start, now_ms())
     for new, changes in out:  # one at a time, outside the lock: a 409 reads the store and takes the lock
         await post_version(event, ctx, s, new, changes, infer)
+    prefetch(event, ctx, s, shown)
     return []
 
 
@@ -348,6 +466,7 @@ async def apply_speech(event: dict, ctx, s: Session, line: Line) -> None:
 async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, infer) -> None:
     eid = event["event_id"]
     proposal, changed, live = None, {}, None  # changed: card_id -> its changes
+    frame_of = {}  # card_id -> the frame event of the cut-out its live version carries
     async with s.lock:
         s.lines.remove(line)
         cands = {
@@ -356,6 +475,13 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
             if c["status"] != "retired" and window.overlaps(s.spans.get(cid, []), line.start, line.end)
         }
         keep, reason = window.choose(event["text"], cands)
+        if reason is None and len(keep) == 1:
+            reason = kind_price_reason(event["text"], s.meta[keep[0]])
+        other = None  # a line naming only colours the card does not have is about another item, priced or not
+        if len(keep) == 1:
+            other = color_price_reason(spoken.colors, s.cards[keep[0]])
+        if reason is None:
+            reason = other
         if spoken.price is not None and reason:
             s.waits[reason] += 1
             log.info(
@@ -394,13 +520,20 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
                         "speech_event_id": eid,
                         "_infer": infer,
                     }  # ts_ms and caused_by: the speech's
-            if spoken.sizes and card["sku"]:
+            # sizes said for another colour's item are not this card's: its variants stay as they are
+            if spoken.sizes and card["sku"] and not other:
                 color = spoken.colors[0] if len(spoken.colors) == 1 else meta["color"]
                 variants = variants_of(item_by_sku(card["sku"]), color, spoken.sizes)
                 if variants != card["variants"]:
                     changes["variants"], changes["stock"] = variants, sum(v["stock"] for v in variants)
             if card["status"] == "draft" and changes.get("price") is not None:
                 changes["status"], live = "live", cid
+                cut = s.cuts.get(cid)
+                if cut and cut.done() and cut.result() and not card["image_url"]:
+                    # the cut-out made while the card was a draft goes live with the price, in the same version
+                    changes["image_url"], _, frame_event = cut.result()
+                    frame_of[cid] = [frame_event] if frame_event else []
+                    s.attaching.add(cid)
             if changes:
                 changed[cid] = changes
         for cid in cands:  # switched away while this line was undecided, and still no price
@@ -415,53 +548,111 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
     if proposal:
         await ctx.runner.post([build(event, proposal, ctx.received_ms)])
     for new, changes in news:
-        new = await post_version(event, ctx, s, new, changes, infer)
+        new = await post_version(event, ctx, s, new, changes, infer, frame_of.get(new["card_id"]))
         if new and new["card_id"] == live and not new["image_url"]:
             queue_cutout(event, ctx, s, live)
 
 
+def prefetch(event: dict, ctx, s: Session, cid: str) -> None:
+    """Start the cut-out of a draft whose frame is cached; it posts nothing, the live version takes the result."""
+    from worker.vision import frames
+
+    card = s.cards[cid]
+    if card["status"] != "draft" or card["image_url"] or cid in s.cuts:
+        return
+    if any(c == cid for _, _, c in s.prefetches):
+        return
+    if not frames.get(event["session_id"], s.meta[cid]["frame_ts_ms"]):
+        return
+    s.prefetches.append((event, ctx, cid))
+    start_cutting(s)
+
+
 def queue_cutout(event: dict, ctx, s: Session, cid: str) -> None:
-    """The cut-out waits for the session's SAM consumer, which takes one card at a time."""
+    """A live card's image version waits for the session's SAM consumer, ahead of every draft's cut-out."""
+    if cid in s.attaching:
+        return
+    s.attaching.add(cid)
     s.cutouts.append((event, ctx, cid))
+    start_cutting(s)
+
+
+def start_cutting(s: Session) -> None:
     if not s.cutting:
         s.cutting = True
         s.spawn(cut_out_all(s))
 
 
 async def cut_out_all(s: Session) -> None:
+    """One SAM call at a time per session: live cards' images first, then the drafts' cut-outs in order."""
     try:
-        while s.cutouts:
-            event, ctx, cid = s.cutouts.popleft()
+        while s.cutouts or s.prefetches:
+            if s.cutouts:
+                event, ctx, cid = s.cutouts.popleft()
+                job = attach_cutout(event, ctx, s, cid)
+            else:
+                event, ctx, cid = s.prefetches.popleft()
+                job = prefetch_cutout(event, ctx, s, cid)
             try:
-                await attach_cutout(event, ctx, s, cid)
+                await job
             except Exception as exc:  # e.g. its version refused; the card stays without an image (C7)
                 log.exception("cut-out for %s failed: %s", cid, exc)
     finally:
         s.cutting = False
 
 
-async def attach_cutout(event: dict, ctx, s: Session, cid: str) -> None:
-    """SAM 3.1 cut-out of the card's frame -> next version with image_url (caused by the speech and frame)."""
+async def prefetch_cutout(event: dict, ctx, s: Session, cid: str) -> None:
+    """A draft's cut-out, when its turn comes; a card retired or switched away from meanwhile is skipped."""
+    card = s.cards[cid]
+    skip = (
+        "retired" if card["status"] == "retired"
+        else "no longer current" if cid != s.current
+        else "not a draft" if card["status"] != "draft" or card["image_url"]
+        else "cut already" if cid in s.cuts
+        else None
+    )  # fmt: skip
+    if skip:
+        log.info("cut-out of %s before it goes live skipped: %s", cid, skip)
+        return
+    await cut(event, ctx, s, cid)
+
+
+async def cut(event: dict, ctx, s: Session, cid: str) -> tuple | None:
+    """The card's one SAM call, on its frame now, kept in the session: (image_url, infer, frame event id), or None.
+    A card already cut out gets that result, not a second call. No cached frame: no call and nothing kept."""
     from worker.vision import frames, sam
 
+    if cid in s.cuts:
+        return await s.cuts[cid]
     meta = s.meta[cid]
     frame = frames.get(event["session_id"], meta["frame_ts_ms"])
     if not frame:
-        return
+        return None
+    done, out = asyncio.get_running_loop().create_future(), None
+    s.cuts[cid], frame_event = done, meta["frame_event_id"]
     try:
-        res = await sam.cut_out(ctx.client(), frame, meta["category"])
+        res = await sam.cut_out(ctx.client(), frame, sam.subject(meta["category"], meta.get("kind")))
+        if res:
+            out = (res[0], res[1], frame_event)
     except Exception as exc:  # the card stays without an image; the stream goes on (C7)
         log.warning("sam cut-out for %s failed: %s", cid, exc)
-        return
+    finally:
+        done.set_result(out)
+    return out
+
+
+async def attach_cutout(event: dict, ctx, s: Session, cid: str) -> None:
+    """A live card's cut-out (made before it went live, else now) -> next version with image_url, caused by the
+    event that made it live and the frame the cut-out came from."""
+    res = await cut(event, ctx, s, cid)
     if not res:
         return
-    url, infer = res
+    url, infer, frame_event = res
     async with s.lock:
         if s.cards[cid]["status"] == "retired" or s.cards[cid]["image_url"]:
             return
         new = s.bump(cid, image_url=url)
-    extra = [meta["frame_event_id"]] if meta["frame_event_id"] else []
-    await post_version(event, ctx, s, new, {"image_url": url}, infer, extra)
+    await post_version(event, ctx, s, new, {"image_url": url}, infer, [frame_event] if frame_event else [])
 
 
 async def post_version(event, ctx, s: Session, new: dict, changes: dict, infer, extra=None) -> dict | None:
@@ -498,11 +689,15 @@ async def post_version(event, ctx, s: Session, new: dict, changes: dict, infer, 
 
 async def on_card(event: dict, ctx) -> list[dict]:
     """Follow versions made elsewhere (console edits) so the next version number is right. A stored version with
-    the number the worker holds wins: the worker's own comes back unchanged, another writer's took the number."""
+    the number the worker holds wins: the worker's own comes back unchanged, another writer's took the number.
+    A card the seller priced (status edited) without an image gets its cut-out as the next version, caused by
+    that priced version; the seller's version itself is the app's, so the image cannot ride on it."""
     s = SESSIONS.get(event["session_id"])
     cid = event["card_id"]
     if s and cid in s.cards and event["version"] >= s.cards[cid]["version"]:
         s.follow(event)
+        if event["status"] == "edited" and event["price"] is not None and not event["image_url"]:
+            queue_cutout(event, ctx, s, cid)
     return []
 
 
@@ -515,7 +710,7 @@ def speech_backlog() -> dict:
 
 def cutout_backlog() -> dict:
     return {
-        "waiting": sum(len(s.cutouts) for s in SESSIONS.values()),
+        "waiting": sum(len(s.cutouts) + len(s.prefetches) for s in SESSIONS.values()),
         "in_flight": sum(s.cutting for s in SESSIONS.values()),
     }
 

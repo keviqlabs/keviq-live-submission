@@ -5,7 +5,7 @@ import asyncio
 import httpx
 import pytest
 
-from app.attachment_auth import SOURCE_KINDS, binding_definition
+from app.attachment_auth import SOURCE_KINDS, WAIT_MS, binding_definition
 from app.contracts import make_event
 from app.main import create_app
 from app.store import PgStore
@@ -177,7 +177,7 @@ async def test_expired_candidate_batch_failure_rolls_back_then_retries_in_causal
     _, _, _, body = await two_cards(w)
     await w.service.close()
     comment = next(e for e in await w.events() if e["event_id"] == body["comment_event_id"])
-    w.now = comment["ingested_ms"] + 4000
+    w.now = comment["ingested_ms"] + WAIT_MS
     batch = w.store.append_order_batch
 
     async def interrupted(events, **kwargs):

@@ -7,15 +7,18 @@ import uuid
 
 import pytest
 
-from app.attachment_auth import SOURCE_KINDS, binding_definition
+from app.attachment_auth import SOURCE_KINDS, WAIT_MS, binding_definition
 from app.contracts import make_event
+
+START_MS = 100_000  # the World clock at setup; a comment ingested then expires at DEADLINE_MS
+DEADLINE_MS = START_MS + WAIT_MS
 
 
 class World:
     def __init__(self, app, store, client):
         self.app, self.store, self.client = app, store, client
         self.sid = "pytest-attachment-" + uuid.uuid4().hex[:10]
-        self.now = 100_000
+        self.now = START_MS
         self.epoch = "epoch-1"
         self.source, self.system = "synthetic-source-" + self.sid, "synthetic-system-" + self.sid
         self.frames, self.cards, self.seen = [], [], []
@@ -585,7 +588,7 @@ async def test_selected_unpriced_card_waits_and_pins_its_own_price(world):
 
 async def test_expired_two_priced_candidates_require_explicit_order_choice(world):
     a, b, _, body = await two_cards(world)
-    world.now += 4000
+    world.now += WAIT_MS
     expired = await world.system_request(body)
     assert expired["attachment"]["outcome"] == "expired"
     order = (await world.store.orders(world.sid))[0]
@@ -609,7 +612,7 @@ async def test_expired_two_priced_candidates_require_explicit_order_choice(world
 
 async def test_keep_select_retries_and_preorder_reject_are_audited_without_fake_orders(world):
     a, b, _, body = await two_cards(world, priced=False)
-    world.now += 4000
+    world.now += WAIT_MS
     expired = (await world.system_request(body))["attachment"]
     kept = (await world.decide(expired, "keep_unresolved"))["attachment"]
     assert kept["version"] == 2 and kept["selected_card_id"] is None
@@ -629,14 +632,14 @@ async def test_keep_select_retries_and_preorder_reject_are_audited_without_fake_
 async def test_timer_expiry_without_worker_request_retains_original_clock_and_null_epoch(world):
     a = await world.card(10, "GIAY-01")
     comment, label = await world.comment(ts=15)
-    world.now += 3999
+    world.now += WAIT_MS - 1
     await world.service.expire_due(world.sid)
     assert not await world.store.attachments(world.sid)
     world.now += 1
     await world.service.expire_due(world.sid)
     event = (await world.store.attachments(world.sid))[0]
-    assert event["worker_epoch"] is None and event["deadline_ms"] == 104000
-    assert event["ts_ms"] == 104000 and event["comment_event_id"] == comment["event_id"]
+    assert event["worker_epoch"] is None and event["deadline_ms"] == DEADLINE_MS
+    assert event["ts_ms"] == DEADLINE_MS and event["comment_event_id"] == comment["event_id"]
     assert event["label_event_id"] == label["event_id"]
     assert event["candidates"][0]["card_id"] == a["card_id"]
     before = await world.store.head_seq()
@@ -657,7 +660,7 @@ async def test_late_label_recovery_excludes_late_recognition_and_does_not_reset_
         reply_to=None,
     )
     await world.ingest(comment)
-    world.now += 5000
+    world.now += WAIT_MS + 1000
     await world.card(14, "BOOT-02")
     label = make_event(
         "comment_labeled",
@@ -675,13 +678,13 @@ async def test_late_label_recovery_excludes_late_recognition_and_does_not_reset_
         },
         scam_signals=[],
         action="none",
-        latency_ms=5000,
+        latency_ms=WAIT_MS + 1000,
         caused_by=[comment["event_id"]],
     )
     await world.ingest(label)
     await world.service.expire_due(world.sid)
     event = (await world.store.attachments(world.sid))[0]
-    assert event["deadline_ms"] == 104000 and event["ts_ms"] == 105000
+    assert event["deadline_ms"] == DEADLINE_MS and event["ts_ms"] == DEADLINE_MS + 1000
     assert event["reason"].startswith("recovery-late")
     assert [c["card_id"] for c in event["candidates"]] == [world.cards[0]["card_id"]]
 
@@ -767,13 +770,13 @@ async def test_proof_preparation_crossing_deadline_cannot_write_a_late_ready(wor
         nonlocal crossed
         if event["type"] == "comment_attachment" and event["action"] == "ready" and not crossed:
             crossed = True
-            world.now += 4000
+            world.now += WAIT_MS
         return original(event, binding, origin)
 
     monkeypatch.setattr(world.store, "origin_body", delayed)
     result = await world.system_request(body)
     assert result["attachment"]["outcome"] == "expired"
-    assert result["attachment"]["ts_ms"] == result["attachment"]["deadline_ms"] == 104000
+    assert result["attachment"]["ts_ms"] == result["attachment"]["deadline_ms"] == DEADLINE_MS
     assert not [e for e in await world.events() if e["type"] == "order" and e["state"] == "CONFIRM_SENT"]
 
 
@@ -795,7 +798,7 @@ async def test_sku_null_priced_card_stays_selected_without_an_invented_order(wor
 
 async def test_empty_frozen_snapshot_can_only_be_kept_or_rejected(world):
     await world.comment(ts=15)
-    world.now += 4000
+    world.now += WAIT_MS
     await world.service.expire_due(world.sid)
     expired = (await world.store.attachments(world.sid))[0]
     assert expired["candidates"] == []

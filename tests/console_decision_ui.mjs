@@ -72,3 +72,61 @@ test("the queue buttons are the design's primary/danger actions and the source l
   assert.equal(ui.run("shown.size"), 0);
   assert.deepEqual(ui.requests.map((r) => [r.method, r.url]), [["GET", "/api/sessions/decision%20ui/orders/o1/log"]]);
 });
+
+test("known approval reasons translate and format amounts without changing the stored reason", () => {
+  const ui = setup();
+  ui.run('orders.get("o1").reason = "amount 2070000 > seller threshold 2000000"; renderOrders()');
+  const english = ui.nodes.get("queue").innerHTML;
+  assert.match(english, /Total <span class="money">2\.070\.000 ₫<\/span> exceeds/);
+  assert.match(english, /2\.000\.000 ₫/);
+  assert.doesNotMatch(english, /amount 2070000/);
+  ui.run('setLang("vi", rerender)');
+  const vietnamese = ui.nodes.get("queue").innerHTML;
+  assert.match(vietnamese, /Tổng <span class="money">2\.070\.000 ₫<\/span>/);
+  assert.doesNotMatch(vietnamese, /seller threshold|Total /);
+  assert.equal(ui.run('orders.get("o1").reason'), "amount 2070000 > seller threshold 2000000");
+  assert.deepEqual(ui.requests, []);
+});
+
+test("complete known reasons are localized while unknown details remain escaped and lossless", () => {
+  const ui = setup();
+  assert.equal(ui.run('reasonText("customer confirmed in Messenger")'), "Customer confirmed in Messenger.");
+  assert.equal(ui.run('reasonText("draft checks passed: price matches live card, qty within stock")'),
+    "Order checks passed; awaiting the customer.");
+  assert.equal(ui.run('reasonText("drafted from comment cm-one on card-one v2 (150.000đ)")'),
+    "Drafted from the customer comment.");
+  assert.equal(ui.run(`reasonText("card internal-card changed before the customer's ok: v1 150.000đ -> v2 180.000đ; the customer confirms again")`),
+    "Card price changed from 150.000 ₫ to 180.000 ₫ before the customer confirmed. Customer must confirm again.");
+  assert.equal(ui.run('reasonText("variant size 40 not on internal-card v2")'),
+    "Requested option is not listed on this item: size 40.");
+  const unknown = 'new rule <img src=x onerror="bad()">; unrecognized suffix';
+  ui.run(`orders.get("o1").reason = ${JSON.stringify(unknown)}; renderOrders()`);
+  assert.equal(ui.run(`reasonText(${JSON.stringify(unknown)})`), unknown);
+  for (const reason of ["constructor", "toString", "__proto__"])
+    assert.equal(ui.run(`reasonText(${JSON.stringify(reason)})`), reason);
+  assert.match(ui.nodes.get("queue").innerHTML, /new rule &lt;img src=x onerror=&quot;bad\(\)&quot;&gt;/);
+  assert.doesNotMatch(ui.nodes.get("queue").innerHTML, /<img src=x/);
+  assert.equal(ui.run('reasonText("draft checks passed: a new server condition")'),
+    "draft checks passed: a new server condition");
+  assert.match(ui.run('logHtml({steps: [{reason: "amount 2070000 > seller threshold 2000000"}]})'),
+    /amount 2070000 &gt; seller threshold 2000000/);
+});
+
+test("recent orders use the pinned item name and keep reason, activity and money separate", () => {
+  const ui = setup();
+  ui.run(`versions.set("c", [{card_id: "c", version: 2, name: "Original item"}]);
+    cards.set("c", {card_id: "c", version: 3, name: "Renamed item"});
+    orders.get("o1").state = "CONFIRM_SENT";
+    orders.get("o1").reason = "draft checks passed"; renderOrders()`);
+  const html = ui.nodes.get("orders").innerHTML;
+  assert.match(html, /Original item/);
+  assert.doesNotMatch(html, /Renamed item/);
+  assert.match(html, /class="order-total money">150\.000 ₫/);
+  assert.match(html, /class="order-reason">Order checks passed/);
+  assert.match(html, /class="order-activity">By assistant at/);
+  assert.match(html, /class="order-sim"/);
+  assert.match(html, /class="order-actions"/);
+  assert.match(html, /data-act="yes" data-oid="o1"/);
+  assert.match(html, /data-act="no" data-oid="o1"/);
+  assert.doesNotMatch(html.replace(/<[^>]+>/g, ""), /\bo1\b|\bc v2\b/);
+});

@@ -19,10 +19,11 @@ from measure import labels as measure_labels
 from meta.client import MetaClient
 from meta.meter import Meter, memory_spend
 from meta.transport import FakeTransport, Reply, responses_reply
+from orders import handlers as orders_handlers
 from worker.brain import labels as labels_mod
 from worker.brain.labels import Labeler, cards_at, resolve
 from worker.brain.shield import first_label, scan
-from worker.runner import Runner, build
+from worker.runner import Ctx, Runner, build
 
 GOLD = measure_labels.load_gold()
 
@@ -75,8 +76,13 @@ def wire(client, transport, moderator=None):
 
 
 async def drain(labeler):
-    """Wait for every flush the labeler spawned; a cancelled timer is fine, any other error is raised."""
+    """Wait for every flush the labeler spawned; a cancelled timer is fine, any other error is raised.
+
+    A batch task can finish between its consumer's end and this task's wakeup, with its removal from `tasks`
+    still a pending callback; gathering only done tasks does not yield, so yield once per round to let it run.
+    """
     while labeler.tasks:
+        await asyncio.sleep(0)
         for r in await asyncio.gather(*list(labeler.tasks), return_exceptions=True):
             if isinstance(r, Exception):
                 raise r
@@ -235,20 +241,50 @@ def ident(card):
     return card and (card["card_id"], card["version"])
 
 
-def test_live_snapshot_skips_an_unpriced_draft():
-    # The media-time snapshot knows the draft; the live snapshot (sessions without a binding) does not.
-    # (media-time identity carries each card's latest supplied version, so the prefix pins the draft version)
+def test_unbound_snapshot_takes_the_unpriced_draft_on_screen_as_current():
+    # Both snapshots know the draft on screen: it is the current item and "the one before" is the card shown
+    # before it. (media-time identity carries each card's latest supplied version, so the prefix pins the draft)
     current, previous = cards_at(DRAFT_THEN_LIVE, 12_500)
     assert (current["card_id"], previous["card_id"]) == ("card-B", "card-A")
     current, previous = cards_at(DRAFT_THEN_LIVE[:2], 12_500)
     assert (ident(current), ident(previous)) == (("card-B", 1), ("card-A", 1))
-    # Live current is card-A; previous is the latest other card shown, the draft's first version, as on the base.
+    # The unbound snapshot (sessions without a binding) takes each card at its version known at ts_ms, so the
+    # price set at 13 s is not used at 12.5 s.
     current, previous = cards_at(DRAFT_THEN_LIVE, 12_500, live_only=True)
-    assert (ident(current), ident(previous)) == (("card-A", 1), ("card-B", 1))
+    assert (ident(current), ident(previous)) == (("card-B", 1), ("card-A", 1))
     current, previous = cards_at(DRAFT_THEN_LIVE, 13_500, live_only=True)
     assert (ident(current), ident(previous)) == (("card-B", 2), ("card-A", 1))
     draft = resolve(item("current_card"), DRAFT_THEN_LIVE, 12_500, set(), live_only=True)
-    assert draft["referenced_card_id"] == "card-A"
+    assert draft["referenced_card_id"] == "card-B"
+
+
+class Binding:
+    """A runner whose session binds orders through attachments."""
+
+    async def attachment_enabled(self, session_id):
+        return True
+
+
+@pytest.mark.parametrize(
+    ("ctx", "pair"), [(None, ("card-B", "card-A")), (Ctx({}, Binding()), ("card-B", "card-A"))]
+)
+async def test_the_prompt_shows_the_draft_on_screen_with_or_without_a_binding(ctx, pair):
+    """The model sees the pair resolve() binds from: without an attachment binding the unbound snapshot, with
+    one the media-time pair. Both take the unpriced draft on screen as the current item and the card shown
+    before it as the previous one."""
+    transport = FakeTransport([responses_reply("not json"), responses_reply("not json")])
+
+    async def emit(fields):
+        pass
+
+    labeler = Labeler(
+        client_for=lambda _: MetaClient(transport, Meter(memory_spend([0.0]), 30, 300, 20), emit)
+    )
+    versions = [{**c, "name": c["card_id"]} for c in DRAFT_THEN_LIVE]
+    comment = {"comment_id": "c-1", "session_id": "s-1", "text": "lấy cái này", "ts_ms": 12_500}
+    assert await labeler._ask([labels_mod.Pending(comment, ctx, [], "none")], versions) == ({}, None)
+    sent = json.loads(transport.requests[0][1]["input"][1]["content"])["comments"][0]
+    assert (sent["current_card"]["card_id"], sent["previous_card"]["card_id"]) == pair
 
 
 # --- the stream end to end on the in-memory app
@@ -352,19 +388,23 @@ async def test_a_batch_goes_at_twenty_and_the_rest_after_the_wait(mem_app):
     assert ctx["catalog"] and ctx["card_timeline"][0]["card_id"] == "card-01"
 
 
-async def test_one_label_batch_at_a_time_per_session(mem_app):
-    """A flood never opens a model call per twenty comments at once: the next batch is cut when the last is done,
-    from what queued meanwhile (phone numbers are still hidden on receipt, before any batch)."""
+async def test_a_flood_opens_a_call_per_twenty_up_to_the_lane_cap(mem_app):
+    """Forty-five comments at once: two full batches open at once (each cut as its twenty queue), the five left
+    wait their window; never more calls open than the session's lanes (phone numbers are still hidden on
+    receipt, before any batch)."""
     _, store, client = mem_app
-    transport = TimedOracle(0.1)
+    transport = TimedOracle(0.5)
     labeler, runner = wire(client, transport)
     timed = plan(events(), SESSION, now_ms(), 1.0)
     schedule = [p for p in timed if p[1]["type"] == "card"][:1]
     comments = [p for p in timed if p[1]["type"] == "comment"][:45]
     await feed(client, runner, schedule + comments)
+    await asyncio.sleep(0.05)
+    assert labeler.backlog() == {"waiting": 5, "in_flight": 40}
     await drain(labeler)
-    assert transport.most == 1
     assert sizes(transport) == [20, 20, 5]
+    assert 2 <= transport.most <= labels_mod.BATCH_LANES
+    assert labeler.backlog() == {"waiting": 0, "in_flight": 0}
     labeled = {e["comment_id"] for e in await store.read(SESSION, 0, 500) if e["type"] == "comment_labeled"}
     assert labeled == {e["comment_id"] for _, e in comments}
 
@@ -577,7 +617,9 @@ def order_comment(sid, comment_id, ts_ms):
     )
 
 
-async def test_session_without_binding_orders_from_the_live_card_not_the_draft(mem_app, monkeypatch):
+async def test_session_without_binding_binds_the_draft_on_screen_and_holds_it_for_the_seller(
+    mem_app, monkeypatch
+):
     monkeypatch.setattr(labels_mod, "BATCH_WAIT_S", 0.01)
     _, store, client = mem_app
     sid = "nobinding1"
@@ -587,6 +629,19 @@ async def test_session_without_binding_orders_from_the_live_card_not_the_draft(m
     first += [card_event(sid, "card-B", 1, "draft", None, 12_000, 12_000), order_comment(sid, "nb-1", 12_500)]
     await feed(client, runner, [(0, e) for e in first])
     await drain(labeler)
+    # The order on the unpriced draft goes to the orders flow, whose rules hold it for the seller.
+    orders = Runner("http://test", orders_handlers.HANDLERS, http=client)
+    [nb1] = [e for e in await store.read(sid, 0, 100) if e["type"] == "comment_labeled"]
+    await orders.handle(nb1)
+    events_so_far = await store.read(sid, 0, 100)
+    states = [e for e in events_so_far if e["type"] == "order"]
+    assert [e["state"] for e in states] == ["DRAFT", "NEEDS_SELLER"]
+    [line] = states[-1]["lines"]
+    assert (line["card_id"], line["card_version"], line["unit_price"]) == ("card-B", 1, 0)
+    reasons = states[-1]["reason"].split("; ")
+    assert reasons[:2] == ["card-B v1 was draft when the comment was written", "card has no price yet"]
+    assert states[-1]["approval_needed"] is True
+    assert not [e for e in events_so_far if e["type"] == "message_out" and e["template"] == "confirm_order"]
     later = [
         card_event(sid, "card-B", 2, "live", 200_000, 13_000, 12_000),
         order_comment(sid, "nb-2", 13_500),
@@ -595,6 +650,6 @@ async def test_session_without_binding_orders_from_the_live_card_not_the_draft(m
     await drain(labeler)
     labeled = {e["comment_id"]: e for e in await store.read(sid, 0, 100) if e["type"] == "comment_labeled"}
     draft = labeled["nb-1"]["order_draft"]
-    assert (draft["referenced_card_id"], draft["reference_kind"]) == ("card-A", "current_card")
+    assert (draft["referenced_card_id"], draft["reference_kind"]) == ("card-B", "current_card")
     draft = labeled["nb-2"]["order_draft"]
     assert (draft["referenced_card_id"], draft["reference_kind"]) == ("card-B", "current_card")

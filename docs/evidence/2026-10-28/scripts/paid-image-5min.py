@@ -6,6 +6,7 @@ From the session's first frame, within --window-s (300) there must be both:
 Found: print IMAGE_OK with card_id/version, the image sha256 and the model_call event id; exit 0; the run goes on.
 Not found: print IMAGE_MISSING, SIGTERM the runner (python -m measure.c5 ... --run RUN) and its children
 (measure.c5_proc ... RUN), SIGKILL after 10 s, print /api/cost?session=RUN (DIAG + cost); exit 1.
+With --passive, report IMAGE_MISSING and exit 1 without finding or signaling any process.
 Prints ids, sha256 and numbers only, no comment or speech text.
 
   uv run python paid-image-5min.py --base-url http://127.0.0.1:8000 --run c5-test1x5-1028-HHMM > image-5min.log
@@ -65,6 +66,7 @@ def main():
     p.add_argument("--base-url", required=True)
     p.add_argument("--run", required=True)
     p.add_argument("--window-s", type=float, default=300)
+    p.add_argument("--passive", action="store_true", help="report only; caller owns process shutdown")
     a = p.parse_args()
     if a.base_url.rstrip("/").endswith(":8001"):
         sys.exit("refusing :8001")
@@ -89,6 +91,8 @@ def main():
             return 0
         if t0 is not None and time.time() * 1000 - t0 > a.window_s * 1000:
             say(kind="IMAGE_MISSING", window_s=a.window_s, cutout_call=cut, card_image=img)
+            if a.passive:
+                return 1
             targets, killed = stop(a.run)
             say(kind="stopped", pids=targets, sigkill=killed)
             say(kind="cost", **http.get("/api/cost", params={"session": a.run}).json())

@@ -101,6 +101,7 @@ def test_install_puts_gold_labels_and_stored_cutouts_in_the_worker(monkeypatch, 
         (sam, "cut_out"),
         (frames, "load"),
         (runner.Runner, "client_for"),
+        (runner.Runner, "process"),
     ):
         monkeypatch.setattr(mod, name, getattr(mod, name))  # undone after the test
     (tmp_path / "labels.json").write_text(json.dumps({"products": {}}))
