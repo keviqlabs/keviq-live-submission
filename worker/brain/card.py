@@ -49,7 +49,7 @@ from worker.voice import vn
 
 log = logging.getLogger("worker.card")
 CATALOG: list[dict] = json.loads(catalog_path().read_text())  # the items on sale (ruling 417)
-# The words the vision and speech prompts and the transcriber use stay those of data/catalog.json (ruling 417)
+# Base words stay fixed; the optional other-item vision vocabulary uses explicit active-catalog kinds.
 WORDS: list[dict] = json.loads((ROOT / "data" / "catalog.json").read_text())
 CATEGORIES = sorted({i["category"] for i in WORDS})
 COLORS = sorted({v["color"] for i in WORDS for v in i["variants"]})
@@ -109,6 +109,70 @@ def match(category: str, color: str | None) -> dict | None:
     if color:
         same = [i for i in same if any(v["color"] == color for v in i["variants"])]
     return same[0] if len(same) == 1 else None
+
+
+def other_items() -> list[dict]:
+    """Only explicit seller-catalog kinds can refine the coarse 'other' category."""
+    return [
+        i
+        for i in CATALOG
+        if "other" in (i.get("categories") or [i["category"]])
+        and isinstance(i.get("kind"), str)
+        and i["kind"].strip()
+    ]
+
+
+def kind_words() -> tuple[list[str], list[str]]:
+    items = other_items()
+    return sorted({i["kind"] for i in items}), sorted(
+        {v["color"] for i in items for v in i["variants"] if isinstance(v.get("color"), str)}
+    )
+
+
+def other_identity(attributes: dict, confidence) -> tuple[dict | None, dict]:
+    """Kind is visual evidence, never a price or an authority to change an existing card's SKU."""
+    kind, color = attributes.get("kind"), attributes.get("color")
+    kind = kind if isinstance(kind, str) else None
+    same = []
+    if (
+        attributes.get("identity_state") == "one_product"
+        and isinstance(confidence, (int, float))
+        and not isinstance(confidence, bool)
+        and 0.5 <= confidence <= 1
+        and isinstance(color, str)
+        and color
+        and kind
+    ):
+        same = [
+            i for i in other_items() if i["kind"] == kind and any(v["color"] == color for v in i["variants"])
+        ]
+    item = same[0] if len(same) == 1 else None
+    return item, {"kind": kind, "identity_state": "one_product" if item else "unclear"}
+
+
+def observation(meta: dict) -> tuple:
+    return tuple(meta.get(k) for k in ("category", "color", "kind", "identity_state"))
+
+
+def kind_price_reason(text: str, meta: dict) -> str | None:
+    """A refined identity needs the same explicit kind in the price line, not just 'other'."""
+    if "identity_state" not in meta:  # legacy cards retain the existing coarse speech decision
+        return None
+    if meta["identity_state"] != "one_product" or not meta.get("kind"):
+        return "kind_unclear"
+    target = tuple(vn.tokens(meta["kind"]))
+    words = {tuple(vn.tokens(i["kind"])) for i in other_items()}
+    words.update(kind for kind, categories in window.KINDS.items() if "other" in categories)
+    words.add(target)
+    tokens = vn.tokens(text)
+    mentioned = {
+        kind
+        for kind in words
+        if kind and any(tuple(tokens[i : i + len(kind)]) == kind for i in range(len(tokens)))
+    }
+    if mentioned == {target}:
+        return None
+    return "kind_mismatch" if mentioned else "kind_unclear"
 
 
 def item_by_sku(sku: str | None) -> dict | None:
@@ -215,8 +279,13 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
                  event["frame_ts_ms"], s.last_frame_ts)  # fmt: skip
         return []
     s.last_frame_ts = event["frame_ts_ms"]
-    category, color = event["category"], (event.get("attributes") or {}).get("color")
-    item = match(category, color)
+    attrs = event.get("attributes") or {}
+    category, color = event["category"], attrs.get("color")
+    refined = category == "other" and ("kind" in attrs or "identity_state" in attrs)
+    item, identity = (
+        other_identity(attrs, event.get("confidence")) if refined else (match(category, color), {})
+    )
+    observed = {"category": category, "color": color, **identity}
     out = []  # (version, its changes), in posting order
     async with s.lock:
         prev = s.cards.get(s.current) if s.current else None
@@ -225,7 +294,7 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
             prev
             and prev["sku"] is None
             and prev["status"] != "retired"
-            and (last.get("category"), last.get("color")) == (category, color)
+            and observation(last) == observation(observed)
         ):
             # The same item read again: only the frame moves, so the repeat has its own version (C1) while the
             # SKU, price, status, span and current item stay as they are.
@@ -236,15 +305,19 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
                                        "frame_event_id": (event.get("caused_by") or [None])[0]}  # fmt: skip
             out.append((s.bump(prev["card_id"], provenance=prov), {"provenance": prov}))
         else:
+            candidates = reversed(s.cards.values()) if refined else s.cards.values()
             same = item and next(
-                (c for c in s.cards.values() if c["sku"] == item["sku"] and c["status"] != "retired"), None
+                (c for c in candidates if c["sku"] == item["sku"] and c["status"] != "retired"), None
             )
             if same:
                 prior = s.meta.get(same["card_id"], {})
-                agrees = prior.get("category") == category and prior.get("color") == color
+                agrees = observation(prior) == observation(observed)
                 if not agrees or (prev and prev["sku"] is None):
-                    # A unique catalog candidate does not prove that this is the same physical item.
-                    item, same = None, None
+                    # Clear kind evidence may open a fresh unpriced identity, never restore an old price.
+                    # The legacy coarse path still refuses a one-frame category jitter as before.
+                    same = None
+                    if not refined:
+                        item = None
             if prev and prev is not same:
                 window.close_span(s.spans.setdefault(prev["card_id"], []), event["frame_ts_ms"])
                 if prev["status"] == "draft" and not pending(s, prev["card_id"]):
@@ -278,8 +351,7 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
             if not prev or prev is not same:
                 window.open_span(s.spans.setdefault(card["card_id"], []), event["frame_ts_ms"])
             s.meta[card["card_id"]] = {
-                "category": category,
-                "color": color,
+                **observed,
                 "frame_ts_ms": event["frame_ts_ms"],
                 "frame_event_id": (event.get("caused_by") or [None])[0],
             }
@@ -376,6 +448,8 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
             if c["status"] != "retired" and window.overlaps(s.spans.get(cid, []), line.start, line.end)
         }
         keep, reason = window.choose(event["text"], cands)
+        if reason is None and len(keep) == 1:
+            reason = kind_price_reason(event["text"], s.meta[keep[0]])
         if spoken.price is not None and reason:
             s.waits[reason] += 1
             log.info(
