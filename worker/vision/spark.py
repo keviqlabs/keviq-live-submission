@@ -2,7 +2,10 @@
 
 Only a change of product is emitted (`is_new` true): a new category, or the same category in a new colour,
 compared with the last product this session saw. Frames with no product, or the same product again, produce
-nothing, so every product_seen gets a card within the cycle (D-009). The frame is cached for the SAM cut-out.
+nothing. A product_seen gets a card version within the cycle (D-009): a new card, or, when two reads in flight
+both report the same change, a version of the kept card that moves its frame (worker/brain/card.py). One of a
+frame older than the last frame the card brain took is ignored there as stale and gets no version.
+The frame is cached for the SAM cut-out.
 A read that fails (no key, model error, budget spent, output failed twice) fails the frame in the runner's vision
 lane; it is not read again.
 """
