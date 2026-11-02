@@ -105,3 +105,35 @@ Each cause below is reproduced from stored events or logs. No fix was started in
 | `run2-app.log` | 11610 | `0e28f1a64cd7ff1f5598a4d8f89526dbed29b5c1a7433f952c2facdd300f659b` |
 | `run2-worker-part1.log` | 46525 | `a55b4994155a19f898c2fc2e34b1c0cb4241f668bab4f7d0ddfa7955c65303aa` |
 | `run2-worker.log` | 14995 | `3e84698a6e24496e3b81995e72dddb955e4f0aa48a8145cc27f75425a5bf86db` |
+
+## Later run: judge-paid-1102-1644
+Added on 2 November from a later section of the same run note (kept outside the repository), checked against
+read-only `SELECT` queries on `keviq_paid_test`. Times are in ICT; t = seconds from the session's first event.
+
+- Code: origin/main 46a0f0ebd40e740484ca3c4bf4ebb6531e685184 (tree 6b163d4), the merge of PR #100 "Hold a heard price when the line names a colour the card does not have". It includes D-038 (PR #96), PR #98, #99 and #102 (which reverted #97); it does not include PR #103.
+- Same kind of session as judge-paid-1102-1109: judge-video + media `--no-voice` + judge-feed, database `keviq_paid_test`, port 8040.
+- Events stored 16:45:06–16:46:13: 176 (frame 64, model_call 52, comment_labeled 15, comment 14, order 10 = 5 orders × draft and decision, message_out 9, card 6, product_seen 3, speech 3).
+- Cards:
+  - GIAY-01 sneaker: draft 2.8, live 450k at 8.7, image at 10.4.
+  - TUI-03 bag: draft 22.4, live 690k at 28.2, **no image**.
+  - BOOT-02 black boot: draft 41.7, **never priced**. The brown boot's 920000 line is now held instead of going to the black boot (in judge-paid-1102-1109 BOOT-02 went live at 920000).
+  - BOOT-05 brown boot: no card.
+- Labels (15 for 14 comments): order 7, price_question 2, scam 2, stock_question 1, spam 1, complaint 1, other 1. cm-04 was labeled twice (scam, spam) and hidden; cm-12 (scam) was warned.
+- Replies (message_out 9): price for cm-01 and stock for cm-02 (GIAY-01); order received for cm-05, cm-06, cm-08, cm-14; order confirmation for cm-07; ask_which_item for cm-09 (TUI-03 / BOOT-02); "the seller will confirm the price" for cm-13 (BOOT-02).
+- Orders (same comments and expectations as judge-paid-1102-1109 above):
+
+| comment | gloss | got | expected |
+|---|---|---|---|
+| cm-07 | one pair, size 40 | GIAY-01 40 CONFIRM_SENT | same ✓ |
+| cm-05 | the pair from just now, size 39, two pairs for 400… | TUI-03 draft, size 39 x2, NEEDS_SELLER | GIAY-01 39, NEEDS_SELLER (discount) ✗ |
+| cm-06 | confirm one red bag | TUI-03 red x1, NEEDS_SELLER (the card was still a draft when the comment was written; TUI-03 went live at 28.2) | TUI-03 CONFIRM_SENT: right card, other state |
+| cm-08 | the red one from before | BOOT-02 draft red, NEEDS_SELLER | TUI-03 ✗ |
+| cm-09 | buy this shirt | ask_which_item (TUI-03 / BOOT-02) | same ✓ |
+| cm-11 | confirm the brown boots, size 39 | **no order** (no BOOT-05 card) | BOOT-05 39 ✗ |
+| cm-14 | three red bags | TUI-03 red x3, NEEDS_SELLER (2,070,000 over the 2,000,000 seller threshold) | same ✓ |
+
+- Of the 7 order comments: as expected 3 (cm-07, cm-09, cm-14); right card in another state 1 (cm-06); wrong card 2 (cm-05, cm-08: the comment points at the previous card while the new one is still a draft); no order 1 (cm-11).
+- Against judge-paid-1102-1109: cm-06 and cm-14 now land on TUI-03; cm-05 and cm-08 are still on a wrong card; cm-11 still has no order.
+- Receipts 0, CONFIRMED 0: the judge feed has no customer replies.
+- Model calls 52, 0.0747279 USD (`SELECT` on `model_call`): product_seen 34 (p50 1598 ms, p95 3390), label_comments 13 (p50 1849, p95 2823), card_from_speech 3 (p50 3398, p95 3479), card_cutout 2 (789 and 1468 ms). Percentiles are nearest rank (`percentile_disc`).
+- **Result: still FAIL** (2 wrong cards, 1 missing order, no receipt).
