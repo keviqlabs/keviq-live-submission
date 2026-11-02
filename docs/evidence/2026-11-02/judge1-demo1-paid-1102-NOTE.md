@@ -139,3 +139,35 @@ read-only `SELECT` queries on `keviq_paid_test`. Times are in ICT; t = seconds f
 - Receipts 0, CONFIRMED 0: the judge feed has no customer replies.
 - Model calls 52, 0.0747279 USD (`SELECT` on `model_call`): product_seen 34 (p50 1598 ms, p95 3390), label_comments 13 (p50 1849, p95 2823), card_from_speech 3 (p50 3398, p95 3479), card_cutout 2 (789 and 1468 ms). Percentiles are nearest rank (`percentile_disc`).
 - **Result: still FAIL** (2 wrong cards, 1 missing order, no receipt).
+
+## Later run: judge-paid-1102-2006
+Added on 2 November from read-only `SELECT` queries on `keviq_paid_test`. Times are in ICT; t = seconds from the
+session's first frame.
+
+- Code: origin/main 137ffca9841d7a02ed8ba56c97250fc30ab2c262 (tree 3a96f5f), the merge of PR #105 "Bind an unbound comment's previous item to the item shown before the one on screen" (D-040). It includes PR #103.
+- Same kind of session as judge-paid-1102-1109: judge-video + media `--no-voice` + judge-feed, database `keviq_paid_test`, port 8040.
+- Events stored 20:06:21–20:07:24: 177 (frame 64, model_call 50, comment_labeled 15, comment 14, order 10 = 5 orders × draft and decision, message_out 9, card 8, product_seen 4, speech 3).
+- Cards:
+  - GIAY-01 sneaker: draft 2.5, live 450k at 8.8 with its image.
+  - TUI-03 bag: draft 23.9, live 690k at 28.2, **no image**.
+  - BOOT-02 black boot: draft 43.5, retired at 46.1, **never priced**.
+  - BOOT-05 brown boot: draft 46.1, live 920k at 49.2 with its image.
+- Labels (15 for 14 comments): order 7, price_question 2, scam 2, stock_question 1, spam 1, complaint 1, other 1. cm-04 was labeled twice (spam, scam) and hidden; cm-12 (scam) was warned.
+- Replies (message_out 9): price for cm-01 (GIAY-01) and cm-13 (BOOT-05); stock for cm-02 (GIAY-01); order received for cm-05, cm-06, cm-08; order confirmation for cm-07 and cm-11; a size question on BOOT-05 for cm-09.
+- Orders (same comments and expectations as judge-paid-1102-1109 above):
+
+| comment | gloss | got | expected |
+|---|---|---|---|
+| cm-07 | one pair, size 40 | GIAY-01 40 CONFIRM_SENT | same ✓ |
+| cm-05 | the pair from just now, size 39, two pairs for 400… | GIAY-01 39 x2, NEEDS_SELLER | same ✓ |
+| cm-06 | confirm one red bag | TUI-03 red x1, NEEDS_SELLER (the card was still a draft when the comment was written; TUI-03 went live at 28.2) | TUI-03 CONFIRM_SENT: right card, other state |
+| cm-08 | the red one from before | BOOT-02 red, NEEDS_SELLER (BOOT-02 was retired at 46.1 without ever having a price) | TUI-03 ✗ |
+| cm-09 | buy this shirt | size question on BOOT-05 | ask_which_item ✗ |
+| cm-11 | confirm the brown boots, size 39 | BOOT-05 39 CONFIRM_SENT | BOOT-05 39 ✓ |
+| cm-14 | three red bags | **no order** (labeled `explicit_sku` TUI-03; the pair at 62.0 was BOOT-05 / BOOT-02) | TUI-03 x3, NEEDS_SELLER ✗ |
+
+- Of the 7 order comments: as expected 3 (cm-05, cm-07, cm-11); right card in another state 1 (cm-06); not as expected 3 (cm-08 wrong card; cm-09 a size question instead of asking which item; cm-14 no order). Right card 4 of 7, as in judge-paid-1102-1644, but on different comments.
+- Against judge-paid-1102-1644: cm-05 now lands on GIAY-01 and cm-11 now gets an order (the brown boot got its own card this time); cm-08 is still on a wrong card, now a retired item that never had a price; cm-09 and cm-14 no longer come out as expected.
+- Receipts 0, CONFIRMED 0: the judge feed has no customer replies.
+- Model calls 50, 0.0700995 USD (`SELECT` on `model_call`): product_seen 30 (p50 1973 ms, p95 3054), label_comments 13 (p50 2587, p95 3527), card_cutout 4 (p50 1230, p95 2182), card_from_speech 3 (p50 3788, p95 4176). Percentiles are nearest rank (`percentile_disc`).
+- **Video test flow result: still FAIL.**
