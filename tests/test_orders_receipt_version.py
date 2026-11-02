@@ -123,6 +123,24 @@ async def test_a_card_without_a_sku_goes_to_the_seller():
     assert out[1]["approval_needed"] and "no SKU" in out[1]["reason"]
 
 
+async def test_a_card_without_a_sku_or_stock_shows_the_stock_reason_too():
+    """The rules' refusal follows the blocking reasons, so the seller does not approve a sold-out line blind."""
+    _, out = await drafted(card(1, 1000, sku=None, image_url=IMAGE, variants=[], stock=0))
+    assert states(out) == ["DRAFT", "NEEDS_SELLER", "waiting_for_shop"]
+    assert out[1]["reason"] == "card-x v1 has no SKU; qty 1 > stock 0"
+
+
+async def test_a_size_not_on_the_card_is_not_reported_as_out_of_stock():
+    """Without one variant the card's stock (the sum the card worker writes) bounds the line: the only reason is the
+    variant."""
+    label = {**LABEL, "order_draft": {**LABEL["order_draft"], "variant": {"size": "41", "color": None}}}
+    out = await flow.on_labeled(
+        label, flow.View.of([card(1, 1000, stock=8), COMMENT, label]), Recorder(), now=3000
+    )
+    assert states(out) == ["DRAFT", "NEEDS_SELLER", "waiting_for_shop"]
+    assert out[1]["reason"] == "variant size 41 not on card-x v1"
+
+
 async def test_ok_after_a_version_that_only_changes_the_sku_goes_to_the_seller():
     events, out = await drafted(card(1, 1000, image_url=IMAGE))
     assert states(out) == ["DRAFT", "CONFIRM_SENT", "confirm_order"]

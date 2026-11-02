@@ -388,7 +388,7 @@ async def on_labeled(trigger: dict, view: View, messenger, now: int) -> list[dic
             )
             if asked is not None:
                 return asked
-        stock = 0
+        stock = card.get("stock") or 0  # no single variant: the card's stock bounds the line, not a made-up 0
         how = "not on" if not hits else "ambiguous on"
         blocking.append(f"variant {variant_text(variant)} {how} {card_id} v{card['version']}")
     return await draft_order(
@@ -431,11 +431,14 @@ async def draft_order(
     blocking: list[str],
     causes: list[str],
     reply_to: str | None,
+    *,
+    seller_picks_card: bool = False,
 ) -> list[dict]:
     """DRAFT priced from the version `card` locks to (locked_card: the version current at the comment, or a later
     one that changes only the name or the image), then the rules: CONFIRM_SENT + confirm_order, or NEEDS_SELLER +
     waiting_for_shop. A locked version without a SKU waits for the seller. `reply_to` is the comment for a private
-    reply; None sends by PSID (Meta allows one private reply per comment)."""
+    reply; None sends by PSID (Meta allows one private reply per comment). With `seller_picks_card` the seller still
+    chooses among frozen cards, so the rules' refusal on `card` is not shown (the choice is checked again)."""
     card_id = card["card_id"]
     at_comment, card = card, locked_card(view.cards, card, now)
     if card is not at_comment:
@@ -475,6 +478,8 @@ async def draft_order(
         msg = await messenger.send(thread, "confirm_order", confirm_payload(nxt, card, reply_to))
     else:
         why = blocking or [decision.reason]
+        if blocking and not decision.allowed and not seller_picks_card:
+            why = [*blocking, decision.reason]  # the seller sees the rules' refusal (e.g. stock) too
         if discount:
             why[-1] += f' ("{discount["phrase"]}")'
         if not window.allowed:
