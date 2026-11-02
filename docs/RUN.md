@@ -135,7 +135,7 @@ make media SESSION=judge1-paid VIDEO=data/local/judge1/judge1.mp4 MEDIA_ARGS=--n
 make judge-feed SESSION=judge1-paid
 ```
 
-This was run once with a key on the judge1 video, on 2 November 2026: session `judge-paid-1102-1109` on main `aa457d9`, 51 model calls, 0.0879 USD. It made 4 cards; of the 7 comments meant to become orders, 2 did as expected, 3 went to a wrong card and 2 made no order; no receipt was produced. The result is FAIL (`docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`). The change made after it (decision D-038) has not been measured on this video yet. <!-- run pending --> The same `curl` shows the spend afterwards.
+This was run with a key on the judge1 video in four sessions on 2 November 2026; two are written up. Session `judge-paid-1102-1109` on main `aa457d9`: 51 model calls, 0.0879 USD; 4 cards; of the 7 comments meant to become orders, 2 did as expected, 3 went to a wrong card and 2 made no order; no receipt was produced. Session `judge-paid-1102-1644` on main `46a0f0e` (after decision D-038 and the colour check of PR #100): 52 model calls, 0.0747 USD; 3 cards; of the same 7 comments, 3 did as expected, 1 went to the right card in another state, 2 went to a wrong card and 1 made no order; no receipt was produced. Both written-up results are FAIL (`docs/evidence/2026-11-02/judge1-demo1-paid-1102-NOTE.md`). The same `curl` shows the spend afterwards.
 
 ## 6. The paid run on the test1 recording
 

@@ -8,7 +8,7 @@ Vietnamese comment and speech texts are replaced by English glosses, and times a
 - Code: origin/main aa457d98785a51320aa80a62c25744941b946afc (tree 6b7da8f), a clean clone outside the working copy, no local change.
 - Caps as coded: session 1.5 / warn 1.2, daily 30 / warn 20, total 285. Port 8040. Database `keviq_paid_test`. The model key was read from a local `.env` and never printed.
 - Two sessions as specified, plus one diagnostic extra (labeled below). All three stayed far under 1.5 USD per session.
-- **Video test flow result: FAIL.** Cards appear in judge1, but 3 of 6 order comments bind to the wrong card, 2 order comments get no order and no reply, one card carries another item's spoken price, no receipt in either specified session, and no receipt anywhere carries an image.
+- **Video test flow result: FAIL.** Cards appear in judge1, but 3 of 6 order comments bind to the wrong card, 2 order comments get no order and no reply (the session table below lists 7 order comments: 2 as expected, 3 on a wrong card, 2 with no order), one card carries another item's spoken price, no receipt in either specified session, and no receipt anywhere carries an image.
 
 ## Sessions
 | session | kind | start ICT | end ICT | events posted | rc | session USD |
@@ -62,20 +62,22 @@ Each cause below is reproduced from stored events or logs. No fix was started in
 - Evidence: offline replay of `worker/brain/labels.py` `cards_at` on the stored card events of both sessions (0 USD, `resolve_check.py` → `resolve-check.out`). For cm-05/cm-06 the model was shown current=TUI-03 (draft) / previous=GIAY-01, while `resolve()` (live_only=True when no attachment flow) used current=GIAY-01 / previous=TUI-03. "previous_card" and "current_card" therefore land on the swapped card. cm-08 shows the same swap (model: current BOOT-02 draft, previous TUI-03; resolve: current TUI-03, previous BOOT-02).
 - Code: `_ask` builds the prompt with `cards_at(versions, ts)` (drafts included); `_consequences` calls `resolve(..., live_only=not attached_flow)`.
 - Fix: build the prompt's current/previous with the same `live_only` that `resolve()` will use, so the model and the binder see one snapshot. File `worker/brain/labels.py`. Changes the model input, so it needs a decision entry with before/after on the same sessions. Risk: low; an order on a still-draft card keeps going to NEEDS_SELLER through the existing rules.
-- Later the same day: recorded as D-038 and merged in PR #96 (merge 159c841, 2 November 2026). The "after" numbers on these sessions are not measured yet. <!-- run pending -->
+- Later the same day: recorded as D-038 and merged in PR #96 (merge 159c841, 2 November 2026). Measured on the judge1 video in judge-paid-1102-1644 (section "Later run" below): cm-06 now goes to TUI-03, while cm-05 and cm-08 still go to a wrong card because the comment points at the previous card while the new one is still a draft. The demo1 sessions were not written up again.
 
 **B. An explicit product name that is not the current or previous card produces nothing (cm-14 both sessions, cm-11 judge).**
 - Evidence: order_draft `{"reference_kind": "explicit_sku", "sku": "TUI-03", "referenced_card_id": null}` for cm-14; no order and no message_out follow. `resolve()` binds explicit_sku only when the SKU is the current or previous card. Otherwise it keeps explicit_sku with no card. The label stream asks only for `unresolved`. `orders/flow.py on_labeled` returns [] when there is no card id.
 - Fix: for explicit_sku in the catalog, bind to the newest card of that SKU shown at or before the comment's ts_ms. If none has been shown yet, mark the draft unresolved so ask_which_item goes out. File `worker/brain/labels.py resolve()`, plus a test. Risk: low. Does not touch `orders/rules.py`. Not fixed as of this note.
+- Later the same day, in judge-paid-1102-1644: cm-14 got an order on TUI-03 (NEEDS_SELLER); cm-11 still got none, with no BOOT-05 card in that session.
 
 **C. A spoken price goes to a card whose colour the line contradicts (BOOT-02 got 920000 from the brown boot's line).**
 - Evidence: card-74c6572cbe35 v2 `price 920000 caused_by ["…sp-d1"]`, where sp-d1 is "short brown leather boot, nine hundred twenty thousand" (gloss). The card is "short black leather boot" (gloss). `kind_price_reason` / `window.choose` check the kind (boot) only, not the colour.
 - Fix: when the line names a catalog colour and none of the named colours is a variant colour of the card's SKU, the price waits (new wait reason `color_mismatch`). File `worker/brain/card.py`, plus a test. Risk: medium; a seller who names a wrong colour gets no auto price and the price stays manual.
+- Later the same day: merged in PR #100 (merge 46a0f0e). In judge-paid-1102-1644 the brown boot's 920000 line did not go to BOOT-02, which was never priced.
 
 **D. Receipt without an image.**
 - Evidence: the TUI-03 cut-out failed ("sam found no handbag"). The replay has no frames, so it has no cut-out. Run 1: 6/6 receipts have no image (see `c5-paid-1102-1028-NOTE.md` in this folder). The o-11 receipt points at card-d v2, image_url null.
 - Proposal (from the Run 1 analysis, see its "Causes and proposals"): R3, queue the cut-out at card open (`worker/brain/card.py`), so the image version exists before the price; R1 relock is D-032 bound and only a fallback; R2 SAM noun from the catalog kind for "other" items. TUI-03 "sam found no handbag" is a SAM miss on a known noun, which R3 does not fix.
-- Later the same day: R3 was merged in PR #97 (merge e5328cc, 2 November 2026). Its effect on receipts is not measured yet. <!-- run pending -->
+- Later the same day: R3 was merged in PR #97 (merge e5328cc, 2 November 2026). The next full-size run, on main 4ed3041, had 0 of 151 comment attachments ready (`c5-paid-1102-1426-NOTE.md` in this folder), and PR #102 (merge 767f7fe) reverted #97. PR #103 (merge 31e7d8a) starts the cut-out when the draft opens without posting a card version for it, so the live version can carry the image, and adds R2. Its effect on receipts is not measured yet. <!-- run pending -->
 
 **E. Brown boot seen 17 s late (58.0 vs about 41).**
 - Evidence: 33 of 64 frames skipped while a product_seen call was in flight (p50 2.0 s per call). Why the frames that were read did not switch the card to BOOT-05 earlier is **not established** from the logs: product_seen results for those frames are not logged.
