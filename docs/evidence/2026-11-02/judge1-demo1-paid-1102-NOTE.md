@@ -212,9 +212,9 @@ Added on 3 November from the run's events export, kept outside this repository (
 - Cards (7 versions; `image_url` is empty on all 7, although the 4 `card_cutout` calls returned):
   - GIAY-01 sneaker: draft 13.7, retired 24.7, **never priced**.
   - TUI-03 bag: draft 24.7, live 690k at 29.0.
-  - BOOT-02 black boot: draft 44.4, retired 49.2 (4.8 s after its first version), **never priced**.
+  - BOOT-02 black boot: draft 44.4, retired 49.2 (4.7 s after its first version), **never priced**.
   - BOOT-05 brown boot: draft 47.1, **never priced**.
-- Spoken prices: as in judge-paid-1102-2131, only the bag's reached a card. The sneaker's speech ended at 4.5, before the first card (13.7), and no `card_from_speech` call was made for it; the call for the brown boot at 45.0 returned while the BOOT-02 draft was the current card, and no card version carries that price.
+- Spoken prices: as in judge-paid-1102-2131, only the bag's reached a card. The sneaker's speech ended at 4.5, before the first card (13.7), and no `card_from_speech` call was made for it. The call for the brown boot started at 45.0 and returned at 48.7, after the BOOT-05 draft had opened at 47.1 (in judge-paid-1102-2131 it returned while the BOOT-02 draft was still the current card); the decision on that line then retired the unpriced BOOT-02 draft at 49.2, and no card version carries the 920000 price.
 - Labels (15 for 14 comments): order 7, price_question 2, scam 2, stock_question 1, spam 1, complaint 1, other 1. cm-04 was labeled twice (scam, spam) and hidden; cm-12 was labeled scam (gold: spam) and warned.
 - Replies (message_out 8): waiting for the seller for cm-05, cm-06, cm-07, cm-11, cm-14; order confirmation for cm-08; ask_which_item for cm-09 (BOOT-05 / TUI-03); a price answer for cm-13. **No reply to cm-01** ("how much is this pair?", at 6.0) **or cm-02** ("is size 39 in stock?", 8.0): both came before the first card at 13.7.
 - Orders (same comments and expectations as above):
@@ -231,7 +231,7 @@ Added on 3 November from the run's events export, kept outside this repository (
 
 - Of the 7 order comments: as expected 5 (cm-05, cm-08, cm-09, cm-11, cm-14), right card in another state 2 (cm-06, cm-07), wrong card 0, no order 0. Right card 7 of 7. Five of the six orders wait in NEEDS_SELLER.
 - Against judge-paid-1102-2131 (right card 6 of 7 then, 7 of 7 now; one run each, so the cause of the difference is not established):
-  - The only order comment with a different outcome is cm-14: no order in 2131, TUI-03 x3 here (cm-09 was asked to choose between BOOT-02 and TUI-03 in 2131, between BOOT-05 and TUI-03 here). D-041 does not count a never-priced item put away within 5 s (`QUICK_SWITCH_MS`) of its first version as "the one before". BOOT-02 was put away 4.8 s after its first version here and 8.4 s after it in 2131. That fits the cm-14 difference but was not tested on these two runs, and why the BOOT-02 draft was shorter here is not established.
+  - The only order comment with a different outcome is cm-14: no order in 2131, TUI-03 x3 here (cm-09 was asked to choose between BOOT-02 and TUI-03 in 2131, between BOOT-05 and TUI-03 here). D-041 does not count a never-priced item put away within 5 s (`QUICK_SWITCH_MS`) of its first version as "the one before". BOOT-02 was put away 4.7 s after its first version here and 8.4 s after it in 2131. That fits the cm-14 difference but was not tested on these two runs; the visible step is that the BOOT-05 draft opened at 47.1 here and at 52.1 in 2131, and why it opened earlier here is not established.
   - The first card came later (13.7 against 9.2), and cm-01 and cm-02, answered in 2131, got no reply.
   - The same in both: GIAY-01, BOOT-02 and BOOT-05 never priced; no card image; cm-06, cm-07 and cm-11 waiting for the seller; cm-08 on the right card; no receipt.
   - C1 11/15 against 12/15; 46 model calls against 44; 0.0676 against 0.0663 USD.
