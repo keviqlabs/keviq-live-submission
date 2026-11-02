@@ -8,7 +8,7 @@ SESSION ?= demo1
 SPEED ?= 1
 COMPOSE = docker compose -f deploy/compose.yml
 
-.PHONY: infra-up infra-down app worker replay live-ingest lint fmt test measure-quick check smoke integration secrets hygiene hooks
+.PHONY: infra-up infra-down app worker replay live-ingest lint fmt test ui-test measure-quick check smoke integration secrets hygiene hooks
 
 infra-up:
 	$(COMPOSE) up -d --wait postgres
@@ -40,10 +40,13 @@ fmt:
 test:
 	uv run python -m tests.db_lock -- pytest -q
 
+ui-test:
+	node --test tests/console_*_ui.mjs
+
 measure-quick:
 	uv run python -m measure --events-file data/sessions/demo1/events.jsonl --gold data/sessions/demo1/gold.json --no-write
 
-check: lint hygiene test measure-quick
+check: lint hygiene ui-test test measure-quick
 
 smoke:
 	bash tests/smoke.sh
