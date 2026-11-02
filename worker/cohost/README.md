@@ -1,5 +1,11 @@
 # Replay cohost module
 
+## What it calls, and how it is turned on
+
+- **Voice:** the cohost speaks through the voice built into macOS: the system `say` command (`/usr/bin/say`, the installed Vietnamese voice Linh). Without `--audio` it speaks nothing and prints its lines as JSON instead.
+- **No model:** it makes no Model API call and calls no model. The package imports only the Python standard library and its own files; it has no HTTP client, no `meta/` client and no network code, so it emits no `model_call` event. The lines it says are fixed templates filled from approved card data.
+- **Off by default:** nothing in the app or the worker imports it, and `deploy/.env.example` sets `COHOST_ENABLED=0`. To turn it on, run the standalone command with `COHOST_ENABLED=1` (for example `COHOST_ENABLED=1 uv run python -m worker.cohost --mode replay`, adding `--audio` to speak aloud on macOS), then send `microphone_ready` and `enable` on its input. With the variable unset or set to anything other than `1`, it stays silent.
+
 ## Task and acceptance plan
 
 Build an isolated, default-off speech module for an operator-controlled replay or demo. It must announce itself as an AI assistant before product speech, speak only fixed templates from the current approved card snapshot, serialize output, and cancel speech on host activity. Device changes, microphone loss and session reconnect latch it off for the lifetime of the controller; a new explicit session is required to enable it again. The module must have no imports, clients or callbacks that mutate commerce state.

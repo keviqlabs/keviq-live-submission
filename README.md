@@ -235,11 +235,11 @@ The Founder confirmed the review sample c001–c030 on 27 October (all 30, none 
 - The video is a recording or a drawing played from a file: the media worker reads finished files only, so there is no live camera and no stream input. RTMP ingest is not built; the `mediamtx` service in `deploy/compose.yml` is an unused profile.
 - The comments are synthetic in every mode and in every measurement in this README; Messenger is simulated in every mode.
 - The judge1 pictures and video are flat drawings made by `scripts/judge_draw.py`, not photos, and in the judge1 replay the cards, labels and orders are recorded stand-ins, as in demo1. With no key, the judge1 video makes no card and no order (mode 2 above).
-- The voice co-host ("Next steps") is not in this build.
+- The voice co-host (`worker/cohost/`) runs only as a standalone replay/demo command, is not connected to the app or the worker, and its interruption latency, voice quality and self-voice isolation have not been measured on real audio.
 
 ## Next steps
 
-- Voice co-host: not part of P0 and not in this build. A narrow version for the video and demo would speak lines templated from seller-approved card data through local text-to-speech (the Model API has none), filter its own voice so it is never taken as the seller's words, have a pause button, pass every line through `orders/rules.py` and introduce itself as the shop's AI assistant.
+- Voice co-host: a default-off version is built in `worker/cohost/`. It speaks fixed lines templated from approved card data through the voice built into macOS (the system `say` command), introduces itself as an AI assistant and makes no Model API call (it calls no model); it is turned on only with `COHOST_ENABLED=1` on its own command (`worker/cohost/README.md`). Next: connect it to seller-approved cards and real microphone and host-speech signals.
 
 ## License
 
