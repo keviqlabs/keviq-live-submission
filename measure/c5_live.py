@@ -1,4 +1,4 @@
-"""C5 live run: a running app, and per loop k the worker (--session) and media, each under measure/c5_proc.
+"""C5 live run: a running app, one session worker and per-loop media under measure/c5_proc.
 
 The run's per-session cap and warning are MODEL_SESSION_CAP_USD / MODEL_SESSION_WARN_USD of this process's env, both
 or neither, 8 / 6 when unset (session_cap). The app is started by the operator with the same and is not on :8001; the
@@ -10,16 +10,20 @@ Without --paid the children run with MODEL_API_KEY empty: 0 USD, the vision call
 --no-voice. The runner then posts the 6b vision rows (measure/c5_dry.media_items)
 as product_seen on the loop's clock, each caused by this run's frame at or just before its time, so cards open on
 the runtime path (caused_by, not CARDS_FROM_REPLAY), and the stored test1 lines as final speech when they end (the
-rule price reader reads them). The worker gets C5_OFFLINE=<k>: gold labels through the labels brain, the stored
+rule price reader reads them). The worker gets C5_OFFLINE=1 and C5_OFFLINE_LOOPS=<count>: the existing gold rows of every requested stream
+through the labels brain, the stored
 SAM cut-out of the same frame and noun (measure/c5_offline; never chosen by the gold), and no model client at all;
 a card with no such cut-out has no image (NOT_RUN). All of it is stored output of session test1, replayed, not a model result; the shop's route
 and the simulated Messenger are the real ones.
 
-Per loop: worker up (it reads from the head, as after a restart), media up; t0 = the first frame's ts_ms minus its
+The worker starts once at the empty session head and retains its real frame evidence throughout the run.
+Per loop: media up; t0 = the first frame's ts_ms minus its
 index * 1000 (media posts frame i at t0 + i * 1000); comments and customers on that clock; at t0 + loop + tail
 media is stopped if still running, the shop and customers finish, the runner waits at the barrier (Watch.barrier: the
 worker has finished every event of the session, by its own count; never on silence alone), every open card gets a
-retired version, the barrier again, then the worker gets SIGTERM and prints its waits snapshot (ruling 419). A session_cap
+retired version, the barrier again, then SIGUSR1 requests a nonterminating waits snapshot. Per-loop waits,
+wait lines and cut-outs are separate; worker progress remains cumulative. The worker gets SIGTERM once at run end
+or on failure. A session_cap
 refusal ends the run after its loop. A barrier that times out is INCOMPLETE in the loop row, with what was left.
 Child logs go to --out next to the evidence files and are not evidence: they may hold utterances and comment text.
 
@@ -28,7 +32,6 @@ read from DATABASE_URL (the .env the app reads)."""
 
 import asyncio
 import bisect
-import contextlib
 import json
 import logging
 import os
@@ -78,6 +81,32 @@ def write_log(path: Path, lines: list[str]) -> None:
     path.write_text("".join(line + "\n" for line in lines))
 
 
+def loop_waits(lines: list[str], cumulative: dict, previous: dict) -> dict:
+    """Derive loop-local counter suffixes for the existing scorer, retaining the authentic reports.
+
+    Event IDs/reasons and the raw process log are unchanged. Counter deltas omit zero entries; negative
+    deltas remain visible if a producer unexpectedly resets a counter, rather than concealing disagreement.
+    """
+
+    def delta(counts):
+        return {reason: change for reason in sorted(counts.keys() | previous.keys())
+                if (change := counts.get(reason, 0) - previous.get(reason, 0)) != 0}  # fmt: skip
+
+    derived = []
+    for text in lines:
+        prefix, marker, suffix = text.rpartition(" waits ")
+        if not marker:
+            derived.append(text)
+            continue
+        counts = {reason: int(count) for reason, count in (part.split("=") for part in suffix.split())}
+        derived.append(
+            prefix + marker + " ".join(f"{reason}={count}" for reason, count in delta(counts).items())
+        )
+    return {"waits": delta(cumulative), "wait_lines": derived, "wait_lines_raw": list(lines),
+            "waits_cumulative": dict(cumulative), "waits_previous": dict(previous),
+            "wait_lines_scope": "derived per-loop counter suffixes; original cumulative lines in wait_lines_raw"}  # fmt: skip
+
+
 class Child:
     """One `python -m measure.c5_proc <module>` process; stdout and stderr kept, its C5PROC lines parsed."""
 
@@ -85,6 +114,7 @@ class Child:
         self.module, self.args, self.env, self.log_path = module, args, env, log_path
         self.lines: list[str] = []
         self.said: dict[str, dict] = {}
+        self.snapshots: list[dict] = []
         self.wait_lines: list[str] = []
         self.cutouts: list[dict] = []
         self.failures, self.ready, self.summary = 0, asyncio.Event(), None
@@ -110,6 +140,8 @@ class Child:
                     self.said.setdefault(said["kind"], said)
                 if said["kind"] == "cutout":
                     self.cutouts.append(said)
+                elif said["kind"] == "waits":
+                    self.snapshots.append(said)
             elif "price wait:" in line:
                 self.wait_lines.append(line[line.index("price wait:") :])
             elif " handler " in line and " failed on " in line:
@@ -149,6 +181,19 @@ class Child:
         if self.proc.returncode is None:
             self.proc.send_signal(signal.SIGTERM)
         return (await self.stop(10.0))[0]
+
+    async def snapshot(self, timeout_s: float = 10.0) -> dict:
+        """Get a fresh loop-end snapshot without discarding the session's completion evidence."""
+        n = len(self.snapshots)
+        if self.proc.returncode is not None:
+            raise SystemExit(f"worker ended before snapshot (rc {self.proc.returncode})")
+        self.proc.send_signal(signal.SIGUSR1)
+        async with asyncio.timeout(timeout_s):
+            while len(self.snapshots) == n:
+                if self.proc.returncode is not None:
+                    raise SystemExit(f"worker ended during snapshot (rc {self.proc.returncode})")
+                await asyncio.sleep(0.01)
+        return self.snapshots[n]
 
 
 class Watch:
@@ -358,6 +403,8 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
     env.pop("CARDS_FROM_REPLAY", None)
     if not paid:
         env["MODEL_API_KEY"] = ""
+    env.pop("C5_OFFLINE", None)
+    env.pop("C5_OFFLINE_LOOPS", None)
     bind = c5_bind.credentials()  # the children inherit the C5_BIND_* variables through env
     if bind is not None and bind["session"] != run:
         raise SystemExit(f"C5_BIND_SESSION {bind['session']!r} is not the run {run!r}")
@@ -389,25 +436,42 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
         customers = Customers(http, run, feed)
         watch = Watch(http, run, feed, shop)
         watching = asyncio.create_task(watch.run())
-        seen = speaking = None
+        seen = speaking = posting = None
+        worker = None
+        worker_rc = None
+        previous_waits = {}
         try:
+            # One session/epoch owns one completion ledger, including every earlier loop's frames.
+            worker_env = env if paid else {**env, "C5_OFFLINE": "1", "C5_OFFLINE_LOOPS": str(loops)}
+            worker_want = {
+                **want,
+                "offline_loop": None if paid else 1,
+                "offline_loops": None if paid else loops,
+            }
+            worker = Child(
+                "worker", ["--base-url", base_url, "--session", run], worker_env, out / f"{run}-worker.log"
+            )
+            children.append(worker)
+            await worker.start()
+            worker_proofs = {"worker": await worker.said_kind("proof", 60)}
+            if not paid:
+                worker_proofs["offline"] = await worker.said_kind("offline", 60)
+            if bind:
+                worker_proofs["worker_attachment"] = await worker.said_kind("attachment", 60)
+            if bad := check_proof(worker_proofs["worker"], worker_want):
+                raise SystemExit(f"worker: {bad}")
+            await asyncio.wait_for(worker.ready.wait(), 30)
             for k in range(1, loops + 1):
                 rows, msgs = c5.streams(k)
                 rows_by_loop[k], msgs_by_loop[k] = rows, msgs
                 loop_env = env if paid else {**env, "C5_OFFLINE": str(k)}
                 loop_want = {**want, "offline_loop": None if paid else k}
-                worker = Child("worker", ["--base-url", base_url, "--session", run], loop_env,
-                               out / f"{run}-loop{k}-worker.log")  # fmt: skip
-                children.append(worker)
-                await worker.start()
-                proofs = {"worker": await worker.said_kind("proof", 60)}
-                if not paid:
-                    proofs["offline"] = await worker.said_kind("offline", 60)
-                if bind:
-                    proofs["worker_attachment"] = await worker.said_kind("attachment", 60)
-                if bad := check_proof(proofs["worker"], loop_want):
-                    raise SystemExit(f"worker, loop {k}: {bad}")
-                await asyncio.wait_for(worker.ready.wait(), 30)
+                proofs = dict(worker_proofs)
+                wait_start, cutout_start, failures_start = (
+                    len(worker.wait_lines),
+                    len(worker.cutouts),
+                    worker.failures,
+                )
                 media = Child("worker.media", ["--session", "test1", "--target", run, "--base-url", base_url,
                                                *(["--seconds", str(seconds)] if seconds else []),
                                                *([] if paid else ["--no-voice"])], loop_env,
@@ -457,17 +521,20 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                     ).raise_for_status()
                 ends.append(await watch.barrier(worker, [shop.tasks, customers.tasks]))
                 calm = all(e["status"] == "SETTLED" for e in ends)
-                worker_rc = await worker.term()
-                snapshot = (worker.said.get("waits") or {}).get("waits", {}).get(run, {})
+                cumulative_waits = (await worker.snapshot()).get("waits", {}).get(run, {})
+                wait_report = loop_waits(worker.wait_lines[wait_start:], cumulative_waits, previous_waits)
+                snapshot = wait_report["waits"]
+                previous_waits = dict(cumulative_waits)
                 loop_rows.append({"k": k, "t0_ms": t0, "end_ms": now_ms(), "settled": calm, "barrier": ends,
                                   "worker_progress": worker.progress,
-                                  "wait_lines": worker.wait_lines, "waits": snapshot,
-                                  "waits_line": "waits" in worker.said, "retired": len(retired),
-                                  "runner_failures": worker.failures, "comments_late_max_ms": late_ms,
+                                  "worker_progress_scope": "cumulative session",
+                                  **wait_report,
+                                  "waits_line": True, "retired": len(retired),
+                                  "runner_failures": worker.failures - failures_start, "comments_late_max_ms": late_ms,
                                   "media": {"rc": media_rc, "stopped": media_stopped, "summary": media.summary},
                                   "worker_rc": worker_rc, "proofs": proofs, "capped": watch.capped,
                                   "replay_seen": seen_log, "replay_speech": speech_log,
-                                  "cutouts": worker.cutouts})  # fmt: skip
+                                  "cutouts": worker.cutouts[cutout_start:]})  # fmt: skip
                 print(
                     f"loop {k}: done, {'/'.join(e['status'] for e in ends)} behind {ends[-1]['behind']}, retired "
                     f"{len(retired)}, waits {snapshot}, failures {worker.failures}"
@@ -476,16 +543,25 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                     print(f"loop {k}: session_cap refusal {watch.capped}, run stops")
                     break
         finally:
-            for task in (seen, speaking):
-                if task and not task.done():
-                    task.cancel()
+            pending = [task for task in (posting, seen, speaking) if task and not task.done()]
+            for task in pending:
+                task.cancel()
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
+            actors = [task for task in [*shop.tasks, *customers.tasks] if not task.done()]
+            for task in actors:
+                task.cancel()
+            if actors:
+                await asyncio.gather(*actors, return_exceptions=True)
             await watch.halt(watching)  # not cancel(): the poll in flight ends before read_all queries
             for child in children:  # a child killed here keeps its log too
-                if child.proc and child.proc.returncode is None:
-                    child.proc.kill()
-                    with contextlib.suppress(TimeoutError):
-                        await asyncio.wait_for(child.reader, 5)
-                    write_log(child.log_path, child.lines)
+                if child.proc:
+                    if child is worker:
+                        worker_rc = await child.term()
+                    elif child.proc.returncode is None:
+                        await child.stop(0)
+            for row in loop_rows:
+                row["worker_rc"] = worker_rc if worker_rc is not None else worker.proc.returncode
         events = await read_all(http, run)
         cost_api = (await http.get("/api/cost", params={"session": run})).json()
     run_file = {
@@ -508,7 +584,7 @@ async def main(base_url: str, run: str, loops: int, catalog: Path, out: Path, ch
                    "observations": None if paid or not observations else
                    {"path": str(observations), "sha256": frozen_sha(observations)},
                    "cap_usd": cap, "warn_usd": warn, "cap_from": cap_from, "paid": paid, "seconds": seconds,
-                   "restart": "worker and media processes per loop", "shop_delay_s": SHOP_DELAY_S,
+                   "restart": "one worker per session; media process per loop", "shop_delay_s": SHOP_DELAY_S,
                    "tail_ms": c5.TAIL_MS, "loop_ms": loop_ms},
         "cost_api": cost_api, "customers": customers.log, "shop": shop.log,
     }  # fmt: skip
