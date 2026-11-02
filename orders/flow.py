@@ -388,7 +388,7 @@ async def on_labeled(trigger: dict, view: View, messenger, now: int) -> list[dic
             )
             if asked is not None:
                 return asked
-        stock = 0
+        stock = card.get("stock") or 0  # no single variant: the card's stock bounds the line, not a made-up 0
         how = "not on" if not hits else "ambiguous on"
         blocking.append(f"variant {variant_text(variant)} {how} {card_id} v{card['version']}")
     return await draft_order(
@@ -475,6 +475,8 @@ async def draft_order(
         msg = await messenger.send(thread, "confirm_order", confirm_payload(nxt, card, reply_to))
     else:
         why = blocking or [decision.reason]
+        if blocking and not decision.allowed:
+            why = [*blocking, decision.reason]  # the seller sees the rules' refusal (e.g. stock) too
         if discount:
             why[-1] += f' ("{discount["phrase"]}")'
         if not window.allowed:
