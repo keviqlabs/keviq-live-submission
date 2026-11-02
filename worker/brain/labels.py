@@ -48,6 +48,9 @@ EFFORT = "minimal"
 LABELS = ["order", "price_question", "stock_question", "complaint", "spam", "scam", "other"]
 KINDS = ["explicit_sku", "current_card", "previous_card", "unresolved"]
 SIGNALS = ["phone_number", "link"]
+# A draft put away this soon after it opened, without ever having a price, was a passing misread (one item replaced
+# by another), not an item the seller presented (D-041).
+QUICK_SWITCH_MS = 5_000
 
 SCHEMA = {
     "type": "object",
@@ -130,23 +133,32 @@ def live_cards_at(versions: list[dict], ts_ms: int) -> tuple[dict | None, dict |
     frame-time appearance by ts_ms last. Sessions without an attachment binding order from this snapshot.
     current is the first card whose latest known version is not retired; an unpriced draft on screen counts, so
     "the one before" is the item shown before it, and an order on the draft is held for the seller by the order
-    rules. previous is the first card that is not current and whose latest known version is not retired, or is
-    retired but one of its versions known at ts_ms was live or edited (the statuses a priced card has): a retired
-    card is never the current item, and the item the seller put away after it had a price is still "the one
-    before", but a draft put away before it ever had a price (one item replaced by another) is skipped."""
+    rules. previous is the first card that is not current and is not a misread: a card whose latest known version
+    is retired, none of whose versions known at ts_ms was live or edited (the statuses a priced card has), and that
+    was put away within QUICK_SWITCH_MS of its first version. A retired card is never the current item; the item
+    the seller put away after it had a price, or after it was shown a while with its price missed, is still "the
+    one before", but a draft replaced by another item within seconds is skipped."""
     known = [c for c in versions if c["ts_ms"] <= ts_ms]
     latest: dict[str, dict] = {}
+    opened: dict[str, int] = {}
     priced: set[str] = set()
     for card in sorted(known, key=lambda c: (c["ts_ms"], c["version"])):
         latest[card["card_id"]] = card
+        opened.setdefault(card["card_id"], card["ts_ms"])
         if card["status"] in ("live", "edited"):
             priced.add(card["card_id"])
+
+    def misread(c: dict) -> bool:
+        return (
+            c["status"] == "retired"
+            and c["card_id"] not in priced
+            and c["ts_ms"] - opened[c["card_id"]] < QUICK_SWITCH_MS
+        )
+
     rank = {cid: i for i, cid in enumerate(appearance_ids(known, ts_ms))}
     shown = sorted(latest.values(), key=lambda c: rank.get(c["card_id"], len(rank)))
     current = next((c for c in shown if c["status"] != "retired"), None)
-    previous = next(
-        (c for c in shown if c is not current and (c["status"] != "retired" or c["card_id"] in priced)), None
-    )
+    previous = next((c for c in shown if c is not current and not misread(c)), None)
     return current, previous
 
 

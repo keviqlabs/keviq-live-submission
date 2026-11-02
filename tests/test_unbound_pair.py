@@ -1,9 +1,9 @@
 """The (current, previous) pair a session without an attachment binding orders from (labels.live_cards_at).
 
 current is the most recently shown item by frame time whose version known at the comment is not retired, an
-unpriced draft included; previous is the next most recently shown item whose version known at the comment is not
-retired, or is retired but was live or edited (priced) in a version known at the comment. An item put away after
-it had a price is still "the one before"; a draft put away before it ever had a price is skipped.
+unpriced draft included; previous is the next most recently shown item that is not a misread. An item put away after
+it had a price, or after it was on screen a while with its price missed, is still "the one before"; a draft put away
+within QUICK_SWITCH_MS of opening without ever having a price is skipped.
 """
 
 from worker.brain.labels import cards_at, resolve
@@ -127,7 +127,11 @@ def test_an_item_shown_a_while_with_a_missed_price_is_still_the_one_before():
     # "three red bags" at 62 s names the bag, which is still in the pair
     item = {"reference_kind": "explicit_sku", "sku": "TUI-03", "size": None, "color": None, "qty": 3}
     order = resolve(item, MISSED_PRICE, 62_000, {"GIAY-01", "TUI-03", "BOOT-02"}, live_only=True)
-    assert (order["referenced_card_id"], order["reference_kind"], order["qty"]) == ("tui-03", "explicit_sku", 3)
+    assert (order["referenced_card_id"], order["reference_kind"], order["qty"]) == (
+        "tui-03",
+        "explicit_sku",
+        3,
+    )
     # a draft put away within the quick-switch window is still skipped (the black boot above, 2.5 s)
     assert bound("previous_card", NEVER_PRICED, 47_000) == "tui-03"
 
