@@ -14,10 +14,11 @@
   or the call fails), at most SPEECH_READS lines at a time from read to decision; the others wait their turn. The
   line is decided once its read is done and HOLD_MS after it arrived, in arrival order.
   A heard price goes to the one candidate card; with several, the kind of item the line names picks one. Any
-  other line leaves the price for the seller and counts as a wait by reason in the session (`price wait` log
-  lines). A price makes the card live. A card that already has a price keeps it (D-023): a
-  different spoken price becomes a `price_proposal` for the seller, once per heard price while the card's price
-  stays the same (D-024). Each change is a new version whose provenance lists the speech event ids (C4).
+  other line, or one that names only colours the card does not have, leaves the price for the seller and counts
+  as a wait by reason in the session (`price wait` log lines). A price makes the card live. A card that already
+  has a price keeps it (D-023): a different spoken price becomes a `price_proposal` for the seller, once per
+  heard price while the card's price stays the same (D-024). Each change is a new version whose provenance
+  lists the speech event ids (C4).
 - A version another writer already took (409, D-024: the seller's price route) is applied on top of the card's
   highest version once, or dropped; the number is never reused. product_seen's versions go the same way.
 - When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background, one card at a
@@ -177,6 +178,19 @@ def kind_price_reason(text: str, meta: dict) -> str | None:
 
 def item_by_sku(sku: str | None) -> dict | None:
     return next((i for i in CATALOG if i["sku"] == sku), None)
+
+
+def color_price_reason(colors: list[str], card: dict, meta: dict) -> str | None:
+    """A line that names colours, none of them the card's, is about another item: its price waits. The card's
+    colours are its catalog item's when it has a SKU, else the colour vision saw; none known means no check."""
+    if card["sku"]:
+        item = item_by_sku(card["sku"]) or {"variants": []}
+        known = {v["color"] for v in item["variants"] if v.get("color")}
+    else:
+        known = {meta["color"]} if meta.get("color") else set()
+    if colors and known and not known.intersection(colors):
+        return "color_mismatch"
+    return None
 
 
 def variants_of(item: dict | None, color: str | None, sizes: list[str] | None = None) -> list[dict]:
@@ -453,6 +467,8 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
         keep, reason = window.choose(event["text"], cands)
         if reason is None and len(keep) == 1:
             reason = kind_price_reason(event["text"], s.meta[keep[0]])
+        if reason is None and len(keep) == 1:
+            reason = color_price_reason(spoken.colors, s.cards[keep[0]], s.meta[keep[0]])
         if spoken.price is not None and reason:
             s.waits[reason] += 1
             log.info(
