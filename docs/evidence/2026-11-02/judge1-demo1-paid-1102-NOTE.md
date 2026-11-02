@@ -67,7 +67,7 @@ Each cause below is reproduced from stored events or logs. No fix was started in
 **B. An explicit product name that is not the current or previous card produces nothing (cm-14 both sessions, cm-11 judge).**
 - Evidence: order_draft `{"reference_kind": "explicit_sku", "sku": "TUI-03", "referenced_card_id": null}` for cm-14; no order and no message_out follow. `resolve()` binds explicit_sku only when the SKU is the current or previous card. Otherwise it keeps explicit_sku with no card. The label stream asks only for `unresolved`. `orders/flow.py on_labeled` returns [] when there is no card id.
 - Fix: for explicit_sku in the catalog, bind to the newest card of that SKU shown at or before the comment's ts_ms. If none has been shown yet, mark the draft unresolved so ask_which_item goes out. File `worker/brain/labels.py resolve()`, plus a test. Risk: low. Does not touch `orders/rules.py`. Not fixed as of this note.
-- Later the same day, in judge-paid-1102-1644: cm-14 got an order on TUI-03 (NEEDS_SELLER); cm-11 still got none, with no BOOT-05 card in that session.
+- Later the same day, in judge-paid-1102-1644: the model labeled cm-14 `current_card` (referenced card card-68ec3e4d6cce, TUI-03), not `explicit_sku`, so it got an order on TUI-03 (NEEDS_SELLER) without going through this cause; cm-11 was labeled `explicit_sku` (BOOT-05, no card) again and got no order, with no BOOT-05 card in that session.
 
 **C. A spoken price goes to a card whose colour the line contradicts (BOOT-02 got 920000 from the brown boot's line).**
 - Evidence: card-74c6572cbe35 v2 `price 920000 caused_by ["…sp-d1"]`, where sp-d1 is "short brown leather boot, nine hundred twenty thousand" (gloss). The card is "short black leather boot" (gloss). `kind_price_reason` / `window.choose` check the kind (boot) only, not the colour.
@@ -77,7 +77,7 @@ Each cause below is reproduced from stored events or logs. No fix was started in
 **D. Receipt without an image.**
 - Evidence: the TUI-03 cut-out failed ("sam found no handbag"). The replay has no frames, so it has no cut-out. Run 1: 6/6 receipts have no image (see `c5-paid-1102-1028-NOTE.md` in this folder). The o-11 receipt points at card-d v2, image_url null.
 - Proposal (from the Run 1 analysis, see its "Causes and proposals"): R3, queue the cut-out at card open (`worker/brain/card.py`), so the image version exists before the price; R1 relock is D-032 bound and only a fallback; R2 SAM noun from the catalog kind for "other" items. TUI-03 "sam found no handbag" is a SAM miss on a known noun, which R3 does not fix.
-- Later the same day: R3 was merged in PR #97 (merge e5328cc, 2 November 2026). The next full-size run, on main 4ed3041, had 0 of 151 comment attachments ready (`c5-paid-1102-1426-NOTE.md` in this folder), and PR #102 (merge 767f7fe) reverted #97. PR #103 (merge 31e7d8a) starts the cut-out when the draft opens without posting a card version for it, so the live version can carry the image, and adds R2. Its effect on receipts is not measured yet. <!-- run pending -->
+- Later the same day: R3 was merged in PR #97 (merge e5328cc, 2 November 2026). The next full-size run, on main 4ed3041, had 0 of 151 comment attachments ready (`c5-paid-1102-1426-NOTE.md` in this folder), and PR #102 (merge 767f7fe) reverted #97. PR #103 (merge 31e7d8a) starts the cut-out when the draft opens without posting a card version for it, so the live version can carry the image, and adds R2. In the full-size run on main 31e7d8a (`c5-paid-1102-1709-NOTE.md` in this folder) all 9 receipts carry the card image (9/9, against 0/6 in c5-paid-1102-1532 on 767f7fe), while comment attachments ready fell to 97 of 151 (137 in c5-paid-1102-1532); the cause of that drop is not established.
 
 **E. Brown boot seen 17 s late (58.0 vs about 41).**
 - Evidence: 33 of 64 frames skipped while a product_seen call was in flight (p50 2.0 s per call). Why the frames that were read did not switch the card to BOOT-05 earlier is **not established** from the logs: product_seen results for those frames are not logged.
@@ -135,7 +135,7 @@ read-only `SELECT` queries on `keviq_paid_test`. Times are in ICT; t = seconds f
 | cm-14 | three red bags | TUI-03 red x3, NEEDS_SELLER (2,070,000 over the 2,000,000 seller threshold) | same ✓ |
 
 - Of the 7 order comments: as expected 3 (cm-07, cm-09, cm-14); right card in another state 1 (cm-06); wrong card 2 (cm-05, cm-08: the comment points at the previous card while the new one is still a draft); no order 1 (cm-11).
-- Against judge-paid-1102-1109: cm-06 and cm-14 now land on TUI-03; cm-05 and cm-08 are still on a wrong card; cm-11 still has no order.
+- Against judge-paid-1102-1109: cm-06 and cm-14 now land on TUI-03 (cm-14 was labeled `current_card` here, `explicit_sku` in judge-paid-1102-1109); cm-05 and cm-08 are still on a wrong card; cm-11 still has no order.
 - Receipts 0, CONFIRMED 0: the judge feed has no customer replies.
 - Model calls 52, 0.0747279 USD (`SELECT` on `model_call`): product_seen 34 (p50 1598 ms, p95 3390), label_comments 13 (p50 1849, p95 2823), card_from_speech 3 (p50 3398, p95 3479), card_cutout 2 (789 and 1468 ms). Percentiles are nearest rank (`percentile_disc`).
 - **Result: still FAIL** (2 wrong cards, 1 missing order, no receipt).
