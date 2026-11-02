@@ -172,23 +172,29 @@ async def test_speech_without_price_or_card_changes_nothing(mem_app):
     ]
 
 
-async def test_live_card_gets_the_sam_cut_out_as_its_next_version(mem_app, monkeypatch):
+async def test_a_cut_out_ready_before_the_price_goes_live_with_it(mem_app, monkeypatch):
+    """SAM cuts the draft's frame out when the card opens; the spoken price makes the card live with that image in
+    the same version, so no order can quote a live version without it. One SAM call for the card."""
     _, store, client = mem_app
     runner = runner_with(client, [responses_reply('{"price_vnd": 450000, "sizes": [], "colors": []}')])
-    ts = now_ms()
+    ts, calls = now_ms(), []
     frames.put(SID, ts, b"\xff\xd8jpeg")
 
     async def fake_cut_out(client, jpeg, category):
-        assert jpeg == b"\xff\xd8jpeg" and category == "sneaker"
+        assert jpeg == b"\xff\xd8jpeg"
+        calls.append(category)
         return "data:image/png;base64,iVBORw0KGgo=", (ts + 900, ts + 1500)
 
     monkeypatch.setattr(sam, "cut_out", fake_cut_out)
     await run(client, runner, seen("ps-a", "sneaker", "trắng", ts, caused_by=["fr-a"]))
+    await settle()
+    assert calls == ["sneaker"] and [c["version"] for c in await cards_in(store)] == [1]
     await hear(client, store, runner, said("sp-1", "đôi này 450 nghìn", ts + 800))
-    last = (await cards_in(store))[-1]
-    assert (last["version"], last["status"]) == (3, "live")
-    assert last["image_url"].startswith("data:image/png") and last["caused_by"] == ["sp-1", "fr-a"]
-    assert last["timing"]["infer_end_ms"] - last["timing"]["infer_start_ms"] == 600
+    draft, live = await cards_in(store)
+    assert draft["image_url"] is None
+    assert (live["version"], live["status"], live["price"]) == (2, "live", 450000)
+    assert live["image_url"] == "data:image/png;base64,iVBORw0KGgo=" and live["caused_by"] == ["sp-1", "fr-a"]
+    assert calls == ["sneaker"]
 
 
 async def test_card_versions_caused_by_a_product_seen_are_final_when_its_handler_returns(
