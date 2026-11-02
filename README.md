@@ -28,7 +28,7 @@ AI coding assistants were used as tools. The entrant is the Founder, working alo
 
 ## Run it yourself
 
-Hosted demo: optional, link added at submission.
+Hosted demo: optional; include a link and access instructions only if deployed.
 
 Everything below runs on one machine from a fresh clone, in three modes. Modes 1 and 2 need no Meta account and no API key, and call no model. Mode 3 calls the Meta models and needs a Model API key. `docs/RUN.md` has every step with the output to expect, how to run a second copy on other ports, and the paid test1 run.
 
