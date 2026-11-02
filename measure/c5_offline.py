@@ -19,6 +19,8 @@ import json
 import re
 from pathlib import Path
 
+import httpx
+
 from measure import c5
 
 SAM = c5.ROOT / "data/local/test1/probe/sam.json"
@@ -41,6 +43,73 @@ class NoModel:
 
     def __getattr__(self, name: str):
         raise RuntimeError(f"C5 offline run: no model client ({name})")
+
+
+async def register_stored_product(runner, event: dict) -> bool:
+    """Idempotently register an actually observed replay row through the normal authenticated producer.
+
+    A sequence or a plausible payload alone is not stored evidence. Read the same session at that sequence,
+    compare its canonical body, and preserve the accepted sequence. The server retains the original source
+    receipt and still decides epoch/coverage validity; this does not grant a newer epoch to an old row.
+    """
+    from app.attachments import plain
+    from worker.runner import parse_sse
+
+    sid, seq = event["session_id"], event.get("seq")
+    if event.get("source") != "replay" or type(seq) is not int or seq <= 0:
+        return False
+    refs = event.get("caused_by", [])
+    known = runner.evidence.frames.get(sid, {})
+    if len(refs) != 1 or refs[0] not in known or event.get("frame_ts_ms") != known[refs[0]]["ts_ms"]:
+        return False
+    body = plain(event)
+    found = False
+    async with runner.http.stream(
+        "GET", f"/api/sessions/{sid}/events", params={"cursor": seq - 1, "follow": "false"}
+    ) as response:
+        response.raise_for_status()
+        async for stored_seq, stored in parse_sse(response.aiter_lines()):
+            if stored_seq >= seq:
+                found = stored_seq == seq and plain(stored) == body
+                break
+    if not found:
+        return False
+    await runner.post([body])
+    return runner.evidence.post_sequences.get(event["event_id"]) == seq
+
+
+def install_frame_replay(runner_class, say) -> None:
+    """Only the unpaid stand-in process uses external stored recognitions as producer completions."""
+    process = runner_class.process
+
+    async def replay_process(self, event, received_ms, limit_s=None):
+        bound = event["session_id"] in self.attachment_auth
+        stored_product = bound and event["type"] == "product_seen"
+        if stored_product:
+            try:
+                registered = await register_stored_product(self, event)
+            except (httpx.HTTPError, ValueError, KeyError):
+                registered = False
+            if not registered:
+                say("replay_evidence", event_id=event["event_id"], result="refused_stored_product")
+                return "failed"
+        outcome = await process(self, event, received_ms, limit_s)
+        completed = getattr(self, "_c5_stored_terminals", {})
+        if stored_product and outcome == "done":
+            frame_id = self.evidence.seen_frames.get(event["event_id"])
+            terminal = self.evidence.terminals.get(frame_id)
+            if terminal and terminal.get("product_seen_event_id") == event["event_id"]:
+                completed[frame_id] = dict(terminal)
+                self._c5_stored_terminals = completed
+                say("replay_evidence", event_id=event["event_id"], result="stored_product_completed")
+        elif bound and event["type"] == "frame" and event["event_id"] in completed:
+            # A late NoModel failure is still a failed read. It cannot erase a separately completed,
+            # admitted stored-product/card chain. No missing/failed product handler creates this entry.
+            self.evidence.terminals[event["event_id"]] = dict(completed[event["event_id"]])
+            self.evidence.wake()
+        return outcome
+
+    runner_class.process = replay_process
 
 
 class Cutouts:
@@ -81,6 +150,7 @@ def install(k: int, say) -> dict:
     rows = c5.streams(k)[0]
     no_model = NoModel()
     runner.Runner.client_for = lambda self, event: no_model
+    install_frame_replay(runner.Runner, say)
     gold_client = GoldClient(rows)
     labels.LABELER.client_for = lambda ctx: gold_client
     cuts = Cutouts(stored_cutouts(), sam.noun)
@@ -106,5 +176,6 @@ def install(k: int, say) -> dict:
     sam.cut_out = stored_cut_out
     return {"loop": k, "gold_rows": len(rows), "cutout_frames": sorted(cuts.stored),
             "model_client": "none: every call raises RuntimeError, as with no key",
+            "frame_evidence": "admitted stored products reposted idempotently; failed reads remain failed",
             "labels": "gold labels through the labels brain (GoldClient), stored gold of test1, replayed",
             "cutout": "stored output of session test1 (probe/sam) of the same frame and noun, replayed"}  # fmt: skip
