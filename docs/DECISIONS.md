@@ -2,6 +2,25 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-01 — C5 receipt wording and manual comparison
+
+**D-034 C5 refers to the card version quoted to and confirmed by the customer; the separate manual comparison is not a staffing estimate.**
+The project owner approved both wording replacements on 1 November 2026. Independent review by the contracts
+owner is still required before merge; this entry does not record that review as complete.
+
+- Receipt wording: replace "the card version current at confirmation" with "the card version quoted to and
+  confirmed by the customer", consistent with the quote/receipt version behavior recorded in D-032. This does
+  not assert that every measured receipt already meets C5.
+- Comparison wording: remove the unsupported staffing claim. The [single-run manual comparison](evidence/2026-11-01/manual-founder-1-NOTE.md)
+  may be cited only together with n=1 and its published protocol deviations, including prior exposure to aggregate
+  results and three practice runs. It is not an estimate of staff required or a measurement of staffing savings.
+- Preserve all C5 targets: 500 comments in 30 minutes, order-label recall >=0.9, seller interventions <=10 per hour,
+  phone visibility <=5 seconds, and the 100% receipt target. Correct order labels are not completed orders;
+  intent, right item, order, confirmation and receipt outcomes remain distinct.
+- Only the C5 row and this decision record change. No metric/scoring logic, schema, gold, catalog, order code,
+  price authority, confirmation rule or permission changes. The proposed documentation clarification retains v1;
+  the independent contracts review must confirm compatibility and the evidence references before merge.
+
 ## 2026-10-31 — video source
 
 **D-033 The video's main source is a recorded replay with synthetic comments, not a real level-2 live session (C9 and the C4 check amended).**
