@@ -172,59 +172,23 @@ async def test_speech_without_price_or_card_changes_nothing(mem_app):
     ]
 
 
-async def test_a_new_card_gets_the_sam_cut_out_before_it_goes_live(mem_app, monkeypatch):
-    """The cut-out starts when the card opens, so the live version already carries the image; going live does not
-    cut it out again."""
+async def test_live_card_gets_the_sam_cut_out_as_its_next_version(mem_app, monkeypatch):
     _, store, client = mem_app
     runner = runner_with(client, [responses_reply('{"price_vnd": 450000, "sizes": [], "colors": []}')])
-    ts, calls = now_ms(), []
+    ts = now_ms()
     frames.put(SID, ts, b"\xff\xd8jpeg")
 
     async def fake_cut_out(client, jpeg, category):
         assert jpeg == b"\xff\xd8jpeg" and category == "sneaker"
-        calls.append(category)
-        return "data:image/png;base64,iVBORw0KGgo=", (ts + 100, ts + 700)
+        return "data:image/png;base64,iVBORw0KGgo=", (ts + 900, ts + 1500)
 
     monkeypatch.setattr(sam, "cut_out", fake_cut_out)
     await run(client, runner, seen("ps-a", "sneaker", "trắng", ts, caused_by=["fr-a"]))
-    await settle()
-    draft = (await cards_in(store))[-1]
-    assert (draft["version"], draft["status"]) == (2, "draft") and draft["price"] is None
-    assert draft["image_url"].startswith("data:image/png") and draft["caused_by"] == ["ps-a", "fr-a"]
-    assert draft["timing"]["infer_end_ms"] - draft["timing"]["infer_start_ms"] == 600
     await hear(client, store, runner, said("sp-1", "đôi này 450 nghìn", ts + 800))
     last = (await cards_in(store))[-1]
-    assert (last["version"], last["status"], last["price"]) == (3, "live", 450000)
-    assert last["image_url"] == draft["image_url"] and last["caused_by"] == ["sp-1"]
-    assert calls == ["sneaker"]
-
-
-async def test_a_card_retired_while_its_cut_out_waits_gets_no_sam_call(mem_app, monkeypatch):
-    """SAM takes one card at a time; a card the seller moved past before its turn is not cut out."""
-    _, store, client = mem_app
-    runner = runner_with(client, [])
-    ts, gate, calls = now_ms(), asyncio.Event(), []
-    for k in range(3):
-        frames.put(SID, ts + k * 100, b"\xff\xd8jpeg")
-
-    async def slow_cut_out(client, jpeg, category):
-        calls.append(category)
-        await gate.wait()
-        return "data:image/png;base64,iVBORw0KGgo=", (ts, ts)
-
-    monkeypatch.setattr(sam, "cut_out", slow_cut_out)
-    await run(client, runner, seen("ps-a", "sneaker", "trắng", ts, caused_by=["fr-a"]))
-    for _ in range(100):  # the sneaker's cut-out is with SAM before the next product shows
-        if calls:
-            break
-        await asyncio.sleep(0.01)
-    await run(client, runner, seen("ps-b", "bag", "đỏ", ts + 100, caused_by=["fr-b"]))
-    await run(client, runner, seen("ps-c", "shirt", "đen", ts + 200, caused_by=["fr-c"]))
-    gate.set()
-    await settle()
-    assert calls == ["sneaker", "shirt"]  # the bag was retired while the sneaker's cut-out ran
-    imaged = {c["card_id"] for c in await cards_in(store) if c["image_url"]}
-    assert imaged == {card.SESSIONS[SID].current}
+    assert (last["version"], last["status"]) == (3, "live")
+    assert last["image_url"].startswith("data:image/png") and last["caused_by"] == ["sp-1", "fr-a"]
+    assert last["timing"]["infer_end_ms"] - last["timing"]["infer_start_ms"] == 600
 
 
 async def test_a_slow_cut_out_does_not_hold_up_the_next_line(mem_app, monkeypatch):

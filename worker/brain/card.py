@@ -287,7 +287,6 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
     )
     observed = {"category": category, "color": color, **identity}
     out = []  # (version, its changes), in posting order
-    opened = None  # a card this frame opens: its cut-out starts now, not when it goes live
     async with s.lock:
         prev = s.cards.get(s.current) if s.current else None
         last = s.meta.get(prev["card_id"], {}) if prev else {}
@@ -348,7 +347,7 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
                         "edited_by": None,
                     },
                 }
-                s.cards[cid], changes, opened = copy.deepcopy(card), {}, cid
+                s.cards[cid], changes = copy.deepcopy(card), {}
             if not prev or prev is not same:
                 window.open_span(s.spans.setdefault(card["card_id"], []), event["frame_ts_ms"])
             s.meta[card["card_id"]] = {
@@ -360,9 +359,7 @@ async def on_product_seen(event: dict, ctx) -> list[dict]:
             out.append((card, changes))
     infer = (start, now_ms())
     for new, changes in out:  # one at a time, outside the lock: a 409 reads the store and takes the lock
-        posted = await post_version(event, ctx, s, new, changes, infer)
-        if posted and posted["card_id"] == opened and not posted["image_url"]:
-            queue_cutout(event, ctx, s, opened)
+        await post_version(event, ctx, s, new, changes, infer)
     return []
 
 
@@ -538,11 +535,9 @@ async def cut_out_all(s: Session) -> None:
 
 
 async def attach_cutout(event: dict, ctx, s: Session, cid: str) -> None:
-    """SAM 3.1 cut-out of the card's frame -> next version with image_url (caused by the queuing event and frame)."""
+    """SAM 3.1 cut-out of the card's frame -> next version with image_url (caused by the speech and frame)."""
     from worker.vision import frames, sam
 
-    if s.cards[cid]["status"] == "retired" or s.cards[cid]["image_url"]:
-        return  # retired while queued, or an earlier cut-out of this card already landed: no SAM call
     meta = s.meta[cid]
     frame = frames.get(event["session_id"], meta["frame_ts_ms"])
     if not frame:
