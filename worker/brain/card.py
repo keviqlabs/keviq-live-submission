@@ -181,15 +181,13 @@ def item_by_sku(sku: str | None) -> dict | None:
     return next((i for i in CATALOG if i["sku"] == sku), None)
 
 
-def color_price_reason(colors: list[str], card: dict, meta: dict) -> str | None:
+def color_price_reason(colors: list[str], card: dict) -> str | None:
     """A line that names colours, none of them the card's, is about another item: its price waits. The card's
-    colours are its catalog item's when it has a SKU, else the colour vision saw. Each is read as a spoken line is
-    (vn.tokens) and only its COLORS words count, since a line can name nothing else; none left means no check."""
-    if card["sku"]:
-        item = item_by_sku(card["sku"]) or {"variants": []}
-        seen = [v.get("color") for v in item["variants"]]
-    else:
-        seen = [meta.get("color")]
+    colours are its catalog item's, each read as a spoken line is (vn.tokens), and only its COLORS words count,
+    since a line can name nothing else; no catalog item, or none left, means no check. The colour vision saw is not
+    used: vision can misread a product's colour on every frame, and a correct price would then wait."""
+    item = item_by_sku(card["sku"]) if card["sku"] else None
+    seen = [v.get("color") for v in item["variants"]] if item else []
     known = {t for c in seen if isinstance(c, str) for t in vn.tokens(c) if t in COLORS}
     if colors and known and not known.intersection(colors):
         return "color_mismatch"
@@ -469,7 +467,7 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
             reason = kind_price_reason(event["text"], s.meta[keep[0]])
         other = None  # a line naming only colours the card does not have is about another item, priced or not
         if len(keep) == 1:
-            other = color_price_reason(spoken.colors, s.cards[keep[0]], s.meta[keep[0]])
+            other = color_price_reason(spoken.colors, s.cards[keep[0]])
         if reason is None:
             reason = other
         if spoken.price is not None and reason:
