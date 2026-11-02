@@ -2,6 +2,30 @@
 
 Newest on top. Contract changes must have an entry here.
 
+## 2026-11-02 — Eight concurrent vision reads per bound session by default
+
+**D-042 A bound session reads up to eight frames at once by default (`VISION_READS_PER_SESSION`, was 4); the read
+timeout stays 10 s (`VISION_TIMEOUT_S`) and recognitions are still posted in frame order.** With four, frames of a paid
+C5 run waited much longer for a read to start than one read may take. Replayed through the worker's own runner and
+bound lane with the recorded read times (`tests/test_worker_vision_readers_replay.py`; the fixture
+`tests/fixtures/c5_vision_reads.csv` holds only the arrival, read time and failed flag of each of the 1755 frames of
+`c5-paid-1102-1709`), the longest wait is 96.6 s (p95 42.3 s) with four readers, 22.6 s with six and 7.9 s (p95
+2.0 s) with eight. The test fails on the old default and passes on the new one. The environment variable still
+overrides the default. No contract, schema, catalog or rule changes; `v` unchanged.
+
+Before (four readers, `c5-paid-1102-1709`, head `31e7d8a`): p95 frame to product event 56.4 s (p50 5.3 s), right
+item for 72 of 140 order comments (reference accuracy 0.514), latest attachment expired 54 of 151 times, 129 of 1755
+product reads cancelled at 10 s (read p50 2.4 s), ledger 4.253265 USD for 2536 calls, 34 seller interventions (61.4
+per hour), 9 receipts.
+After (eight readers, `c5-paid-1102-2141-r8`, same head, only `VISION_READS_PER_SESSION` changed): p95 frame to
+product event 11.7 s (p50 4.7 s), right item for 86 of 140 (0.614), expired 23 of 152, 176 of 1755 reads cancelled
+(read p50 2.9 s), ledger 4.365958 USD for 2552 calls, 49 seller interventions (91.7 per hour), 7 receipts.
+One run per configuration, no control run at the same time, synthetic comments. Reference accuracy (target 0.9) and
+the C5 seller-intervention rate (target 10 per hour) fail in both runs. Why cancellations, cost and interventions rose
+is not established; the replay covers the queue only, not slower reads under more load. The run's comparison file is
+kept outside the repository (`COMPARISON.json`, sha256
+`020a589fd2d94b3b4ce97a806b3b487744d991b454fff8e6f1234830f46875a4`).
+
 ## 2026-11-02 — A draft replaced within seconds, never priced, is not "the one before"
 
 **D-041 Without an attachment binding, a retired item is "the one before" unless it was a misread: none of its
