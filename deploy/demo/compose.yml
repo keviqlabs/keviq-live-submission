@@ -1,0 +1,94 @@
+# Hosted demo: PostgreSQL + app + worker on replayed synthetic sessions. Runbook: deploy/demo/README.md.
+# The app is published on 127.0.0.1 only; the host's nginx (nginx-demo.conf.template) puts TLS and basic auth
+# in front of it. Nothing here binds port 80 or 443, and PostgreSQL is not published at all.
+# Build and start it with deploy/demo/demo.sh, not with a bare `docker compose up --build`: demo.sh refuses to build
+# without BuildKit, and only BuildKit reads Dockerfile.dockerignore (the legacy builder would copy .env files and
+# local media into the image).
+name: keviq-demo
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-python: &python
+  build:
+    context: ../..
+    dockerfile: deploy/demo/Dockerfile
+  image: keviq-demo:local
+  restart: unless-stopped
+  logging: *logging
+  # The code runs as an unprivileged user and needs no Linux capability.
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_DB: keviq_demo
+      POSTGRES_USER: keviq
+      POSTGRES_PASSWORD: ${DEMO_POSTGRES_PASSWORD:?set DEMO_POSTGRES_PASSWORD in deploy/demo/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [internal]
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keviq -d keviq_demo"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    <<: *python
+    environment:
+      DATABASE_URL: postgresql://keviq:${DEMO_POSTGRES_PASSWORD}@postgres:5432/keviq_demo
+      # Passed through so the start guard sees them: any non-empty value stops the container.
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+      FACEBOOK_PAGE_TOKEN: ${FACEBOOK_PAGE_TOKEN:-}
+      # The app only reports these (the cost panel); the worker below enforces them.
+      MODEL_DAILY_CAP_USD: "0"
+      MODEL_TOTAL_CAP_USD: "0"
+    command: ["sh", "-c", "python -m app.migrate && exec uvicorn app.main:app --host 0.0.0.0 --port 8080"]
+    networks: [internal, published]
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+    ports:
+      - "127.0.0.1:${DEMO_APP_PORT:?set DEMO_APP_PORT in deploy/demo/.env}:8080"
+
+  worker:
+    <<: *python
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+      FACEBOOK_PAGE_TOKEN: ${FACEBOOK_PAGE_TOKEN:-}
+      # Third fence after the guard and the internal network: the worker's meter refuses every model call.
+      MODEL_DAILY_CAP_USD: "0"
+      MODEL_TOTAL_CAP_USD: "0"
+    command: ["python", "-m", "worker", "--base-url", "http://app:8080"]
+    # internal only: no route out of the host, so no model or Graph API call can leave it
+    networks: [internal]
+    mem_limit: 512m
+    cpus: 1.0
+
+networks:
+  internal:
+    internal: true
+  published: {}
+
+volumes:
+  pgdata:

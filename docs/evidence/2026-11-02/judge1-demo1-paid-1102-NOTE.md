@@ -8,7 +8,7 @@ Vietnamese comment and speech texts are replaced by English glosses, and times a
 - Code: origin/main aa457d98785a51320aa80a62c25744941b946afc (tree 6b7da8f), a clean clone outside the working copy, no local change.
 - Caps as coded: session 1.5 / warn 1.2, daily 30 / warn 20, total 285. Port 8040. Database `keviq_paid_test`. The model key was read from a local `.env` and never printed.
 - Two sessions as specified, plus one diagnostic extra (labeled below). All three stayed far under 1.5 USD per session.
-- **Video test flow result: FAIL.** Cards appear in judge1, but 3 of 7 order comments bind to the wrong card, 2 order comments get no order and no reply, one card carries another item's spoken price, no receipt in either specified session, and no receipt anywhere carries an image.
+- **Video test flow result: FAIL.** Cards appear in judge1, but 3 of 7 order comments bind to the wrong card, 2 order comments get no order and no reply (the session table below lists 7 order comments: 2 as expected, 3 on a wrong card, 2 with no order), one card carries another item's spoken price, no receipt in either specified session, and no receipt anywhere carries an image.
 
 ## Sessions
 | session | kind | start ICT | end ICT | events posted | rc | session USD |
@@ -62,20 +62,22 @@ Each cause below is reproduced from stored events or logs. No fix was started in
 - Evidence: offline replay of `worker/brain/labels.py` `cards_at` on the stored card events of both sessions (0 USD, `resolve_check.py` → `resolve-check.out`). For cm-05/cm-06 the model was shown current=TUI-03 (draft) / previous=GIAY-01, while `resolve()` (live_only=True when no attachment flow) used current=GIAY-01 / previous=TUI-03. "previous_card" and "current_card" therefore land on the swapped card. cm-08 shows the same swap (model: current BOOT-02 draft, previous TUI-03; resolve: current TUI-03, previous BOOT-02).
 - Code: `_ask` builds the prompt with `cards_at(versions, ts)` (drafts included); `_consequences` calls `resolve(..., live_only=not attached_flow)`.
 - Fix: build the prompt's current/previous with the same `live_only` that `resolve()` will use, so the model and the binder see one snapshot. File `worker/brain/labels.py`. Changes the model input, so it needs a decision entry with before/after on the same sessions. Risk: low; an order on a still-draft card keeps going to NEEDS_SELLER through the existing rules.
-- Later the same day: recorded as D-038 and merged in PR #96 (merge 159c841, 2 November 2026). The "after" numbers on these sessions are not measured yet. <!-- run pending -->
+- Later the same day: recorded as D-038 and merged in PR #96 (merge 159c841, 2 November 2026). Measured on the judge1 video in judge-paid-1102-1644 (section "Later run" below): cm-06 now goes to TUI-03, while cm-05 and cm-08 still go to a wrong card because the comment points at the previous card while the new one is still a draft. The demo1 sessions were not written up again.
 
 **B. An explicit product name that is not the current or previous card produces nothing (cm-14 both sessions, cm-11 judge).**
 - Evidence: order_draft `{"reference_kind": "explicit_sku", "sku": "TUI-03", "referenced_card_id": null}` for cm-14; no order and no message_out follow. `resolve()` binds explicit_sku only when the SKU is the current or previous card. Otherwise it keeps explicit_sku with no card. The label stream asks only for `unresolved`. `orders/flow.py on_labeled` returns [] when there is no card id.
 - Fix: for explicit_sku in the catalog, bind to the newest card of that SKU shown at or before the comment's ts_ms. If none has been shown yet, mark the draft unresolved so ask_which_item goes out. File `worker/brain/labels.py resolve()`, plus a test. Risk: low. Does not touch `orders/rules.py`. Not fixed as of this note.
+- Later the same day, in judge-paid-1102-1644: the model labeled cm-14 `current_card` (referenced card card-68ec3e4d6cce, TUI-03), not `explicit_sku`, so it got an order on TUI-03 (NEEDS_SELLER) without going through this cause; cm-11 was labeled `explicit_sku` (BOOT-05, no card) again and got no order, with no BOOT-05 card in that session.
 
 **C. A spoken price goes to a card whose colour the line contradicts (BOOT-02 got 920000 from the brown boot's line).**
 - Evidence: card-74c6572cbe35 v2 `price 920000 caused_by ["…sp-d1"]`, where sp-d1 is "short brown leather boot, nine hundred twenty thousand" (gloss). The card is "short black leather boot" (gloss). `kind_price_reason` / `window.choose` check the kind (boot) only, not the colour.
 - Fix: when the line names a catalog colour and none of the named colours is a variant colour of the card's SKU, the price waits (new wait reason `color_mismatch`). File `worker/brain/card.py`, plus a test. Risk: medium; a seller who names a wrong colour gets no auto price and the price stays manual.
+- Later the same day: merged in PR #100 (merge 46a0f0e). In judge-paid-1102-1644 the brown boot's 920000 line did not go to BOOT-02, which was never priced.
 
 **D. Receipt without an image.**
 - Evidence: the TUI-03 cut-out failed ("sam found no handbag"). The replay has no frames, so it has no cut-out. Run 1: 6/6 receipts have no image (see `c5-paid-1102-1028-NOTE.md` in this folder). The o-11 receipt points at card-d v2, image_url null.
 - Proposal (from the Run 1 analysis, see its "Causes and proposals"): R3, queue the cut-out at card open (`worker/brain/card.py`), so the image version exists before the price; R1 relock is D-032 bound and only a fallback; R2 SAM noun from the catalog kind for "other" items. TUI-03 "sam found no handbag" is a SAM miss on a known noun, which R3 does not fix.
-- Later the same day: R3 was merged in PR #97 (merge e5328cc, 2 November 2026). Its effect on receipts is not measured yet. <!-- run pending -->
+- Later the same day: R3 was merged in PR #97 (merge e5328cc, 2 November 2026). The next full-size run, on main 4ed3041, had 0 of 151 comment attachments ready (`c5-paid-1102-1426-NOTE.md` in this folder), and PR #102 (merge 767f7fe) reverted #97. PR #103 (merge 31e7d8a) starts the cut-out when the draft opens without posting a card version for it, so the live version can carry the image, and adds R2. In the full-size run on main 31e7d8a (`c5-paid-1102-1709-NOTE.md` in this folder) all 9 receipts carry the card image (9/9, against 0/6 in c5-paid-1102-1532 on 767f7fe), while comment attachments ready fell to 97 of 151 (137 in c5-paid-1102-1532); the cause of that drop is not established.
 
 **E. Brown boot seen 17 s late (58.0 vs about 41).**
 - Evidence: 33 of 64 frames skipped while a product_seen call was in flight (p50 2.0 s per call). Why the frames that were read did not switch the card to BOOT-05 earlier is **not established** from the logs: product_seen results for those frames are not logged.
@@ -105,3 +107,152 @@ Each cause below is reproduced from stored events or logs. No fix was started in
 | `run2-app.log` | 11610 | `0e28f1a64cd7ff1f5598a4d8f89526dbed29b5c1a7433f952c2facdd300f659b` |
 | `run2-worker-part1.log` | 46525 | `a55b4994155a19f898c2fc2e34b1c0cb4241f668bab4f7d0ddfa7955c65303aa` |
 | `run2-worker.log` | 14995 | `3e84698a6e24496e3b81995e72dddb955e4f0aa48a8145cc27f75425a5bf86db` |
+
+## Later run: judge-paid-1102-1644
+Added on 2 November from a later section of the same run note (kept outside the repository), checked against
+read-only `SELECT` queries on `keviq_paid_test`. Times are in ICT; t = seconds from the session's first event.
+
+- Code: origin/main 46a0f0ebd40e740484ca3c4bf4ebb6531e685184 (tree 6b163d4), the merge of PR #100 "Hold a heard price when the line names a colour the card does not have". It includes D-038 (PR #96), PR #98, #99 and #102 (which reverted #97); it does not include PR #103.
+- Same kind of session as judge-paid-1102-1109: judge-video + media `--no-voice` + judge-feed, database `keviq_paid_test`, port 8040.
+- Events stored 16:45:06–16:46:13: 176 (frame 64, model_call 52, comment_labeled 15, comment 14, order 10 = 5 orders × draft and decision, message_out 9, card 6, product_seen 3, speech 3).
+- Cards:
+  - GIAY-01 sneaker: draft 2.8, live 450k at 8.7, image at 10.4.
+  - TUI-03 bag: draft 22.4, live 690k at 28.2, **no image**.
+  - BOOT-02 black boot: draft 41.7, **never priced**. The brown boot's 920000 line is now held instead of going to the black boot (in judge-paid-1102-1109 BOOT-02 went live at 920000).
+  - BOOT-05 brown boot: no card.
+- Labels (15 for 14 comments): order 7, price_question 2, scam 2, stock_question 1, spam 1, complaint 1, other 1. cm-04 was labeled twice (scam, spam) and hidden; cm-12 (scam) was warned.
+- Replies (message_out 9): price for cm-01 and stock for cm-02 (GIAY-01); order received for cm-05, cm-06, cm-08, cm-14; order confirmation for cm-07; ask_which_item for cm-09 (TUI-03 / BOOT-02); "the seller will confirm the price" for cm-13 (BOOT-02).
+- Orders (same comments and expectations as judge-paid-1102-1109 above):
+
+| comment | gloss | got | expected |
+|---|---|---|---|
+| cm-07 | one pair, size 40 | GIAY-01 40 CONFIRM_SENT | same ✓ |
+| cm-05 | the pair from just now, size 39, two pairs for 400… | TUI-03 draft, size 39 x2, NEEDS_SELLER | GIAY-01 39, NEEDS_SELLER (discount) ✗ |
+| cm-06 | confirm one red bag | TUI-03 red x1, NEEDS_SELLER (the card was still a draft when the comment was written; TUI-03 went live at 28.2) | TUI-03 CONFIRM_SENT: right card, other state |
+| cm-08 | the red one from before | BOOT-02 draft red, NEEDS_SELLER | TUI-03 ✗ |
+| cm-09 | buy this shirt | ask_which_item (TUI-03 / BOOT-02) | same ✓ |
+| cm-11 | confirm the brown boots, size 39 | **no order** (no BOOT-05 card) | BOOT-05 39 ✗ |
+| cm-14 | three red bags | TUI-03 red x3, NEEDS_SELLER (2,070,000 over the 2,000,000 seller threshold) | same ✓ |
+
+- Of the 7 order comments: as expected 3 (cm-07, cm-09, cm-14); right card in another state 1 (cm-06); wrong card 2 (cm-05, cm-08: the comment points at the previous card while the new one is still a draft); no order 1 (cm-11).
+- Against judge-paid-1102-1109: cm-06 and cm-14 now land on TUI-03 (cm-14 was labeled `current_card` here, `explicit_sku` in judge-paid-1102-1109); cm-05 and cm-08 are still on a wrong card; cm-11 still has no order.
+- Receipts 0, CONFIRMED 0: the judge feed has no customer replies.
+- Model calls 52, 0.0747279 USD (`SELECT` on `model_call`): product_seen 34 (p50 1598 ms, p95 3390), label_comments 13 (p50 1849, p95 2823), card_from_speech 3 (p50 3398, p95 3479), card_cutout 2 (789 and 1468 ms). Percentiles are nearest rank (`percentile_disc`).
+- **Result: still FAIL** (2 wrong cards, 1 missing order, no receipt).
+
+## Later run: judge-paid-1102-2006
+Added on 2 November from read-only `SELECT` queries on `keviq_paid_test`. Times are in ICT; t = seconds from the
+session's first frame.
+
+- Code: origin/main 137ffca9841d7a02ed8ba56c97250fc30ab2c262 (tree 3a96f5f), the merge of PR #105 "Bind an unbound comment's previous item to the item shown before the one on screen" (D-040). It includes PR #103.
+- Same kind of session as judge-paid-1102-1109: judge-video + media `--no-voice` + judge-feed, database `keviq_paid_test`, port 8040.
+- Events stored 20:06:21–20:07:24: 177 (frame 64, model_call 50, comment_labeled 15, comment 14, order 10 = 5 orders × draft and decision, message_out 9, card 8, product_seen 4, speech 3).
+- Cards:
+  - GIAY-01 sneaker: draft 2.5, live 450k at 8.8 with its image.
+  - TUI-03 bag: draft 23.9, live 690k at 28.2, **no image**.
+  - BOOT-02 black boot: draft 43.5, retired at 46.1, **never priced**.
+  - BOOT-05 brown boot: draft 46.1, live 920k at 49.2 with its image.
+- Labels (15 for 14 comments): order 7, price_question 2, scam 2, stock_question 1, spam 1, complaint 1, other 1. cm-04 was labeled twice (spam, scam) and hidden; cm-12 (scam) was warned.
+- Replies (message_out 9): price for cm-01 (GIAY-01) and cm-13 (BOOT-05); stock for cm-02 (GIAY-01); order received for cm-05, cm-06, cm-08; order confirmation for cm-07 and cm-11; a size question on BOOT-05 for cm-09.
+- Orders (same comments and expectations as judge-paid-1102-1109 above):
+
+| comment | gloss | got | expected |
+|---|---|---|---|
+| cm-07 | one pair, size 40 | GIAY-01 40 CONFIRM_SENT | same ✓ |
+| cm-05 | the pair from just now, size 39, two pairs for 400… | GIAY-01 39 x2, NEEDS_SELLER | same ✓ |
+| cm-06 | confirm one red bag | TUI-03 red x1, NEEDS_SELLER (the card was still a draft when the comment was written; TUI-03 went live at 28.2) | TUI-03 CONFIRM_SENT: right card, other state |
+| cm-08 | the red one from before | BOOT-02 red, NEEDS_SELLER (BOOT-02 was retired at 46.1 without ever having a price) | TUI-03 ✗ |
+| cm-09 | buy this shirt | size question on BOOT-05 | ask_which_item ✗ |
+| cm-11 | confirm the brown boots, size 39 | BOOT-05 39 CONFIRM_SENT | BOOT-05 39 ✓ |
+| cm-14 | three red bags | **no order** (labeled `explicit_sku` TUI-03; the pair at 62.0 was BOOT-05 / BOOT-02) | TUI-03 x3, NEEDS_SELLER ✗ |
+
+- Of the 7 order comments: as expected 3 (cm-05, cm-07, cm-11); right card in another state 1 (cm-06); not as expected 3 (cm-08 wrong card; cm-09 a size question instead of asking which item; cm-14 no order). Right card 4 of 7, as in judge-paid-1102-1644, but on different comments.
+- Against judge-paid-1102-1644: cm-05 now lands on GIAY-01 and cm-11 now gets an order (the brown boot got its own card this time); cm-08 is still on a wrong card, now a retired item that never had a price; cm-09 and cm-14 no longer come out as expected.
+- Receipts 0, CONFIRMED 0: the judge feed has no customer replies.
+- Model calls 50, 0.0700995 USD (`SELECT` on `model_call`): product_seen 30 (p50 1973 ms, p95 3054), label_comments 13 (p50 2587, p95 3527), card_cutout 4 (p50 1230, p95 2182), card_from_speech 3 (p50 3788, p95 4176). Percentiles are nearest rank (`percentile_disc`).
+- **Video test flow result: still FAIL.**
+
+## Later run: judge-paid-1102-2131
+Added on 3 November from read-only `SELECT` queries on `keviq_paid_test` (170 events; the numbers below come from an
+export of those rows). This run was not written up on 2 November; it is recorded here as the
+comparison point for the next run. Times are in ICT; t = seconds from the session's first frame.
+
+- Code: main `1a886f6`, the merge of PR #106 "Skip a never-priced draft replaced within seconds as the one before"
+  (D-041), by the run record; the events do not name a commit. At this commit `VISION_READS_PER_SESSION` defaults to 4.
+- Events stored 21:31:09–21:32:12: 170 (frame 64, model_call 44, comment_labeled 15, comment 14, order 10 = 5 orders × draft and decision, message_out 9, card 7, product_seen 4, speech 3).
+- Cards (7 versions; `image_url` is empty on all 7, although the 4 `card_cutout` calls returned):
+  - GIAY-01 sneaker: draft 9.2, retired 25.3, **never priced**.
+  - TUI-03 bag: draft 25.3, live 690k at 29.0.
+  - BOOT-02 black boot: draft 43.7, retired 52.1 (8.4 s after its first version), **never priced**.
+  - BOOT-05 brown boot: draft 52.1, **never priced**.
+- Spoken prices: of the three (sneaker 450k, speech ending at 4.5; bag 690k at 24.0; brown boot 920k at 45.0), only the bag's reached a card. No `card_from_speech` call was made for the sneaker (no card existed before 9.2); the call for the brown boot at 45.0 returned while the BOOT-02 draft was the current card, and no card version carries that price.
+- Labels (15 for 14 comments): order 7, price_question 2, scam 2, stock_question 1, spam 1, complaint 1, other 1. cm-04 was labeled twice (scam, spam) and hidden; cm-12 was labeled scam (gold: spam) and warned.
+- Replies (message_out 9): price for cm-01 (at 9.8) and stock for cm-02 (12.2); waiting for the seller for cm-05, cm-06, cm-07, cm-11; order confirmation for cm-08; ask_which_item for cm-09 (BOOT-02 / TUI-03); a price answer for cm-13. No reply to cm-14.
+- Orders, against the expectations in the tables above:
+  - cm-05: GIAY-01 39 x2, NEEDS_SELLER (card retired when the comment was written, no price, "down to 400" asked) ✓.
+  - cm-06: TUI-03 red x1, NEEDS_SELLER (the card was still a draft when the comment was written): right card, other state.
+  - cm-07: GIAY-01 40 x1, NEEDS_SELLER at 34.2, 19.2 s after the comment (GIAY-01 never priced): right card, other state.
+  - cm-08: TUI-03 red x1, 690k, CONFIRM_SENT (`previous_card`) ✓.
+  - cm-09: ask_which_item ✓.
+  - cm-11: BOOT-05 39 x1, NEEDS_SELLER (BOOT-05 never priced): right card and size.
+  - cm-14: **no order, no reply**. It was labeled `explicit_sku` TUI-03 while the pair at 62.0 was BOOT-05 / BOOT-02; the label was stored 1.4 s before the session's last event ✗.
+- Of the 7 order comments: as expected 4 (cm-05, cm-08, cm-09, cm-11), right card in another state 2 (cm-06, cm-07), no order 1 (cm-14). Right card 6 of 7. cm-08 ("the red one from before") is on the right card for the first time in a judge1 run written up here.
+- `python -m measure --events-file <export> --gold data/sessions/judge1/gold.json --no-write` (rc 0): C1 12/15 (missing cm-07, cm-10, cm-14); C3 0.143 on n=7 (not a reference result, see judge-paid-1103-0019 below); C5 order recall 1.000 on n=7; seller interventions 0; phone visible max 0.0 s; labels micro-F1 0.857.
+- Receipts 0, CONFIRMED 0: the judge feed has no customer replies.
+- Model calls 44, 0.06632745 USD, none with an error: product_seen 24, 0.0282989 USD (p50 2161 ms, p95 4476), label_comments 14, 0.02305455 (p50 2377, p95 4524), card_cutout 4, 0.0100 (669 to 1518 ms), card_from_speech 2, 0.004974 (3586 and 4882 ms). Percentiles are nearest rank.
+- **Video test flow result: still FAIL** (1 order comment with no order, only one of four items priced, no card image, no receipt).
+
+## Later run: judge-paid-1103-0019
+Added on 3 November from the run's events export, kept outside this repository (173 rows, 80674 bytes, sha256
+`f28d4970d963db3d3a0e09c774619ced0fcb1954d76059e7dcdaa67df9abd726`), checked against read-only `SELECT` queries on
+`keviq_paid_test`: the database holds the same 173 events. Times are in ICT; t = seconds from the session's first frame.
+
+- Code: main 2a3ba2e30efa03ac592370b6aa612ce8297ba1c6 (tree 9c714ad), the merge of PR #108 "Read up to eight vision frames at once per session by default" (D-042), by the run record; the events do not name a commit. Between `1a886f6` (judge-paid-1102-2131) and this commit the only change outside docs and tests is the default of `VISION_READS_PER_SESSION` in `worker/runner.py`, 4 → 8. Whether the run set that variable itself is not recorded in the events.
+- Events stored 00:18:54–00:19:59: 173 (frame 64, model_call 46, comment_labeled 15, comment 14, order 12 = 6 orders × draft and decision, message_out 8, card 7, product_seen 4, speech 3).
+- Cards (7 versions; `image_url` is empty on all 7, although the 4 `card_cutout` calls returned):
+  - GIAY-01 sneaker: draft 13.7, retired 24.7, **never priced**.
+  - TUI-03 bag: draft 24.7, live 690k at 29.0.
+  - BOOT-02 black boot: draft 44.4, retired 49.2 (4.7 s after its first version), **never priced**.
+  - BOOT-05 brown boot: draft 47.1, **never priced**.
+- Spoken prices: as in judge-paid-1102-2131, only the bag's reached a card. The sneaker's speech ended at 4.5, before the first card (13.7), and no `card_from_speech` call was made for it. The call for the brown boot started at 45.0 and returned at 48.7, after the BOOT-05 draft had opened at 47.1 (in judge-paid-1102-2131 it returned while the BOOT-02 draft was still the current card); the decision on that line then retired the unpriced BOOT-02 draft at 49.2, and no card version carries the 920000 price.
+- Labels (15 for 14 comments): order 7, price_question 2, scam 2, stock_question 1, spam 1, complaint 1, other 1. cm-04 was labeled twice (scam, spam) and hidden; cm-12 was labeled scam (gold: spam) and warned.
+- Replies (message_out 8): waiting for the seller for cm-05, cm-06, cm-07, cm-11, cm-14; order confirmation for cm-08; ask_which_item for cm-09 (BOOT-05 / TUI-03); a price answer for cm-13. **No reply to cm-01** ("how much is this pair?", at 6.0) **or cm-02** ("is size 39 in stock?", 8.0): both came before the first card at 13.7.
+- Orders (same comments and expectations as above):
+
+| comment | gloss | got | expected |
+|---|---|---|---|
+| cm-07 | one pair, size 40 | GIAY-01 40 x1, NEEDS_SELLER at 33.5, 18.5 s after the comment (GIAY-01 was a draft when the comment was written and never got a price) | GIAY-01 40 CONFIRM_SENT: right card, other state |
+| cm-05 | the pair from just now, size 39, two pairs for 400… | GIAY-01 39 x2, NEEDS_SELLER (card retired when the comment was written, no price, "down to 400" asked) | same ✓ |
+| cm-06 | confirm one red bag | TUI-03 red x1, NEEDS_SELLER (the card was still a draft when the comment was written; TUI-03 went live at 29.0) | TUI-03 CONFIRM_SENT: right card, other state |
+| cm-08 | the red one from before | TUI-03 red x1, 690k, CONFIRM_SENT (`previous_card`) | TUI-03 ✓ |
+| cm-09 | buy this shirt | ask_which_item (BOOT-05 / TUI-03) | ask_which_item ✓ |
+| cm-11 | confirm the brown boots, size 39 | BOOT-05 39 x1, NEEDS_SELLER (BOOT-05 never priced; in judge-paid-1102-2006 this order was CONFIRM_SENT at 920k) | BOOT-05 39 ✓ |
+| cm-14 | three red bags | TUI-03 red x3, 2,070,000, NEEDS_SELLER (amount above the seller threshold of 2,000,000) | TUI-03 x3, NEEDS_SELLER ✓ |
+
+- Of the 7 order comments: as expected 5 (cm-05, cm-08, cm-09, cm-11, cm-14), right card in another state 2 (cm-06, cm-07), wrong card 0, no order 0. Right card 7 of 7. Five of the six orders wait in NEEDS_SELLER.
+- Against judge-paid-1102-2131 (right card 6 of 7 then, 7 of 7 now; one run each, so the cause of the difference is not established):
+  - The only order comment with a different outcome is cm-14: no order in 2131, TUI-03 x3 here (cm-09 was asked to choose between BOOT-02 and TUI-03 in 2131, between BOOT-05 and TUI-03 here). D-041 does not count a never-priced item put away within 5 s (`QUICK_SWITCH_MS`) of its first version as "the one before". BOOT-02 was put away 4.7 s after its first version here and 8.4 s after it in 2131. That fits the cm-14 difference but was not tested on these two runs; the visible step is that the BOOT-05 draft opened at 47.1 here and at 52.1 in 2131, and why it opened earlier here is not established.
+  - The first card came later (13.7 against 9.2), and cm-01 and cm-02, answered in 2131, got no reply.
+  - The same in both: GIAY-01, BOOT-02 and BOOT-05 never priced; no card image; cm-06, cm-07 and cm-11 waiting for the seller; cm-08 on the right card; no receipt.
+  - C1 11/15 against 12/15; 46 model calls against 44; 0.0676 against 0.0663 USD.
+- `python -m measure --events-file <export> --gold data/sessions/judge1/gold.json --no-write` (rc 0), key lines (the four C1 misses are printed as label event ids; they are the labels of cm-01, cm-02, cm-07 and cm-10):
+
+```
+events: 173  (hand-written fx- fixtures: 0; numbers over fixtures are not model results)
+C1 consequence within 5000 ms: 11/15
+C3 referenced_card_id accuracy: 0.143 on n=7 (target >= 0.9 on 50)
+C5 order recall: 1.000 on n=7 (target >= 0.9)
+C5 seller interventions: 0 in 1.08 min = 0.0/h (target <= 10/h)
+C5 phone visible max: 0.0 s on n=1 (target <= 5 s)
+C5 receipts with image and version price: 0/0 (target 100%)
+labels micro-F1: 0.857 (14/14 labeled)
+```
+
+  - C1 misses: cm-01 and cm-02 (no reply), cm-07 (order 18.5 s after the comment), cm-10 (complaint, no reply).
+  - C3 0.143 is not a reference result: `measure` compares `referenced_card_id` literally with the gold ids (`card-a`, `card-b`, `card-d`), while a live run names its cards `card-<hash>`, so only cm-09 (no card on either side) matches. By item, the right card count is 7 of 7 here and 6 of 7 in judge-paid-1102-2131.
+  - Seller interventions are 0 because no seller acted during the run, not because no order needed the seller.
+  - Its latency section (p50 / p95 ms): card receive 3054 / 3690 (n 7); comment_labeled infer 2427 / 5876 (n 14); order receive 3199 / 18521 (n 12); message_out receive 3077 / 18521 (n 8).
+  - Its cost section: 42 calls with 1 error, $0.0576, and 4 cut-out calls, $0.0100.
+- Receipts 0, CONFIRMED 0: the judge feed has no customer replies.
+- Model calls 46, 0.06761595 USD (`SELECT` on `model_call`; the export gives the same): product_seen 27, 0.0282957 USD (p50 2009 ms, p95 3205; one call cancelled at 9935 ms with cost 0), label_comments 13, 0.023475 (p50 2421, p95 5865), card_cutout 4, 0.0100 (1242 to 1478 ms), card_from_speech 2, 0.00584525 (3660 and 4915 ms). Percentiles are nearest rank.
+- **Video test flow result: still FAIL** (only one of four items priced, no card image, no reply to two questions, no receipt).
