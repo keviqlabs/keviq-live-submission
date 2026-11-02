@@ -3,6 +3,7 @@ publishes the app on loopback only and keeps the worker off the routed network, 
 allowlist that demo.sh only builds with BuildKit, and the nginx vhost keeps SSE streaming, strips the browser's
 Authorization header, asks for the login, limits the request rate and keeps the event intake read-only."""
 
+import ast
 import os
 import re
 import subprocess
@@ -178,6 +179,43 @@ def test_image_build_context_is_an_allowlist():
     tail = rules[max(i for i, rule in enumerate(rules) if rule.startswith("!")) + 1 :]
     for pattern in ("**/.env", "**/.env.*", "**/*.htpasswd", "**/*.pem", "**/*.key", "**/*.mp4", "**/*.jpg"):
         assert pattern in tail, pattern
+
+
+def dockerignore_includes() -> list[str]:
+    lines = (DEMO / "Dockerfile.dockerignore").read_text().splitlines()
+    rules = [line.strip() for line in lines if line.strip() and not line.lstrip().startswith("#")]
+    return [rule[1:] for rule in rules if rule.startswith("!")]
+
+
+def imported_top_level_names(source: str) -> set[str]:
+    """Top-level module names of the absolute imports in one source file; relative imports stay inside a package."""
+    names = set()
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            names.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            names.add(node.module.split(".")[0])
+    return names
+
+
+def is_first_party(name: str) -> bool:
+    return (ROOT / name / "__init__.py").is_file() or (ROOT / f"{name}.py").is_file()
+
+
+def test_image_includes_every_first_party_package_the_runtime_imports():
+    included = set(dockerignore_includes())
+    code_folders = sorted(path for path in included if (ROOT / path).is_dir())
+    imports: dict[str, set[str]] = {}  # first-party name -> the files that import it
+    for folder in code_folders:
+        for file in sorted((ROOT / folder).rglob("*.py")):
+            for name in imported_top_level_names(file.read_text()):
+                if is_first_party(name):
+                    imports.setdefault(name, set()).add(str(file.relative_to(ROOT)))
+    assert {"app", "worker"} <= set(imports), sorted(imports)  # the scan found the code it is meant to check
+    missing = {name: sorted(files) for name, files in imports.items() if name not in included}
+    assert not missing, f"imported at run time but absent from Dockerfile.dockerignore: {missing}"
+    not_declared = {name for name in imports if name not in BUILD_ALLOWLIST}
+    assert not not_declared, f"imported at run time but absent from BUILD_ALLOWLIST: {sorted(not_declared)}"
 
 
 def compose_file() -> dict:
