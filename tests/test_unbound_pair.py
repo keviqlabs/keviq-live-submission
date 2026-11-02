@@ -1,7 +1,9 @@
 """The (current, previous) pair a session without an attachment binding orders from (labels.live_cards_at).
 
 current is the most recently shown item by frame time whose version known at the comment is not retired, an
-unpriced draft included; previous is the next most recently shown item, retired or not.
+unpriced draft included; previous is the next most recently shown item whose version known at the comment is not
+retired, or is retired but was live or edited (priced) in a version known at the comment. An item put away after
+it had a price is still "the one before"; a draft put away before it ever had a price is skipped.
 """
 
 from worker.brain.labels import cards_at, resolve

@@ -130,16 +130,23 @@ def live_cards_at(versions: list[dict], ts_ms: int) -> tuple[dict | None, dict |
     frame-time appearance by ts_ms last. Sessions without an attachment binding order from this snapshot.
     current is the first card whose latest known version is not retired; an unpriced draft on screen counts, so
     "the one before" is the item shown before it, and an order on the draft is held for the seller by the order
-    rules. previous is the first card that is not current, retired or not: a retired card is never the current
-    item, but the item the seller just put away is still "the one before"."""
+    rules. previous is the first card that is not current and whose latest known version is not retired, or is
+    retired but one of its versions known at ts_ms was live or edited (the statuses a priced card has): a retired
+    card is never the current item, and the item the seller put away after it had a price is still "the one
+    before", but a draft put away before it ever had a price (one item replaced by another) is skipped."""
     known = [c for c in versions if c["ts_ms"] <= ts_ms]
     latest: dict[str, dict] = {}
+    priced: set[str] = set()
     for card in sorted(known, key=lambda c: (c["ts_ms"], c["version"])):
         latest[card["card_id"]] = card
+        if card["status"] in ("live", "edited"):
+            priced.add(card["card_id"])
     rank = {cid: i for i, cid in enumerate(appearance_ids(known, ts_ms))}
     shown = sorted(latest.values(), key=lambda c: rank.get(c["card_id"], len(rank)))
     current = next((c for c in shown if c["status"] != "retired"), None)
-    previous = next((c for c in shown if c is not current), None)
+    previous = next(
+        (c for c in shown if c is not current and (c["status"] != "retired" or c["card_id"] in priced)), None
+    )
     return current, previous
 
 
