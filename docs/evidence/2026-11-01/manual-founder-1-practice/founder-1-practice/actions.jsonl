@@ -1,0 +1,4 @@
+{"seq": 0, "server_ms": 1793458758536, "kind": "start", "video_ms": 1, "perf_ms": 3369.800000011921}
+{"seq": 1, "server_ms": 1793458781064, "kind": "hidden", "video_ms": 22484, "perf_ms": 25912.80000001192}
+{"seq": 2, "server_ms": 1793458818591, "kind": "end", "video_ms": 60000, "perf_ms": 63436.80000001192}
+{"seq": 3, "server_ms": 1793458828588, "kind": "lock", "video_ms": 70000, "perf_ms": 73436.40000000596}

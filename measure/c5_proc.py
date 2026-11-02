@@ -2,12 +2,13 @@
 process really loaded (ruling 01:39, item 2: the app's env proves nothing about the worker's or media's): the catalog
 file and its sha256, the catalog the card and labels brains hold, the cap and warning its Meter takes, the vision
 effort, the git sha. On SIGTERM it prints the card brain's `Session.waits` of each session it holds and exits: the
-loop-end snapshot, taken before the restart (ruling 419). The worker also says, in "progress" lines, how far it has
+final session snapshot. SIGUSR1 emits the same snapshot without ending the worker. The worker also says, in "progress" lines, how far it has
 finished the stream (measure/c5_progress), for the loop-end barrier; the last one again on SIGTERM. Its lines start
 with "C5PROC " and hold no secret (the model key only as set or not).
 
 With C5_OFFLINE=<loop k> and the model key empty, the worker gets the stored-output stand-ins of measure/c5_offline
-(gold labels, stored cut-outs) before it starts, and says so in an "offline" line. With a key set it refuses.
+(gold labels, stored cut-outs) before it starts, and says so in an "offline" line. C5_OFFLINE_LOOPS optionally
+selects that many existing streams starting at k (default one). With a key set it refuses.
 
 With the C5_BIND_* variables (measure/c5_bind), the worker gets the measured session's attachment credentials as
 `Runner(attachment_auth=...)` and media's Poster the source bearer; an "attachment" line says the session, epoch
@@ -49,7 +50,8 @@ def proof(module: str) -> dict:
             "model_key_set": bool(env("MODEL_API_KEY")) and env("MODEL_API_KEY") != "replace-me",
             "model_spark": env("MODEL_SPARK"), "spark_effort": spark.EFFORT,
             "spark_py_sha256": hashlib.sha256(open(spark.__file__, "rb").read()).hexdigest(),
-            "cards_from_replay": env("CARDS_FROM_REPLAY"), "offline_loop": offline_loop()}  # fmt: skip
+            "cards_from_replay": env("CARDS_FROM_REPLAY"), "offline_loop": offline_loop(),
+            "offline_loops": int(env("C5_OFFLINE_LOOPS") or "1") if offline_loop() else None}  # fmt: skip
 
 
 def offline_loop() -> int | None:
@@ -103,13 +105,17 @@ def arg_value(argv: list[str], name: str) -> str | None:
     return None
 
 
-def on_term(signum, frame) -> None:
+def on_snapshot(signum, frame) -> None:
     from worker.brain import card
 
     if PROGRESS is not None:
         PROGRESS.n += 1
         say("progress", n=PROGRESS.n, **PROGRESS.line())
     say("waits", waits={sid: dict(s.waits) for sid, s in card.SESSIONS.items()})
+
+
+def on_term(signum, frame) -> None:
+    on_snapshot(signum, frame)
     os._exit(0)
 
 
@@ -124,7 +130,7 @@ def main() -> None:
             raise SystemExit("C5_OFFLINE with a model key set: the stand-ins are for unpaid runs only")
         from measure import c5_offline
 
-        say("offline", **c5_offline.install(said["offline_loop"], say))
+        say("offline", **c5_offline.install(said["offline_loop"], say, loops=said.get("offline_loops") or 1))
     if module == "worker":
         from measure import c5_progress
 
@@ -133,6 +139,7 @@ def main() -> None:
     if (creds := c5_bind.credentials()) is not None:
         say("attachment", **bind(module, creds, arg_value(sys.argv[2:], "--base-url")))
     signal.signal(signal.SIGTERM, on_term)
+    signal.signal(signal.SIGUSR1, on_snapshot)
     sys.argv = [module, *sys.argv[2:]]
     runpy.run_module(module, run_name="__main__", alter_sys=True)
 

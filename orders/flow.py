@@ -12,6 +12,12 @@ event_id, ts_ms and caused_by) for the caller to post. Every decision comes from
 change is checked by orders/states.py; a refused step raises FlowError and nothing is posted. Event ids are
 derived from the trigger, so a replayed trigger produces duplicates the store drops. C6: the DRAFT lists in
 caused_by the label, the comment and the card version it was priced from; `order_log()` reads that back.
+
+Card version lock: an order is locked at drafting to the version current at the comment, or to a later version
+known at drafting that changes only the name or the image (locked_card; the worker adds the cut-out image after the
+price). The quote and the receipt name that version and carry its image. A locked version without a SKU goes to the
+seller. After the quote, a new price, a new SKU or a dropped variant sends the order back to the seller
+(card_change); a new name or image does not, and the receipt keeps the quoted version.
 """
 
 import hashlib
@@ -24,11 +30,19 @@ from orders.states import can_transition, machine
 from orders.variants import same, variant_of
 
 LIVE = {"live", "edited"}
+# A later card version that changes one of SAME_OFFER is a new offer; one that changes only LOOK is the same offer,
+# and an order drafted after it is locked to it (locked_card).
+SAME_OFFER = ("sku", "price", "currency", "variants", "stock")
+LOOK = ("name", "image_url")
 HOLDS_STOCK = {"CONFIRM_SENT", "CONFIRMED", "CLOSED"}
 TERMINAL = set(machine()["terminal"])
-TRIGGER_LABELS = {"order", "other"}  # comment labels the orders stream reads; scam and spam never reach it
+# Comment labels the orders stream reads; scam and spam never reach it. Only order drafts: complaint is read for a
+# cancel request alone, since the model may call a plain cancel comment a complaint.
+TRIGGER_LABELS = {"order", "other", "complaint"}
 MAX_ASK = 12  # Meta allows 13 quick replies; the last one is "Giữ tất cả"
 MAX_VARIANT_ASKS = 3  # ask_variant per order, first question included; after that the customer is left alone
+# Templates of the customer's quick replies (CONFIRM, CANCEL, KEEP, PICK); only these carry an order_id it chose.
+BUTTONS = ("confirm_yes", "confirm_no", "keep_order", "pick_variant")
 PAYMENT_METHOD = "cod"  # what the confirmation states; no code path here takes money (AGENTS.md rule 6)
 FIXTURE = re.compile(r"(^|\.)fx-")
 UNSAFE = re.compile(r"[^A-Za-z0-9.:-]")
@@ -133,6 +147,38 @@ def card_at(cards: list[dict], card_id: str, ts: int) -> dict | None:
     return best
 
 
+def only_look(old: dict, new: dict) -> bool:
+    """`new` is `old` with only its name or image changed: both live, the same SKU, price, currency, variants and
+    stock, and neither the name nor the image dropped."""
+    return (
+        old["status"] in LIVE
+        and new["status"] in LIVE
+        and all(old.get(k) == new.get(k) for k in SAME_OFFER)
+        and all(new.get(k) or not old.get(k) for k in LOOK)
+    )
+
+
+def locked_card(cards: list[dict], card: dict, at: int) -> dict:
+    """The version an order is locked to when it is drafted at `at`: `card` (the version current at the comment),
+    or the last of the versions that follow it one by one, known at `at`, each changing only the name or the image.
+    The first version that changes anything else ends the walk, so a new price, SKU or variant list keeps the
+    order on the version before it. Both order flows draft through draft_order, which calls this."""
+    out = card
+    later = sorted(
+        (
+            c
+            for c in cards
+            if c["card_id"] == card["card_id"] and c["version"] > card["version"] and c["ts_ms"] <= at
+        ),
+        key=lambda c: c["version"],
+    )
+    for c in later:
+        if c["version"] != out["version"] + 1 or not only_look(out, c):
+            break
+        out = c
+    return out
+
+
 def held(view: View, card_id: str, variant: dict, except_order: str) -> int:
     """Units of this card variant already promised to other orders (confirmation sent or confirmed)."""
     n = 0
@@ -211,6 +257,7 @@ def confirm_payload(order: dict, card: dict | None, comment_id: str | None) -> d
         "card_version": line["card_version"],
         "sku": line["sku"],
         "name": name,
+        "image_url": (card or {}).get("image_url"),
         "size": line["variant"]["size"],
         "color": line["variant"]["color"],
         "qty": line["qty"],
@@ -257,9 +304,17 @@ async def ask_cancel(
     comment_id: str | None = None,
 ) -> list[dict]:
     """Ask the customer which of their open orders to cancel. Never picks one and changes no state: only the
-    customer's CANCEL:<order_id> quick reply cancels. No open order or no 24h window -> nothing is sent."""
+    customer's CANCEL:<order_id> quick reply cancels. No open order or no 24h window -> nothing is sent. A comment
+    is asked once, however many labels it gets (the shield's interim label, then the batch label)."""
     mine = view.open_orders(thread)
     if not mine or not rules.can_message(view.last_contact.get(thread), now).allowed:
+        return []
+    if comment_id and any(
+        m["type"] == "message_out"
+        and m.get("template") == "ask_cancel"
+        and (m.get("payload") or {}).get("comment_id") == comment_id
+        for m in view.messages
+    ):
         return []
     if len(mine) == 1:
         oid = mine[0]["order_id"]
@@ -288,9 +343,9 @@ async def ask_cancel(
 
 async def on_labeled(trigger: dict, view: View, messenger, now: int) -> list[dict]:
     """comment_labeled(order) -> DRAFT priced from the card version current at the comment, then the rules.
-    A cancel request in the comment (label order or other) never drafts: it may only lead to ask_cancel. Negated
-    or unclear cancel words ("chốt 1 đôi, ko huỷ nha") are not a cancel: label order drafts, label other sends
-    nothing."""
+    A cancel request in the comment (label order, other or complaint) never drafts: it may only lead to
+    ask_cancel. Negated or unclear cancel words ("chốt 1 đôi, ko huỷ nha") are not a cancel: label order drafts,
+    label other or complaint sends nothing."""
     comment = (view.comments.get(trigger["comment_id"]) or {}).get("comment")
     if trigger.get("label") not in TRIGGER_LABELS or is_fixture(trigger["event_id"]) or comment is None:
         return []
@@ -377,10 +432,20 @@ async def draft_order(
     causes: list[str],
     reply_to: str | None,
 ) -> list[dict]:
-    """DRAFT priced from `card` (the version current at the comment), then the rules: CONFIRM_SENT +
-    confirm_order, or NEEDS_SELLER + waiting_for_shop. `reply_to` is the comment for a private reply; None
-    sends by PSID (Meta allows one private reply per comment)."""
+    """DRAFT priced from the version `card` locks to (locked_card: the version current at the comment, or a later
+    one that changes only the name or the image), then the rules: CONFIRM_SENT + confirm_order, or NEEDS_SELLER +
+    waiting_for_shop. A locked version without a SKU waits for the seller. `reply_to` is the comment for a private
+    reply; None sends by PSID (Meta allows one private reply per comment)."""
     card_id = card["card_id"]
+    at_comment, card = card, locked_card(view.cards, card, now)
+    if card is not at_comment:
+        causes = [*causes, card["event_id"]]
+        notes = [
+            *notes,
+            f"v{at_comment['version']} at the comment; v{card['version']} changes only the name or image",
+        ]
+    if not card.get("sku"):
+        blocking = [*blocking, f"{card_id} v{card['version']} has no SKU"]
     hold = held(view, card_id, variant, order_id)
     if hold:
         notes = [*notes, f"{hold} already held by other orders"]
@@ -549,6 +614,8 @@ def receipt_payload(order: dict, card: dict | None, receipt: dict, address: str 
         "order_id": order["order_id"],
         "card_id": receipt.get("card_id"),
         "card_version": receipt["card_version"],
+        "sku": line["sku"],
+        "name": name,
         "image_url": receipt["image_url"],
         "card_price": receipt["price"],
         "unit_price": line["unit_price"],
@@ -569,10 +636,10 @@ def offers(card: dict, variant: dict) -> bool:
 
 
 def card_change(view: View, order: dict, at: int) -> tuple[dict | None, str | None]:
-    """The card version current at `at` and, when it differs in price from the version current when the
+    """The card version current at `at` and, when it differs in price or SKU from the version current when the
     confirmation was sent (CONFIRM_SENT ts_ms, a seller approval included) or no longer lists the line's variant,
-    why the order goes back to the seller. A change between the comment and the send is not one: the order keeps
-    the comment-time price it was sent with."""
+    why the order goes back to the seller. A new name or image is not a change. A change between the comment and
+    the send is not one either: the order keeps the locked version and price it was sent with."""
     line = order["lines"][0]
     card_id = line["card_id"]
     seen = card_at(view.cards, card_id, order["ts_ms"]) or view.card(card_id, line["card_version"])
@@ -583,21 +650,74 @@ def card_change(view: View, order: dict, at: int) -> tuple[dict | None, str | No
     old, new = f"v{seen['version']}", f"v{latest['version']}"
     if latest["price"] != seen["price"]:
         return latest, f"{changed}: {old} {vnd(seen['price'])} -> {new} {vnd(latest['price'])}"
+    if latest.get("sku") != seen.get("sku"):
+        return latest, f"{changed}: {old} SKU {seen.get('sku')} -> {new} SKU {latest.get('sku')}"
     if offers(seen, line["variant"]) and not offers(latest, line["variant"]):
         return latest, f"{changed}: {new} no longer lists {variant_text(line['variant'])} ({old} did)"
     return latest, None
 
 
+def button_order(message: dict) -> str | None:
+    """The order_id a customer's button names: the order_id beside a CONFIRM, CANCEL, KEEP or PICK template, or the
+    id in a KIND:<order_id> quick reply. Plain text names none, even with an order_id in its payload, and neither
+    does an id or quick reply that is not a string (the event schema allows both)."""
+    payload = message.get("payload") or {}
+    quick_reply = payload.get("quick_reply")
+    if message.get("template") in BUTTONS:
+        order_id = payload.get("order_id")
+    elif isinstance(quick_reply, str):
+        order_id = customer_reply(None, {"quick_reply": quick_reply})[1]
+    else:
+        order_id = None
+    return order_id if isinstance(order_id, str) and order_id else None
+
+
+def answers_cancel_question(view: View, trigger: dict) -> bool:
+    """Before the trigger in its thread, the shop's last message is the ask_cancel question or the customer's last
+    plain "huỷ" / "không" came after it (that gets ask_cancel too while an order is open), and no button naming an
+    order (button_order: CONFIRM, CANCEL, KEEP or PICK) came after either. Other messages in between leave the
+    question open: plain text ("sao vậy shop", or a first "có" whose question asked again is stored after this
+    one), also when its payload carries an order_id. A text or quick reply that is not a string is read as empty;
+    the message's template still counts."""
+    open_question = False
+    for m in view.messages:
+        if m["event_id"] == trigger["event_id"]:
+            break
+        if m["thread_ref"] != trigger["thread_ref"]:
+            continue
+        if m["type"] == "message_out":
+            open_question = m.get("template") == "ask_cancel"
+            continue
+        payload = m.get("payload") or {}
+        odd = {k: "" for k in ("text", "quick_reply") if not isinstance(payload.get(k), str)}
+        if button_order(m):
+            open_question = False
+        elif customer_reply(m.get("template"), {**payload, **odd})[0] == "no":
+            open_question = True
+    return open_question
+
+
 async def on_reply(trigger: dict, view: View, messenger, now: int) -> list[dict]:
     """The customer's yes / no / keep / variant pick in Messenger. Only the customer's own thread can confirm or
     cancel its order, and only a reply naming the order (CANCEL:<order_id>) cancels; a plain "huỷ" gets
-    ask_cancel. Other text may answer an open ask_variant question (on_variant_reply). A yes after the card's
-    price changed, or after its new version dropped the line's variant, goes to the seller (card_change)."""
+    ask_cancel, and so does a yes to a cancel question no button has answered while an order is open
+    (answers_cancel_question), unless the yes is itself a button naming an order (button_order): an order_id in
+    a plain text's payload does not count. Other text may answer an open ask_variant question (on_variant_reply).
+    A yes after the card's price or SKU changed, or after its new version dropped the line's variant, goes to the
+    seller (card_change)."""
     payload = trigger.get("payload") or {}
     kind, order_id = customer_reply(trigger.get("template"), payload)
     thread = trigger["thread_ref"]
     if kind == "keep" or is_fixture(trigger["event_id"]):
         return []
+    if (
+        kind == "yes"
+        and not button_order(trigger)
+        and view.open_orders(thread)
+        and answers_cancel_question(view, trigger)
+    ):
+        # "có" to "huỷ đơn ...?" is not an ok to the order; the CONFIRM:<order_id> button still confirms
+        return await ask_cancel(trigger, view, messenger, now, thread)
     if kind == "yes" and not order_id and view.open_order(thread) is None and pending_asks(view, thread):
         kind = None  # "ok" to "which size?" names no size: it is asked again
     if kind in (None, "pick"):
