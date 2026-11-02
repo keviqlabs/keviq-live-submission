@@ -191,6 +191,42 @@ async def test_live_card_gets_the_sam_cut_out_as_its_next_version(mem_app, monke
     assert last["timing"]["infer_end_ms"] - last["timing"]["infer_start_ms"] == 600
 
 
+async def test_card_versions_caused_by_a_product_seen_are_final_when_its_handler_returns(
+    mem_app, monkeypatch
+):
+    """A comment's attachment evidence records a product_seen's card events when its handler returns, and the
+    app then requires the stored set to match. A version posted later with that product_seen in caused_by (a
+    cut-out queued when the card opened) leaves the frame, and every comment after it, without evidence."""
+    _, store, client = mem_app
+    runner = runner_with(client, [responses_reply('{"price_vnd": 450000, "sizes": [], "colors": []}')])
+    ts, gate, calls = now_ms(), asyncio.Event(), []
+    frames.put(SID, ts, b"\xff\xd8jpeg")
+
+    async def slow_cut_out(client, jpeg, category):
+        calls.append(category)
+        await gate.wait()  # SAM answers after the product handler has returned, as it does on a real stream
+        return "data:image/png;base64,iVBORw0KGgo=", (ts, ts)
+
+    async def citing(event_id: str) -> set[str]:
+        return {c["event_id"] for c in await cards_in(store) if event_id in c.get("caused_by", [])}
+
+    monkeypatch.setattr(sam, "cut_out", slow_cut_out)
+    await run(client, runner, seen("ps-a", "sneaker", "trắng", ts, caused_by=["fr-a"]))
+    recorded = await citing("ps-a")  # what the evidence records for this product_seen
+    assert len(recorded) == 1
+    gate.set()
+    await settle()  # every cut-out queued so far has finished
+    s = card.SESSIONS[SID]
+    assert not s.cutouts and not s.cutting
+    assert await citing("ps-a") == recorded
+    await hear(client, store, runner, said("sp-1", "đôi này 450 nghìn", ts + 800))
+    assert not s.cutouts and not s.cutting and calls == ["sneaker"]
+    last = (await cards_in(store))[-1]
+    assert last["status"] == "live" and last["image_url"].startswith("data:image/png")
+    assert last["caused_by"] == ["sp-1", "fr-a"]
+    assert await citing("ps-a") == recorded
+
+
 async def test_a_slow_cut_out_does_not_hold_up_the_next_line(mem_app, monkeypatch):
     """SAM takes its time on the card that just went live; the next line is decided meanwhile, and the cut-out
     still arrives as a later version."""
