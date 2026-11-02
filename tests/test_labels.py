@@ -22,7 +22,7 @@ from meta.transport import FakeTransport, Reply, responses_reply
 from worker.brain import labels as labels_mod
 from worker.brain.labels import Labeler, cards_at, resolve
 from worker.brain.shield import first_label, scan
-from worker.runner import Runner, build
+from worker.runner import Ctx, Runner, build
 
 GOLD = measure_labels.load_gold()
 
@@ -254,6 +254,34 @@ def test_live_snapshot_skips_an_unpriced_draft():
     assert (ident(current), ident(previous)) == (("card-B", 2), ("card-A", 1))
     draft = resolve(item("current_card"), DRAFT_THEN_LIVE, 12_500, set(), live_only=True)
     assert draft["referenced_card_id"] == "card-A"
+
+
+class Binding:
+    """A runner whose session binds orders through attachments."""
+
+    async def attachment_enabled(self, session_id):
+        return True
+
+
+@pytest.mark.parametrize(
+    ("ctx", "pair"), [(None, ("card-A", "card-B")), (Ctx({}, Binding()), ("card-B", "card-A"))]
+)
+async def test_the_prompt_shows_the_pair_resolve_binds_from(ctx, pair):
+    """Without an attachment binding the model sees the live pair resolve() binds from, not the unpriced draft
+    that is newest at media time; a session with a binding keeps the media-time pair."""
+    transport = FakeTransport([responses_reply("not json"), responses_reply("not json")])
+
+    async def emit(fields):
+        pass
+
+    labeler = Labeler(
+        client_for=lambda _: MetaClient(transport, Meter(memory_spend([0.0]), 30, 300, 20), emit)
+    )
+    versions = [{**c, "name": c["card_id"]} for c in DRAFT_THEN_LIVE]
+    comment = {"comment_id": "c-1", "session_id": "s-1", "text": "lấy cái này", "ts_ms": 12_500}
+    assert await labeler._ask([labels_mod.Pending(comment, ctx, [], "none")], versions) == ({}, None)
+    sent = json.loads(transport.requests[0][1]["input"][1]["content"])["comments"][0]
+    assert (sent["current_card"]["card_id"], sent["previous_card"]["card_id"]) == pair
 
 
 # --- the stream end to end on the in-memory app
