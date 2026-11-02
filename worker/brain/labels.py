@@ -181,6 +181,12 @@ def resolve(item: dict, versions: list[dict], ts_ms: int, skus: set[str], *, liv
     }
 
 
+async def attached(ctx: Ctx | None, event: dict) -> bool:
+    """Whether the event's session binds orders through attachments; otherwise they bind from the live snapshot."""
+    runner = getattr(ctx, "runner", None)
+    return hasattr(runner, "attachment_enabled") and await runner.attachment_enabled(event["session_id"])
+
+
 def card_brief(card: dict | None) -> dict | None:
     return card and {"card_id": card["card_id"], "sku": card["sku"], "name": card["name"]}
 
@@ -416,9 +422,11 @@ class Labeler:
             log.warning("labels: card history for %s not loaded (%s)", sid, exc)
 
     async def _ask(self, batch: list[Pending], versions: list[dict]) -> tuple[dict, tuple | None]:
+        # The model sees the same current/previous pair resolve() binds from, so "this one" means the same card.
+        live_only = not await attached(batch[0].ctx, batch[0].event)
         comments = []
         for p in batch:
-            current, previous = cards_at(versions, p.event["ts_ms"])
+            current, previous = cards_at(versions, p.event["ts_ms"], live_only=live_only)
             comments.append(
                 {
                     "comment_id": p.event["comment_id"],
@@ -455,9 +463,7 @@ class Labeler:
 
     async def _consequences(self, p: Pending, item: dict | None, versions: list[dict], infer) -> list[dict]:
         event, ctx = p.event, p.ctx
-        attached_flow = hasattr(ctx.runner, "attachment_enabled") and await ctx.runner.attachment_enabled(
-            event["session_id"]
-        )
+        attached_flow = await attached(ctx, event)
         if item is None:
             label, draft, model_signals = "other", None, []
         else:
