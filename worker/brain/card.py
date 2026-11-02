@@ -14,10 +14,12 @@
   or the call fails), at most SPEECH_READS lines at a time from read to decision; the others wait their turn. The
   line is decided once its read is done and HOLD_MS after it arrived, in arrival order.
   A heard price goes to the one candidate card; with several, the kind of item the line names picks one. Any
-  other line leaves the price for the seller and counts as a wait by reason in the session (`price wait` log
-  lines). A price makes the card live. A card that already has a price keeps it (D-023): a
-  different spoken price becomes a `price_proposal` for the seller, once per heard price while the card's price
-  stays the same (D-024). Each change is a new version whose provenance lists the speech event ids (C4).
+  other line, or one that names only colours the card does not have (of the card's colours, only those a line can
+  name count), leaves the price for the seller and counts as a wait by reason in the session (`price wait` log
+  lines); a line about another colour does not change the card's sizes either. A price makes the card live. A
+  card that already has a price keeps it (D-023): a different spoken price becomes a `price_proposal` for the
+  seller, once per heard price while the card's price stays the same (D-024). Each change is a new version whose
+  provenance lists the speech event ids (C4).
 - A version another writer already took (409, D-024: the seller's price route) is applied on top of the card's
   highest version once, or dropped; the number is never reused. product_seen's versions go the same way.
 - When a card first goes live and its frame is cached, SAM 3.1 finds the product in the background, one card at a
@@ -177,6 +179,19 @@ def kind_price_reason(text: str, meta: dict) -> str | None:
 
 def item_by_sku(sku: str | None) -> dict | None:
     return next((i for i in CATALOG if i["sku"] == sku), None)
+
+
+def color_price_reason(colors: list[str], card: dict) -> str | None:
+    """A line that names colours, none of them the card's, is about another item: its price waits. The card's
+    colours are its catalog item's, each read as a spoken line is (vn.tokens), and only its COLORS words count,
+    since a line can name nothing else; no catalog item, or none left, means no check. The colour vision saw is not
+    used: vision can misread a product's colour on every frame, and a correct price would then wait."""
+    item = item_by_sku(card["sku"]) if card["sku"] else None
+    seen = [v.get("color") for v in item["variants"]] if item else []
+    known = {t for c in seen if isinstance(c, str) for t in vn.tokens(c) if t in COLORS}
+    if colors and known and not known.intersection(colors):
+        return "color_mismatch"
+    return None
 
 
 def variants_of(item: dict | None, color: str | None, sizes: list[str] | None = None) -> list[dict]:
@@ -450,6 +465,11 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
         keep, reason = window.choose(event["text"], cands)
         if reason is None and len(keep) == 1:
             reason = kind_price_reason(event["text"], s.meta[keep[0]])
+        other = None  # a line naming only colours the card does not have is about another item, priced or not
+        if len(keep) == 1:
+            other = color_price_reason(spoken.colors, s.cards[keep[0]])
+        if reason is None:
+            reason = other
         if spoken.price is not None and reason:
             s.waits[reason] += 1
             log.info(
@@ -488,7 +508,8 @@ async def decide(event: dict, ctx, s: Session, line: Line, spoken: vn.Spoken, in
                         "speech_event_id": eid,
                         "_infer": infer,
                     }  # ts_ms and caused_by: the speech's
-            if spoken.sizes and card["sku"]:
+            # sizes said for another colour's item are not this card's: its variants stay as they are
+            if spoken.sizes and card["sku"] and not other:
                 color = spoken.colors[0] if len(spoken.colors) == 1 else meta["color"]
                 variants = variants_of(item_by_sku(card["sku"]), color, spoken.sizes)
                 if variants != card["variants"]:
