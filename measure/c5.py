@@ -22,6 +22,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -57,6 +58,19 @@ def git_sha() -> str:
     return subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True
     ).stdout.strip()
+
+
+def git_state() -> dict:
+    """What the run ran on: HEAD, whether tracked files differ from it (a dirty tree is not HEAD), and the pull
+    requests merged on the first-parent line ("Merge pull request #N: ..." or "#N from ..."), newest first."""
+
+    def git(*args: str) -> str:
+        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout
+
+    subjects = git("log", "--first-parent", "--merges", "--format=%s", "HEAD").splitlines()
+    prs = [int(m[1]) for s in subjects if (m := re.match(r"Merge pull request #(\d+)\b", s))]
+    return {"head": git("rev-parse", "HEAD").strip(), "dirty": git("status", "--porcelain", "--untracked-files=no") != "",
+            "merged_prs": prs}  # fmt: skip
 
 
 def comment_event(row: dict, sid: str, t0: int) -> dict:
