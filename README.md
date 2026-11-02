@@ -16,7 +16,7 @@ Everything in this repository was made during the event, from 26 October 2026 23
 | Paid C5 run on the integrated build, after the open pull requests are merged | muse-spark-1.3 (`reasoning.effort=minimal`), sam-3.1, muse-voice-transcribe-1.0 | TO FILL | TO FILL after the run |
 
 **Before the event** (before 26 October 23:24 ICT; none of it is in this repository):
-- Two private repositories by the author: the earlier product repository, with a prototype replay console (worked on until the week of 25 October; it is not shown in the demo or the video), and a pre-event baseline repository (one commit, pushed 26 October 20:01 ICT). No code, data or images from either were copied, retyped or consulted here.
+- Two private repositories by the author: the earlier product repository, with a prototype replay console (worked on until the week of 25 October; it is not shown in the demo or the video), and a pre-event baseline repository (one commit, pushed 26 October 20:01 ICT). During development, a file-inspection command displayed a Makefile from an earlier preparation repository. The claim that this implementation did not use that output is self-reported and has not been independently established.
 - Planning notes written on the afternoon of 26 October: a plan that separates existing work from event work, and a baseline task note. They are documents, not code.
 - Accounts and know-how: the Meta Model API account and its credit, the shop's Facebook Page, and the author's experience of selling on livestreams and of the order flow.
 
