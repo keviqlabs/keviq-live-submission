@@ -1,0 +1,14 @@
+status complete, 6.36 min
+                                                   person  assistant
+order comments that name an item                       28         28
+item right                                              2         15
+item wrong                                              3          0
+no item named (unclear + no action / no card)          23         13
+  of which no action                                   23          -
+not taken up within 60 s                               23         13
+phones hidden                                         2/4     4 rows
+longest a phone stayed visible, s              2 not hidden      0.042
+links hidden                                          1/6          -
+wrong hides                                             0          -
+integrity: pauses 0, seeks 0, stalls 0, tab hidden 25.5 s, clock drift 0.1 s, early actions 0
+written docs/evidence/2026-11-01/manual-founder-1/score.json

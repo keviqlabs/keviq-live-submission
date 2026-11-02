@@ -4,7 +4,7 @@ Newest on top. Contract changes must have an entry here.
 
 ## 2026-10-31 — video source
 
-**D-031 The video's main source is a recorded replay with synthetic comments, not a real level-2 live session (C9 and the C4 check amended).**
+**D-033 The video's main source is a recorded replay with synthetic comments, not a real level-2 live session (C9 and the C4 check amended).**
 C9 named one real level-2 live session as the main source of the video, with before/after numbers from that session.
 Three facts in the code make such a session a poor main source. The media worker reads finished files only: there is
 no live camera or stream input, and frames are stamped from the start of playback, while real Page comments carry
@@ -24,6 +24,29 @@ decision does not validate that baseline or establish it as "before" comparison 
 event, schema or version change; acceptance stays v1. No order rule, price authority, customer-confirmation rule or
 level-2 permission changes. The "RTMP input" named in C11 is not built either; that sentence is left for a separate
 contracts change. Product-owner review/merge is required.
+
+## 2026-11-01 — which card version an order keeps
+
+**D-032 An order is locked at drafting to the card version live at the comment, or to a later version known at
+drafting that changes only the name or the image. The quote and the receipt name that version and carry its image.**
+No contract change: the order event keeps `receipt{card_id, card_version, image_url, price}`, `v` stays 1. The
+`confirm_order` payload gains `image_url` and the `receipt` payload gains `sku` and `name`; message payloads are
+free objects in `message_out.schema.json`. Chosen by the product owner on 31 October.
+
+- Why: the worker adds the cut-out image in a version after the price, so a comment written between the two was
+  locked to the version without an image and every such receipt had `image_url: null`.
+- One function (`flow.locked_card`, called from `draft_order`) serves both order flows. The walk follows the
+  versions one by one and stops at the first that changes the SKU, price, currency, variants or stock, or drops the
+  name or image; such a change keeps the comment-time version as before.
+- After the quote: a new price, a new SKU or a dropped variant sends the customer's yes to the seller
+  (`card_change`; SKU is new). A new name or image does not, and the receipt keeps the quoted version.
+- A locked version without a SKU waits for the seller, as the attachment flow already does. Without a price: the
+  seller path as before. Without an image: allowed and counted (`with_image`). `orders/rules.py` is unchanged.
+- Rejected: locking to the newest version at the customer's yes (the customer would confirm a version they were not
+  quoted); locking at drafting to the newest version whatever changed (a new price or SKU would be quoted without
+  the seller).
+- Not done here: a price set in the console makes an `edited` version and queues no cut-out, so such cards still
+  get no image (backlog, worker change). The acceptance wording for C5 is a separate contracts change.
 
 ## 2026-10-28 — attachment reference eligibility
 

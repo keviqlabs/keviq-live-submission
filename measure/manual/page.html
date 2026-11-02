@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đo tay — xử lý bình luận</title>
+<style>
+  :root { --bg: #f6f6f4; --card: #fff; --ink: #1d1d1b; --muted: #6b6b66; --line: #dddcd6;
+          --accent: #1f5fbf; --ok: #1f7a3d; --warn: #b4441b; --hide: #8a8a85; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 system-ui, -apple-system, sans-serif; }
+  header { display: flex; gap: 16px; align-items: center; padding: 8px 16px; background: var(--card);
+           border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+  header .timer { font: 600 22px/1 ui-monospace, monospace; }
+  header .counts { color: var(--muted); }
+  .badge { padding: 2px 8px; border-radius: 10px; font-size: 13px; font-weight: 600; }
+  .badge.practice { background: #fff3c4; color: #7a5a00; }
+  .badge.speed { background: #fde0d6; color: var(--warn); }
+  main { display: grid; grid-template-columns: minmax(220px, 300px) 1fr minmax(300px, 380px); gap: 12px;
+         padding: 12px 16px; height: calc(100vh - 50px); }
+  .col { display: flex; flex-direction: column; min-height: 0; gap: 10px; }
+  video { width: 100%; max-height: 55vh; background: #000; border-radius: 6px; object-fit: contain; }
+  .box { background: var(--card); border: 1px solid var(--line); border-radius: 6px; }
+  .catalog { overflow: auto; font-size: 13px; }
+  .catalog table { width: 100%; border-collapse: collapse; }
+  .catalog td { padding: 3px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .catalog td.price { text-align: right; white-space: nowrap; }
+  .catalog .stock { color: var(--muted); }
+  .feedwrap { position: relative; flex: 1; min-height: 0; }
+  #feed { height: 100%; overflow-y: auto; padding: 6px; }
+  .c { padding: 7px 9px; border-radius: 5px; border: 1px solid transparent; cursor: pointer; margin-bottom: 4px;
+       background: var(--card); }
+  .c:hover { border-color: var(--line); }
+  .c.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .c.hidden-c { opacity: .45; }
+  .c .meta { color: var(--muted); font-size: 12px; }
+  .c .text { white-space: pre-wrap; word-break: break-word; }
+  .c .tags { margin-top: 3px; display: flex; gap: 5px; flex-wrap: wrap; }
+  .tag { font-size: 12px; padding: 1px 6px; border-radius: 8px; background: #e9eef8; color: var(--accent); }
+  .tag.ask { background: #fff0d9; color: #8a5300; }
+  .tag.hide { background: #ececea; color: var(--hide); }
+  .tag.reply { background: #e6f3ea; color: var(--ok); }
+  #more { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: none;
+          background: var(--accent); color: #fff; border: 0; border-radius: 14px; padding: 6px 14px; cursor: pointer; }
+  .panel { padding: 12px; overflow-y: auto; }
+  .panel h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+  /* Three lines tall whatever the comment, so the buttons below do not move between comments. */
+  .panel .quote { padding: 8px; background: var(--bg); border-radius: 5px; margin-bottom: 10px; white-space: pre-wrap;
+                  min-height: calc(4.2em + 16px); }
+  .grid { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+  .pick { border: 1px solid var(--line); background: var(--card); border-radius: 5px; padding: 5px 8px;
+          cursor: pointer; font: inherit; font-size: 13px; }
+  .pick.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .qty { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .qty button { width: 32px; height: 32px; font-size: 18px; }
+  .qty span { min-width: 24px; text-align: center; font-weight: 600; }
+  .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .act { padding: 10px; font: 600 15px system-ui, sans-serif; border-radius: 6px; border: 0; cursor: pointer; color: #fff; }
+  .act.order { background: var(--accent); }
+  .act.ask { background: #c27a00; }
+  .act.hide { background: #5d5d58; }
+  .act.reply { background: var(--ok); }
+  .act:disabled { opacity: .35; cursor: not-allowed; }
+  .flash { color: var(--ok); min-height: 20px; margin-top: 8px; font-size: 13px; }
+  .empty { color: var(--muted); }
+  #banner { display: none; background: var(--warn); color: #fff; padding: 8px 16px; font-weight: 600; }
+  .overlay { position: fixed; inset: 0; background: rgba(20, 20, 18, .82); display: flex; align-items: center;
+             justify-content: center; z-index: 5; }
+  .overlay .sheet { background: var(--card); max-width: 620px; padding: 24px 28px; border-radius: 10px; }
+  .overlay h2 { margin-top: 0; }
+  .overlay li { margin-bottom: 6px; }
+  .overlay button { margin-top: 12px; padding: 12px 28px; font: 600 17px system-ui, sans-serif; border: 0;
+                    border-radius: 8px; background: var(--accent); color: #fff; cursor: pointer; }
+  .overlay button:disabled { opacity: .4; }
+  .overlay .warn { color: var(--warn); font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="banner"></div>
+<header>
+  <span class="timer" id="timer">00:00</span>
+  <span id="phase" class="counts"></span>
+  <span id="badges"></span>
+  <span class="counts" id="counts"></span>
+</header>
+<main>
+  <div class="col">
+    <video id="v" src="/video" playsinline preload="auto" disablepictureinpicture disableremoteplayback
+           controlslist="nodownload noplaybackrate noremoteplayback nofullscreen"></video>
+    <div class="box catalog"><table id="catalog"></table></div>
+  </div>
+  <div class="col">
+    <div class="box feedwrap"><div id="feed"></div><button id="more"></button></div>
+  </div>
+  <div class="col">
+    <div class="box panel" id="panel"></div>
+  </div>
+</main>
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet"></div>
+</div>
+<script>
+"use strict";
+// The page shows comments when the video reaches the time each was written and logs every click with the
+// video clock. It never sees the gold: /data carries only id, time, author handle and text.
+const v = document.getElementById("v");
+const feed = document.getElementById("feed");
+const more = document.getElementById("more");
+const panel = document.getElementById("panel");
+let D = null;                // /data
+let shown = 0;               // comments revealed so far
+let unseen = 0;              // revealed while the feed was scrolled up
+let running = false, locked = false;
+let endMs = null, endedAt = null;
+let selected = null;
+let pick = { item: null, size: null, qty: 1 };
+const state = {};            // comment_id -> {draft, hidden, replies}
+const nodes = {};
+let tally = { order: 0, ask: 0, hide: 0, reply: 0 };
+
+function clock() {
+  if (endedAt === null) return Math.round(v.currentTime * 1000);
+  return Math.round(endMs + (performance.now() - endedAt) * D.speed);
+}
+function mmss(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+function banner(text) {
+  const b = document.getElementById("banner");
+  b.textContent = text;
+  b.style.display = "block";
+}
+
+// Lines go to the server one after another, so the log keeps click order. Each resolves to true once the
+// server stored it. A line it did not store stops the run: nothing after it is sent, so the log has no lock
+// and the run is scored incomplete, even if the connection comes back.
+let chain = Promise.resolve();
+let lost = false;
+function log(entry) {
+  const body = JSON.stringify({ ...entry, perf_ms: performance.now() });
+  const sent = chain.then(async () => {
+    if (lost) return false;
+    let why;
+    try {
+      const r = await fetch("/log", { method: "POST", headers: { "Content-Type": "application/json" }, body });
+      if (r.ok) return true;
+      why = "server trả " + r.status;
+    } catch (e) { why = "mất kết nối tới server cục bộ"; }
+    lost = true;
+    stopRun(entry, why);
+    return false;
+  });
+  chain = sent;
+  return sent;
+}
+
+function stopRun(entry, why) {
+  running = false;
+  v.pause();
+  renderPanel();
+  const p = document.createElement("p");
+  p.textContent = "Thao tác chưa được ghi: " + entry.kind + " lúc " + mmss(entry.video_ms) + " (" + why + ").";
+  if (entry.kind === "start") { sheet("<h2>Không bắt đầu được</h2>", p); return; }
+  sheet(`<h2>Mất bản ghi — lượt đã dừng</h2>
+    <p>Đã ghi: ${tally.order} đơn, ${tally.ask} câu hỏi, ${tally.hide} lần ẩn, ${tally.reply} trả lời.</p>
+    <p>Lượt dừng ở đây và được chấm là <b>chưa xong</b>; trang không gửi thêm gì. Đóng tab và báo người dựng bộ đo.</p>`, p);
+}
+
+function sheet(html, button) {
+  document.getElementById("sheet").innerHTML = html;
+  document.getElementById("overlay").style.display = "flex";
+  if (button) document.getElementById("sheet").appendChild(button);
+}
+function closeSheet() { document.getElementById("overlay").style.display = "none"; }
+
+const RULES = `
+  <h2>Đo tay: xử lý bình luận không có trợ lý</h2>
+  <ul>
+    <li>Video chạy <b>một lần</b>, có tiếng, không dừng, không tua. Dừng, tua hay chuyển tab đều bị ghi lại.</li>
+    <li>Bình luận hiện lúc tới shop. Bấm vào một bình luận để xử lý:
+      <b>Tạo đơn</b> (chọn mã hàng, size, số lượng), <b>Hỏi khách</b> (thiếu size hoặc chưa rõ món),
+      <b>Ẩn</b> (số điện thoại, link, lừa đảo, spam), <b>Trả lời</b>.</li>
+    <li>Hỏi khách: chọn mã hàng nếu đã biết, chỉ để trống size. Chưa rõ món thì chọn <b>Chưa rõ</b>.</li>
+    <li>Tạo đơn hoặc hỏi lại trên cùng bình luận thì lần sau thay lần trước. Ẩn là quyết định cuối.</li>
+    <li>END còn <b>TAIL giây</b>, rồi trang khoá và không nhận thao tác nữa.</li>
+    <li><b>Không tải lại trang.</b> Mỗi lượt chỉ bắt đầu một lần.</li>
+  </ul>`;
+
+// The practice round stops before the video does.
+function endLabel() { return D.stop_ms !== null ? "Hết " + D.stop_ms / 1000 + " giây luyện tập" : "Hết video"; }
+
+function startSheet() {
+  const b = document.createElement("button");
+  b.textContent = "Bắt đầu";
+  b.onclick = () => {
+    b.disabled = true;
+    v.playbackRate = D.speed;
+    // play() inside the click, so the browser allows sound; the start is logged once the video plays
+    v.play().then(
+      () => log({ kind: "start", video_ms: clock() }).then(ok => {
+        if (!ok) return;
+        running = true;
+        closeSheet();
+      }),
+      e => { banner("Video không phát được: " + e.message); b.disabled = false; });
+  };
+  // Three columns need the width; a narrow window squeezes the comments into a sliver.
+  const narrow = innerWidth < 1100
+    ? `<p class="warn">Cửa sổ đang hẹp (${innerWidth} px): phóng to cửa sổ rồi mới bấm Bắt đầu.</p>` : "";
+  sheet(RULES.replace("END", endLabel()).replace("TAIL", D.tail_ms / 1000) + narrow, b);
+}
+
+function finishVideo(ms) {
+  if (endedAt !== null) return;
+  endMs = ms;
+  endedAt = performance.now();
+  v.pause();
+  log({ kind: "end", video_ms: ms });
+}
+
+function lock() {
+  locked = true;
+  running = false;
+  renderPanel();
+  sheet("<h2>Hết giờ — đang lưu…</h2>");
+  log({ kind: "lock", video_ms: endMs + D.tail_ms }).then(ok => {
+    if (!ok) return;
+    sheet(`<h2>Hết giờ — trang đã khoá</h2>
+    <p>Đã ghi: ${tally.order} đơn, ${tally.ask} câu hỏi, ${tally.hide} lần ẩn, ${tally.reply} trả lời.</p>
+    <p>Có thể đóng tab. Kết quả được chấm bằng lệnh <code>score</code>.</p>`);
+  });
+}
+
+function tick() {
+  if (!running) return;
+  const t = clock();
+  while (shown < D.comments.length && D.comments[shown].at_ms <= t) reveal(D.comments[shown++]);
+  if (D.stop_ms !== null && endedAt === null && t >= D.stop_ms) finishVideo(D.stop_ms);
+  const timer = document.getElementById("timer");
+  const phase = document.getElementById("phase");
+  if (endedAt === null) {
+    timer.textContent = mmss(t);
+    const total = D.stop_ms !== null ? D.stop_ms : (v.duration || 0) * 1000;
+    phase.textContent = total ? "/ " + mmss(total) : "";
+  } else {
+    timer.textContent = mmss(t);
+    phase.textContent = endLabel() + " — khoá sau " + Math.max(0, Math.ceil((endMs + D.tail_ms - t) / 1000)) + " giây";
+    if (!locked && t >= endMs + D.tail_ms) lock();
+  }
+}
+
+function nearBottom() { return feed.scrollHeight - feed.scrollTop - feed.clientHeight < 80; }
+function reveal(c) {
+  const stick = nearBottom();
+  const el = document.createElement("div");
+  el.className = "c";
+  el.innerHTML = '<div class="meta"></div><div class="text"></div><div class="tags"></div>';
+  el.querySelector(".meta").textContent = "@" + c.user_ref + " · " + mmss(c.at_ms);
+  el.querySelector(".text").textContent = c.text;
+  el.onclick = () => select(c.comment_id);
+  nodes[c.comment_id] = el;
+  feed.appendChild(el);
+  if (stick) feed.scrollTop = feed.scrollHeight;
+  else { unseen++; more.textContent = "↓ " + unseen + " bình luận mới"; more.style.display = "block"; }
+}
+feed.addEventListener("scroll", () => { if (nearBottom()) { unseen = 0; more.style.display = "none"; } });
+more.onclick = () => { feed.scrollTop = feed.scrollHeight; };
+
+function itemOf(sku) { return D.catalog.find(i => i.sku === sku); }
+function sizesOf(sku) {
+  const item = itemOf(sku);
+  if (!item) return [];
+  const seen = [];
+  for (const v of item.variants || []) if (v.size !== null && v.size !== undefined && !seen.includes(String(v.size))) seen.push(String(v.size));
+  return seen;
+}
+
+function select(id) {
+  if (selected && nodes[selected]) nodes[selected].classList.remove("sel");
+  selected = id;
+  nodes[id].classList.add("sel");
+  const d = (state[id] || {}).draft;
+  pick = d ? { item: d.item, size: d.size, qty: d.qty || 1 } : { item: null, size: null, qty: 1 };
+  renderPanel();
+}
+
+function button(label, on, click) {
+  const b = document.createElement("button");
+  b.className = "pick" + (on ? " on" : "");
+  b.textContent = label;
+  b.onclick = click;
+  return b;
+}
+
+function renderPanel() {
+  panel.innerHTML = "";
+  if (!selected) { panel.innerHTML = '<p class="empty">Bấm vào một bình luận để xử lý.</p>'; return; }
+  const c = D.comments.find(x => x.comment_id === selected);
+  const q = document.createElement("div");
+  q.className = "quote";
+  q.textContent = "@" + c.user_ref + ": " + c.text;
+  panel.appendChild(q);
+
+  const h1 = document.createElement("h3"); h1.textContent = "Mã hàng"; panel.appendChild(h1);
+  const items = document.createElement("div"); items.className = "grid";
+  for (const i of D.catalog) items.appendChild(button(i.name, pick.item === i.sku, () => {
+    pick.item = i.sku; if (!sizesOf(i.sku).includes(pick.size)) pick.size = null; renderPanel();
+  }));
+  items.appendChild(button("Chưa rõ", pick.item === "unclear", () => { pick.item = "unclear"; pick.size = null; renderPanel(); }));
+  panel.appendChild(items);
+
+  const sz = pick.item && pick.item !== "unclear" ? sizesOf(pick.item) : [];
+  if (sz.length) {
+    const h2 = document.createElement("h3"); h2.textContent = "Size"; panel.appendChild(h2);
+    const g = document.createElement("div"); g.className = "grid";
+    for (const s of sz) g.appendChild(button(s, pick.size === s, () => { pick.size = s; renderPanel(); }));
+    g.appendChild(button("Chưa nói", pick.size === null, () => { pick.size = null; renderPanel(); }));
+    panel.appendChild(g);
+  }
+
+  const h3 = document.createElement("h3"); h3.textContent = "Số lượng"; panel.appendChild(h3);
+  const qty = document.createElement("div"); qty.className = "qty";
+  const minus = document.createElement("button"); minus.textContent = "−";
+  minus.onclick = () => { pick.qty = Math.max(1, pick.qty - 1); renderPanel(); };
+  const n = document.createElement("span"); n.textContent = pick.qty;
+  const plus = document.createElement("button"); plus.textContent = "+";
+  plus.onclick = () => { pick.qty = Math.min(99, pick.qty + 1); renderPanel(); };
+  qty.append(minus, n, plus);
+  panel.appendChild(qty);
+
+  const acts = document.createElement("div"); acts.className = "acts";
+  const mk = (cls, label, enabled, fn) => {
+    const b = document.createElement("button");
+    b.className = "act " + cls; b.textContent = label; b.disabled = locked || !running || busy || !enabled; b.onclick = fn;
+    acts.appendChild(b);
+  };
+  mk("order", "Tạo đơn", !!pick.item, () => act("order"));
+  mk("ask", "Hỏi khách", !!pick.item, () => act("ask"));
+  mk("hide", "Ẩn bình luận", !(state[selected] || {}).hidden, () => act("hide"));
+  mk("reply", "Trả lời", true, () => act("reply"));
+  panel.appendChild(acts);
+  const f = document.createElement("div"); f.className = "flash"; f.id = "flash"; panel.appendChild(f);
+}
+
+// An action is timed at the click but shows as done (tag, count, flash) only once the server stored it;
+// the buttons wait until then.
+let busy = false;
+function act(kind) {
+  if (!running || locked || !selected || busy) return;
+  const id = selected;
+  const e = { kind, video_ms: clock(), comment_id: id };
+  if ((kind === "order" || kind === "ask") && pick.item) {
+    e.item = pick.item;
+    e.qty = pick.qty;
+    if (pick.item !== "unclear" && pick.size !== null) e.size = pick.size;
+  }
+  busy = true;
+  renderPanel();
+  log(e).then(ok => {
+    busy = false;
+    if (!ok) return;
+    const s = state[id] || (state[id] = { draft: null, hidden: false, replies: 0 });
+    if (kind === "order" || kind === "ask") s.draft = { kind, item: e.item || null, size: e.size || null, qty: e.qty || null };
+    else if (kind === "hide") s.hidden = true;
+    else s.replies++;
+    tally[kind]++;
+    drawTags(id);
+    renderPanel();
+    const label = { order: "Đã tạo đơn", ask: "Đã hỏi khách", hide: "Đã ẩn", reply: "Đã trả lời" }[kind];
+    document.getElementById("flash").textContent = label + " · " + mmss(e.video_ms);
+    document.getElementById("counts").textContent =
+      `Đơn ${tally.order} · Hỏi ${tally.ask} · Ẩn ${tally.hide} · Trả lời ${tally.reply}`;
+  });
+}
+
+function drawTags(id) {
+  const s = state[id], tags = nodes[id].querySelector(".tags");
+  tags.innerHTML = "";
+  const tag = (cls, text) => { const t = document.createElement("span"); t.className = "tag " + cls; t.textContent = text; tags.appendChild(t); };
+  if (s.draft) {
+    const what = s.draft.item === "unclear" ? "chưa rõ món" : (s.draft.item || "");
+    const extra = [what, s.draft.size ? "size " + s.draft.size : "", s.draft.qty ? "×" + s.draft.qty : ""].filter(Boolean).join(" ");
+    tag(s.draft.kind === "order" ? "" : "ask", (s.draft.kind === "order" ? "Đơn " : "Hỏi ") + extra);
+  }
+  if (s.hidden) tag("hide", "Đã ẩn");
+  if (s.replies) tag("reply", "Trả lời" + (s.replies > 1 ? " ×" + s.replies : ""));
+  nodes[id].classList.toggle("hidden-c", s.hidden);
+}
+
+function catalog() {
+  const t = document.getElementById("catalog");
+  for (const i of D.catalog) {
+    const tr = document.createElement("tr");
+    const stock = {};
+    for (const v of i.variants || []) { const k = v.size === null || v.size === undefined ? "" : String(v.size); stock[k] = (stock[k] || 0) + (v.stock || 0); }
+    const sizes = Object.entries(stock).map(([k, n]) => (k ? k + " " : "") + "còn " + n).join(" · ");
+    tr.innerHTML = '<td></td><td class="price"></td>';
+    tr.children[0].innerHTML = '<b></b><div class="stock"></div>';
+    tr.children[0].querySelector("b").textContent = i.name;
+    tr.children[0].querySelector(".stock").textContent = sizes;
+    tr.children[1].textContent = Number(i.price).toLocaleString("vi-VN") + (i.currency === "VND" ? " đ" : " " + (i.currency || ""));
+    t.appendChild(tr);
+  }
+}
+
+// Integrity: the video cannot be paused or sought; any attempt is logged and the video resumes.
+v.addEventListener("pause", () => {
+  if (!running || locked || endedAt !== null || v.ended) return;
+  log({ kind: "pause", video_ms: clock() });
+  v.play().catch(() => {});
+});
+v.addEventListener("seeking", () => { if (running && endedAt === null) log({ kind: "seek", video_ms: clock() }); });
+v.addEventListener("waiting", () => { if (running && endedAt === null) log({ kind: "stall", video_ms: clock() }); });
+v.addEventListener("ended", () => { if (running) finishVideo(Math.round(v.duration * 1000)); });
+v.addEventListener("error", () => banner("Video không tải được — dừng lại và báo người dựng bộ đo."));
+v.addEventListener("contextmenu", e => e.preventDefault());
+if ("mediaSession" in navigator) {
+  for (const a of ["pause", "seekbackward", "seekforward", "seekto", "previoustrack", "nexttrack", "stop"]) {
+    try {
+      navigator.mediaSession.setActionHandler(a, () => {
+        if (running && endedAt === null) log({ kind: a === "pause" || a === "stop" ? "pause" : "seek", video_ms: clock() });
+      });
+    } catch (e) { /* not supported by this browser */ }
+  }
+}
+document.addEventListener("visibilitychange", () => {
+  if (running && !locked) log({ kind: document.hidden ? "hidden" : "visible", video_ms: clock() });
+});
+window.addEventListener("beforeunload", e => { if (running && !locked) { e.preventDefault(); e.returnValue = ""; } });
+
+fetch("/data").then(r => r.json()).then(d => {
+  D = d;
+  const badges = document.getElementById("badges");
+  if (D.mode === "practice") badges.innerHTML += '<span class="badge practice">Luyện tập — không chấm</span> ';
+  if (D.speed !== 1) badges.innerHTML += '<span class="badge speed">Tốc độ ×' + D.speed + " — chỉ để thử bộ đo</span>";
+  catalog();
+  renderPanel();
+  if (D.locked) sheet("<h2>Lượt này đã xong</h2><p>Trang đã khoá. Chấm bằng lệnh <code>score</code>.</p>");
+  else if (D.started) sheet("<h2>Lượt này đã bắt đầu trước đó</h2><p>Trang đã được tải lại hoặc mở lần hai. " +
+    "Lượt không chạy tiếp được và được chấm là chưa xong, với những gì đã ghi.</p>");
+  else startSheet();
+  setInterval(tick, 100);
+}).catch(() => banner("Không đọc được dữ liệu từ server cục bộ."));
+</script>
+</body>
+</html>

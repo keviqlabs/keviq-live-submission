@@ -1,0 +1,1793 @@
+{
+ "run_file": {
+  "run": "rescore-paid-1031-1615",
+  "session_id": "rescore-paid-1031-1615",
+  "sha": "bfc76115189b7283c99125359ae41097c1db0b8f",
+  "loops": [
+   {
+    "k": 1,
+    "t0_ms": 1793438159298,
+    "end_ms": 1793438542535,
+    "settled": true,
+    "barrier": [
+     {
+      "status": "SETTLED",
+      "waited_ms": 1507,
+      "head_seq": 1779,
+      "done_seq": 1779,
+      "behind": 0,
+      "delivered": 1316,
+      "finished": 1316,
+      "errors": 0,
+      "skipped": 0,
+      "stale": 0,
+      "pending": 0,
+      "running": 0,
+      "background": 0,
+      "queued": 0,
+      "tasks_running": 0,
+      "progress_age_ms": 153
+     },
+     {
+      "status": "SETTLED",
+      "waited_ms": 1505,
+      "head_seq": 1791,
+      "done_seq": 1791,
+      "behind": 0,
+      "delivered": 1328,
+      "finished": 1328,
+      "errors": 0,
+      "skipped": 0,
+      "stale": 0,
+      "pending": 0,
+      "running": 0,
+      "background": 0,
+      "queued": 0,
+      "tasks_running": 0,
+      "progress_age_ms": 336
+     }
+    ],
+    "worker_progress": {
+     "kind": "progress",
+     "pid": 52714,
+     "n": 884,
+     "start_seq": 462,
+     "delivered": 1328,
+     "finished": 1328,
+     "errors": 0,
+     "skipped": 0,
+     "stale": 0,
+     "pending": 0,
+     "running": 0,
+     "background": 0,
+     "queued": 0,
+     "done_seq": 1791,
+     "stats": {
+      "fast": {
+       "received": 978,
+       "done": 978,
+       "skipped": 0,
+       "stale": 0,
+       "failed": 0,
+       "in_flight": 0,
+       "waiting": 0
+      },
+      "vision": {
+       "received": 350,
+       "done": 350,
+       "skipped": 0,
+       "stale": 0,
+       "failed": 0,
+       "in_flight": 0,
+       "waiting": 0
+      },
+      "speech": {
+       "waiting": 0,
+       "in_flight": 0
+      },
+      "cutout": {
+       "waiting": 0,
+       "in_flight": 0
+      },
+      "labels": {
+       "waiting": 0,
+       "in_flight": 0
+      }
+     }
+    },
+    "wait_lines": [
+     "price wait: speech_72c13671febd41ac9fbb reason many candidates card-65b7c7c04d92,card-d481b49b96fb; session rescore-paid-1031-1615 waits many=1"
+    ],
+    "waits": {
+     "many": 1
+    },
+    "waits_line": true,
+    "retired": 12,
+    "runner_failures": 0,
+    "comments_late_max_ms": 7,
+    "media": {
+     "rc": 0,
+     "stopped": false,
+     "summary": "{'frames': 350, 'speech': 59, 'seconds': 351.0}"
+    },
+    "worker_rc": 0,
+    "proofs": {
+     "worker": {
+      "kind": "proof",
+      "pid": 52714,
+      "module": "worker",
+      "sha": "bfc76115189b7283c99125359ae41097c1db0b8f",
+      "catalog_path": "data/comments/c5/catalog.json",
+      "catalog_sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73",
+      "catalog_items": 10,
+      "labels_catalog_same": true,
+      "session_cap_usd": 8.0,
+      "session_warn_usd": 6.0,
+      "model_key_set": true,
+      "model_spark": null,
+      "spark_effort": "minimal",
+      "spark_py_sha256": "06871357310e06b16c8d596f0d28b9b31808a0e60b2414c74acc3ba1411aa22f",
+      "cards_from_replay": null,
+      "offline_loop": null
+     },
+     "worker_attachment": {
+      "kind": "attachment",
+      "pid": 52714,
+      "session": "rescore-paid-1031-1615",
+      "epoch": "epoch-rescore-paid-1031-1615",
+      "principal": "replay-source",
+      "module": "worker",
+      "injected": "Runner(attachment_auth=...)"
+     },
+     "media": {
+      "kind": "proof",
+      "pid": 52716,
+      "module": "worker.media",
+      "sha": "bfc76115189b7283c99125359ae41097c1db0b8f",
+      "catalog_path": "data/comments/c5/catalog.json",
+      "catalog_sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73",
+      "catalog_items": 10,
+      "labels_catalog_same": true,
+      "session_cap_usd": 8.0,
+      "session_warn_usd": 6.0,
+      "model_key_set": true,
+      "model_spark": null,
+      "spark_effort": "minimal",
+      "spark_py_sha256": "06871357310e06b16c8d596f0d28b9b31808a0e60b2414c74acc3ba1411aa22f",
+      "cards_from_replay": null,
+      "offline_loop": null
+     },
+     "media_attachment": {
+      "kind": "attachment",
+      "pid": 52716,
+      "session": "rescore-paid-1031-1615",
+      "epoch": "epoch-rescore-paid-1031-1615",
+      "principal": "replay-source",
+      "module": "worker.media",
+      "injected": "source bearer on httpx clients to http://127.0.0.1:8040"
+     }
+    },
+    "capped": null,
+    "replay_seen": null,
+    "replay_speech": null,
+    "cutouts": []
+   }
+  ],
+  "config": {
+   "mode": "live",
+   "base_url_port": 8040,
+   "healthz": {
+    "ok": true,
+    "store": "pg",
+    "head_seq": 462
+   },
+   "attachment": {
+    "session": "rescore-paid-1031-1615",
+    "epoch": "epoch-rescore-paid-1031-1615",
+    "principal": "replay-source"
+   },
+   "catalog_path": "data/comments/c5/catalog.json",
+   "catalog_sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73",
+   "vision": "worker vision brain (spark), effort minimal",
+   "effort": "minimal",
+   "fps": 1,
+   "product_seen": "worker vision",
+   "cutout": "on a card gone live (model call)",
+   "model_client": "model client",
+   "card_line": false,
+   "labels": "labels brain with the model",
+   "speech": "media voice (Voice Transcribe)",
+   "observations": null,
+   "cap_usd": 8.0,
+   "warn_usd": 6.0,
+   "cap_from": "env",
+   "paid": true,
+   "seconds": 350.0,
+   "restart": "worker and media processes per loop",
+   "shop_delay_s": 4.0,
+   "tail_ms": 30000,
+   "loop_ms": 350000
+  },
+  "cost_api": {
+   "today_usd": 1.071951,
+   "total_usd": 1.071951,
+   "daily_cap_usd": 30.0,
+   "daily_warn_usd": 20.0,
+   "total_cap_usd": 300.0,
+   "test_sessions": {
+    "prefixes": [
+     "pytest",
+     "smoke-"
+    ],
+    "today_usd": 0.0,
+    "total_usd": 0.0
+   },
+   "session_usd": 0.79894,
+   "session_cap_usd": 8.0,
+   "session_warn_usd": 6.0
+  },
+  "customers": [
+   {
+    "loop": 1,
+    "msg_id": "c5-1-m01",
+    "order_id": "o-c5-1-006",
+    "expect": "NEEDS_SELLER",
+    "situation": 10,
+    "due_ms": 1793438224698,
+    "sent": true,
+    "status": 200,
+    "sent_ms": 1793438224841,
+    "message_in": "mi.m-rescore-paid-1031-1615-c5-1-m01"
+   },
+   {
+    "loop": 1,
+    "msg_id": "c5-1-m02",
+    "order_id": "o-c5-1-016",
+    "expect": "CONFIRMED",
+    "situation": 12,
+    "due_ms": 1793438240398,
+    "sent": true,
+    "status": 200,
+    "sent_ms": 1793438250058,
+    "message_in": "mi.m-rescore-paid-1031-1615-c5-1-m02"
+   },
+   {
+    "loop": 1,
+    "msg_id": "c5-1-m03",
+    "order_id": "o-c5-1-029",
+    "expect": "CONFIRMED",
+    "situation": 12,
+    "due_ms": 1793438272898,
+    "sent": false,
+    "why": "no confirm_order for o-c5-1-029 by the loop end"
+   },
+   {
+    "loop": 1,
+    "msg_id": "c5-1-m04",
+    "order_id": "o-c5-1-060",
+    "expect": "CANCELLED",
+    "situation": 8,
+    "due_ms": 1793438395148,
+    "sent": false,
+    "why": "no ask_cancel for o-c5-1-060 by the loop end"
+   }
+  ],
+  "shop": [
+   {
+    "kind": "proposal",
+    "event_id": "price_proposal_7796807a6e70454783b6",
+    "card_id": "card-88e63c823459",
+    "action": "accept",
+    "heard_price": 220000,
+    "price": 220000,
+    "seen_ms": 1793438202718,
+    "held": "SP01",
+    "card_item": "SP01",
+    "right_card": true,
+    "status": 200,
+    "response": {
+     "changed": true,
+     "version": 6
+    },
+    "done_ms": 1793438215995
+   },
+   {
+    "kind": "order",
+    "event_id": "mi.m-rescore-paid-1031-1615-c5-1-m01.o-c5-1-006.reply",
+    "order_id": "o-c5-1-006",
+    "cause": "price_changed",
+    "decision": "approve",
+    "unit_price": 220000,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793438224878,
+    "done_ms": 1793438229183
+   },
+   {
+    "kind": "order",
+    "event_id": "attv-0b9d6f28afebfc64ac90d671a665c0da7f06be4f56352487.o-c5-1-016.decide",
+    "order_id": "o-c5-1-016",
+    "cause": "variant",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793438245679,
+    "done_ms": 1793438249985
+   },
+   {
+    "kind": "order",
+    "event_id": "attv-edf31642a718c500a92187f1f7b7585b8487debce6248049.o-c5-1-024.decide",
+    "order_id": "o-c5-1-024",
+    "cause": "variant",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793438260006,
+    "done_ms": 1793438264186
+   },
+   {
+    "kind": "order",
+    "event_id": "attv-9ab83a517ac1caabd5db6458b17530587b5b232cc57bf797.o-c5-1-041.decide",
+    "order_id": "o-c5-1-041",
+    "cause": "variant",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793438303494,
+    "done_ms": 1793438307841
+   },
+   {
+    "kind": "proposal",
+    "event_id": "price_proposal_2784cb4c50c546839dbd",
+    "card_id": "card-d2f4cfffe2c0",
+    "action": "accept",
+    "heard_price": 160000,
+    "price": 160000,
+    "seen_ms": 1793438311998,
+    "held": "SP04",
+    "card_item": "SP04",
+    "right_card": true,
+    "status": 200,
+    "response": {
+     "changed": true,
+     "version": 6
+    },
+    "done_ms": 1793438331674
+   },
+   {
+    "kind": "order",
+    "event_id": "attv-8bfce6300e2d8d47bc5963fbb4ec217532379ba89a7c70d8.o-c5-1-055.decide",
+    "order_id": "o-c5-1-055",
+    "cause": "variant",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793438342443,
+    "done_ms": 1793438346899
+   },
+   {
+    "kind": "order",
+    "event_id": "attv-6ff2a90ce6aeff28607ffc66f4b1ef1e76a442462d076bc7.o-c5-1-056.decide",
+    "order_id": "o-c5-1-056",
+    "cause": "variant",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793438343879,
+    "done_ms": 1793438348416
+   },
+   {
+    "kind": "order",
+    "event_id": "attv-c8e9d26b0b663e0ca3f1a4244b7fb7bc164542513380339f.o-c5-1-062.decide",
+    "order_id": "o-c5-1-062",
+    "cause": "discount",
+    "decision": "approve",
+    "unit_price": null,
+    "status": 200,
+    "response": null,
+    "seen_ms": 1793438369587,
+    "done_ms": 1793438373769
+   }
+  ],
+  "code_checks": {
+   "tests/test_card.py": {
+    "rc": 0,
+    "tail": "15 passed in 0.43s"
+   },
+   "tests/test_card_handoff.py": {
+    "rc": 0,
+    "tail": "10 passed in 0.26s"
+   },
+   "tests/test_card_window.py": {
+    "rc": 0,
+    "tail": "12 passed in 1.04s"
+   },
+   "tests/test_labels.py": {
+    "rc": 0,
+    "tail": "18 passed in 3.19s"
+   },
+   "tests/test_measure.py": {
+    "rc": 0,
+    "tail": "8 passed in 0.02s"
+   },
+   "tests/test_meta.py": {
+    "rc": 0,
+    "tail": "10 passed in 0.09s"
+   },
+   "tests/test_orders_ask_variant.py": {
+    "rc": 0,
+    "tail": "44 passed in 0.44s"
+   },
+   "tests/test_orders_cancel.py": {
+    "rc": 0,
+    "tail": "24 passed in 0.38s"
+   },
+   "tests/test_orders_flow.py": {
+    "rc": 0,
+    "tail": "17 passed in 0.64s"
+   },
+   "tests/test_orders_ok_after_card_change.py": {
+    "rc": 0,
+    "tail": "9 passed in 0.03s"
+   },
+   "tests/test_orders_price_proposal.py": {
+    "rc": 0,
+    "tail": "1 passed in 0.08s"
+   },
+   "tests/test_price_proposal.py": {
+    "rc": 0,
+    "tail": "9 passed in 0.26s"
+   },
+   "tests/test_price_route.py": {
+    "rc": 0,
+    "tail": "17 passed in 0.33s"
+   },
+   "tests/test_replay_ask_variant.py": {
+    "rc": 0,
+    "tail": "2 passed in 0.12s"
+   },
+   "tests/test_store_sse.py": {
+    "rc": 0,
+    "tail": "9 passed in 0.35s"
+   },
+   "tests/test_worker.py": {
+    "rc": 0,
+    "tail": "4 passed in 0.10s"
+   }
+  },
+  "ledger": {
+   "query": "SELECT session_id, count(*) AS n, COALESCE(SUM((body->>'cost_usd')::numeric), 0) AS usd\nFROM events WHERE type = 'model_call' AND session_id = 'rescore-paid-1031-1615' GROUP BY session_id;",
+   "rows": [
+    [
+     "rescore-paid-1031-1615",
+     499,
+     "0.79893985"
+    ]
+   ],
+   "rowcount": 1
+  }
+ },
+ "score": {
+  "run": "rescore-paid-1031-1615",
+  "session_id": "rescore-paid-1031-1615",
+  "sha": "bfc76115189b7283c99125359ae41097c1db0b8f",
+  "config": {
+   "mode": "live",
+   "base_url_port": 8040,
+   "healthz": {
+    "ok": true,
+    "store": "pg",
+    "head_seq": 462
+   },
+   "attachment": {
+    "session": "rescore-paid-1031-1615",
+    "epoch": "epoch-rescore-paid-1031-1615",
+    "principal": "replay-source"
+   },
+   "catalog_path": "data/comments/c5/catalog.json",
+   "catalog_sha256": "fd5e86ad67ada1c0d200386fedd642e688440a34970e795d65b99ebc267adc73",
+   "vision": "worker vision brain (spark), effort minimal",
+   "effort": "minimal",
+   "fps": 1,
+   "product_seen": "worker vision",
+   "cutout": "on a card gone live (model call)",
+   "model_client": "model client",
+   "card_line": false,
+   "labels": "labels brain with the model",
+   "speech": "media voice (Voice Transcribe)",
+   "observations": null,
+   "cap_usd": 8.0,
+   "warn_usd": 6.0,
+   "cap_from": "env",
+   "paid": true,
+   "seconds": 350.0,
+   "restart": "worker and media processes per loop",
+   "shop_delay_s": 4.0,
+   "tail_ms": 30000,
+   "loop_ms": 350000
+  },
+  "loops_run": 1,
+  "posted": {
+   "comments": 100,
+   "messenger_sent": 2
+  },
+  "c5": {
+   "order_recall": 1.0,
+   "order_n": 30,
+   "interventions": 9,
+   "interventions_per_hour": 84.95374740419105,
+   "session_minutes": 6.36,
+   "phone_visible_max_s": 0.042,
+   "phone_n": 4,
+   "receipts": 1,
+   "receipts_ok": 0
+  },
+  "latency": {
+   "frame": {
+    "wait": {
+     "n": 350,
+     "p50": 2,
+     "p95": 4
+    },
+    "infer": {
+     "n": 350,
+     "p50": 207,
+     "p95": 254
+    },
+    "display": {
+     "n": 350,
+     "p50": 7,
+     "p95": 10
+    }
+   },
+   "model_call": {
+    "receive": {
+     "n": 498,
+     "p50": 2029,
+     "p95": 3372
+    },
+    "wait": {
+     "n": 498,
+     "p50": 0,
+     "p95": 0
+    },
+    "display": {
+     "n": 498,
+     "p50": 8,
+     "p95": 13
+    }
+   },
+   "comment_labeled": {
+    "receive": {
+     "n": 125,
+     "p50": 7,
+     "p95": 15
+    },
+    "wait": {
+     "n": 125,
+     "p50": 1027,
+     "p95": 1043
+    },
+    "infer": {
+     "n": 115,
+     "p50": 1705,
+     "p95": 2312
+    },
+    "display": {
+     "n": 125,
+     "p50": 8,
+     "p95": 21
+    }
+   },
+   "speech": {
+    "wait": {
+     "n": 59,
+     "p50": 0,
+     "p95": 0
+    },
+    "infer": {
+     "n": 59,
+     "p50": 1433,
+     "p95": 1489
+    },
+    "display": {
+     "n": 59,
+     "p50": 8,
+     "p95": 15
+    }
+   },
+   "product_seen": {
+    "receive": {
+     "n": 28,
+     "p50": 4,
+     "p95": 8
+    },
+    "wait": {
+     "n": 28,
+     "p50": 16,
+     "p95": 21
+    },
+    "infer": {
+     "n": 28,
+     "p50": 1956,
+     "p95": 3401
+    },
+    "display": {
+     "n": 28,
+     "p50": 8,
+     "p95": 15
+    }
+   },
+   "card": {
+    "receive": {
+     "n": 60,
+     "p50": 4,
+     "p95": 9
+    },
+    "wait": {
+     "n": 60,
+     "p50": 0,
+     "p95": 4215
+    },
+    "infer": {
+     "n": 58,
+     "p50": 1,
+     "p95": 3198
+    },
+    "display": {
+     "n": 60,
+     "p50": 8,
+     "p95": 15
+    }
+   },
+   "price_proposal": {
+    "receive": {
+     "n": 2,
+     "p50": 3,
+     "p95": 5
+    },
+    "wait": {
+     "n": 2,
+     "p50": 21,
+     "p95": 22
+    },
+    "infer": {
+     "n": 2,
+     "p50": 2189,
+     "p95": 2718
+    },
+    "display": {
+     "n": 2,
+     "p50": 12,
+     "p95": 16
+    }
+   },
+   "message_in": {
+    "wait": {
+     "n": 2,
+     "p50": 0,
+     "p95": 0
+    },
+    "display": {
+     "n": 2,
+     "p50": 2,
+     "p95": 2
+    }
+   }
+  },
+  "cards": {
+   "SP01": 4,
+   "SP02": 1,
+   "SP03": 3,
+   "SP04": 1,
+   "SP05": 1,
+   "SP06": 1,
+   "SP07": 2,
+   "SP08": 3,
+   "SP09": 4,
+   "SP10": 1
+  },
+  "card_sku": {
+   "card-88e63c823459": "SP01",
+   "card-822a00d5d0e3": "SP02",
+   "card-1536aea6c2b1": null,
+   "card-dcc6e30f7300": null,
+   "card-5f7502ee3fa5": null,
+   "card-d2f4cfffe2c0": "SP04",
+   "card-53e60737733b": "SP05",
+   "card-d31844b875d5": "SP06",
+   "card-34329b9851bd": null,
+   "card-22754834125e": null,
+   "card-5105c135e314": null,
+   "card-383e273aae0a": null,
+   "card-f2f11632aa81": null,
+   "card-75cadb72c755": null,
+   "card-65b7c7c04d92": null,
+   "card-d481b49b96fb": null,
+   "card-528c4378e66c": null,
+   "card-1bc3ee740889": null,
+   "card-f57415b91511": null,
+   "card-a950f6247759": null,
+   "card-eb7772640b66": null
+  },
+  "references": {
+   "n": 28,
+   "right": 15,
+   "no_card": 13,
+   "by_kind": {
+    "current_card": {
+     "n": 24,
+     "right": 13
+    },
+    "previous_card": {
+     "n": 4,
+     "right": 2
+    }
+   },
+   "by_source": {
+    "order": 14,
+    "ask_variant": 1,
+    "none": 13
+   },
+   "disagree": [],
+   "wrong": [
+    {
+     "comment_id": "c5-1-029",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-031",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-032",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-035",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-045",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-071",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-074",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-078",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-082",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-085",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-091",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-095",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-098",
+     "card_id": null,
+     "card_item": null,
+     "why": "no_card"
+    }
+   ],
+   "accuracy": 0.5357142857142857,
+   "gate": false
+  },
+  "order_ids": {
+   "n": 30,
+   "outcomes": {
+    "unresolved": 2,
+    "order": 14,
+    "ask_variant": 1,
+    "other": 13
+   },
+   "in_n": 28,
+   "right": 15,
+   "why": {
+    "no_card": 13
+   },
+   "rows": [
+    {
+     "comment_id": "c5-1-001",
+     "outcome": "unresolved",
+     "label": "order",
+     "gold_item": null,
+     "gold_kind": "unresolved",
+     "expected_action": "ask_customer",
+     "draft_kind": "unresolved",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": false,
+     "right": false,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-006",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP01",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-88e63c823459",
+     "card": "card-88e63c823459",
+     "card_source": "order",
+     "card_item": "SP01",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-010",
+     "outcome": "ask_variant",
+     "label": "order",
+     "gold_item": "SP01",
+     "gold_kind": "current_card",
+     "expected_action": "ask_customer",
+     "draft_kind": "current_card",
+     "label_card": "card-88e63c823459",
+     "card": "card-88e63c823459",
+     "card_source": "ask_variant",
+     "card_item": "SP01",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-016",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP02",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-822a00d5d0e3",
+     "card": "card-822a00d5d0e3",
+     "card_source": "order",
+     "card_item": "SP02",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-018",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP01",
+     "gold_kind": "previous_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "previous_card",
+     "label_card": "card-88e63c823459",
+     "card": "card-88e63c823459",
+     "card_source": "order",
+     "card_item": "SP01",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-021",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP02",
+     "gold_kind": "current_card",
+     "expected_action": "ask_customer",
+     "draft_kind": "current_card",
+     "label_card": "card-822a00d5d0e3",
+     "card": "card-822a00d5d0e3",
+     "card_source": "order",
+     "card_item": "SP02",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-024",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP02",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-822a00d5d0e3",
+     "card": "card-822a00d5d0e3",
+     "card_source": "order",
+     "card_item": "SP02",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-029",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP03",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-031",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP02",
+     "gold_kind": "previous_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "previous_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-032",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP03",
+     "gold_kind": "current_card",
+     "expected_action": "ask_customer",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-035",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP03",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-036",
+     "outcome": "unresolved",
+     "label": "order",
+     "gold_item": null,
+     "gold_kind": "unresolved",
+     "expected_action": "ask_customer",
+     "draft_kind": "unresolved",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": false,
+     "right": false,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-041",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP04",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-d2f4cfffe2c0",
+     "card": "card-d2f4cfffe2c0",
+     "card_source": "order",
+     "card_item": "SP04",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-043",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP04",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-d2f4cfffe2c0",
+     "card": "card-d2f4cfffe2c0",
+     "card_source": "order",
+     "card_item": "SP04",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-045",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP03",
+     "gold_kind": "previous_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "previous_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-047",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP04",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-d2f4cfffe2c0",
+     "card": "card-d2f4cfffe2c0",
+     "card_source": "order",
+     "card_item": "SP04",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-048",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP04",
+     "gold_kind": "current_card",
+     "expected_action": "ask_customer",
+     "draft_kind": "current_card",
+     "label_card": "card-d2f4cfffe2c0",
+     "card": "card-d2f4cfffe2c0",
+     "card_source": "order",
+     "card_item": "SP04",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-054",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP05",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-53e60737733b",
+     "card": "card-53e60737733b",
+     "card_source": "order",
+     "card_item": "SP05",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-055",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP04",
+     "gold_kind": "previous_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "previous_card",
+     "label_card": "card-d2f4cfffe2c0",
+     "card": "card-d2f4cfffe2c0",
+     "card_source": "order",
+     "card_item": "SP04",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-056",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP05",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-53e60737733b",
+     "card": "card-53e60737733b",
+     "card_source": "order",
+     "card_item": "SP05",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-060",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP06",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": "card-d31844b875d5",
+     "card": "card-d31844b875d5",
+     "card_source": "order",
+     "card_item": "SP06",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-062",
+     "outcome": "order",
+     "label": "order",
+     "gold_item": "SP06",
+     "gold_kind": "current_card",
+     "expected_action": "needs_seller",
+     "draft_kind": "current_card",
+     "label_card": "card-d31844b875d5",
+     "card": "card-d31844b875d5",
+     "card_source": "order",
+     "card_item": "SP06",
+     "in_n": true,
+     "right": true,
+     "why": null
+    },
+    {
+     "comment_id": "c5-1-071",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP07",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-074",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP07",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-078",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP08",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-082",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP09",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-085",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP09",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-091",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP10",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-095",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP01",
+     "gold_kind": "current_card",
+     "expected_action": "confirm_order",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    },
+    {
+     "comment_id": "c5-1-098",
+     "outcome": "other",
+     "label": "order",
+     "gold_item": "SP01",
+     "gold_kind": "current_card",
+     "expected_action": "needs_seller",
+     "draft_kind": "current_card",
+     "label_card": null,
+     "card": null,
+     "card_source": "none",
+     "card_item": null,
+     "in_n": true,
+     "right": false,
+     "why": "no_card"
+    }
+   ]
+  },
+  "proposals": {
+   "n": 2,
+   "outcomes": {
+    "used": 2
+   },
+   "right_card": 2,
+   "right_price": 2,
+   "both": 2,
+   "wrong_card": 0,
+   "wrong": {
+    "n": 0,
+    "outcomes": {},
+    "card": 0,
+    "price": 0
+   },
+   "stale": {
+    "n": 0,
+    "ids": [],
+    "reason": "closed by a version ingested before the proposal"
+   },
+   "handling_ms": {
+    "median": 4494.5,
+    "n": 2
+   },
+   "handling_ms_all": {
+    "median": 4494.5,
+    "n": 2
+   },
+   "rows": [
+    {
+     "event_id": "price_proposal_7796807a6e70454783b6",
+     "loop": 1,
+     "card_id": "card-88e63c823459",
+     "had_price": true,
+     "outcome": "used",
+     "closed_by": "card_ea7b839b10da45eb928a",
+     "right_card": true,
+     "right_price": true,
+     "wrong": false,
+     "stale": false,
+     "handling_ms": 4514
+    },
+    {
+     "event_id": "price_proposal_2784cb4c50c546839dbd",
+     "loop": 1,
+     "card_id": "card-d2f4cfffe2c0",
+     "had_price": true,
+     "outcome": "used",
+     "closed_by": "card_a46eb0ce17e740009197",
+     "right_card": true,
+     "right_price": true,
+     "wrong": false,
+     "stale": false,
+     "handling_ms": 4475
+    }
+   ]
+  },
+  "needs_seller": {
+   "per_loop": {
+    "1": {
+     "entries": 7,
+     "causes": {
+      "price_changed": 1,
+      "variant": 5,
+      "discount": 1
+     },
+     "orders": 7,
+     "would_be": 6,
+     "sku_none": 0
+    }
+   },
+   "total": {
+    "entries": 7,
+    "causes": {
+     "price_changed": 1,
+     "variant": 5,
+     "discount": 1
+    },
+    "orders": 7,
+    "would_be": 6,
+    "sku_none": 0
+   },
+   "reasons": {
+    "card card-#e#c# changed before the customer's ok: v# #đ -> v# #đ; the customer confirms again": 1,
+    "variant is unavailable or unresolved on the selected card": 5,
+    "customer asked for a discount: waiting for the shop (\"bớt\")": 1
+   }
+  },
+  "missed": {
+   "n": 28,
+   "missed": [
+    "c5-1-029",
+    "c5-1-031",
+    "c5-1-032",
+    "c5-1-035",
+    "c5-1-045",
+    "c5-1-071",
+    "c5-1-074",
+    "c5-1-078",
+    "c5-1-082",
+    "c5-1-085",
+    "c5-1-091",
+    "c5-1-095",
+    "c5-1-098"
+   ],
+   "no_product": 2,
+   "missed_n": 13
+  },
+  "receipts": {
+   "n": 1,
+   "version_ok": 1,
+   "rate": 1.0,
+   "with_image": 0,
+   "image_path_run": 0,
+   "rows": [
+    {
+     "event_id": "mi.m-rescore-paid-1031-1615-c5-1-m02.o-c5-1-016.reply",
+     "order_id": "o-c5-1-016",
+     "version_ok": true,
+     "image": false,
+     "image_source": {
+      "card_id": "card-822a00d5d0e3",
+      "card_version": 3,
+      "product_seen": "product_seen_822a00d5d0e34d70901f",
+      "frame_ts_ms": 1793438217298,
+      "frame_event": "frame_40600fff03ce43e298a1",
+      "source_frame": 58,
+      "image_sha256": null,
+      "source_session": null,
+      "source_t": null,
+      "image_path": "NOT_RUN",
+      "missing": [
+       "image_sha256",
+       "source_session",
+       "source_t"
+      ]
+     }
+    }
+   ]
+  },
+  "waits": {
+   "per_loop": {
+    "1": {
+     "lines": {
+      "many": 1
+     },
+     "snapshot": {
+      "many": 1
+     },
+     "suffix": {
+      "many": 1
+     },
+     "agree": true
+    }
+   },
+   "total": {
+    "many": 1
+   },
+   "all_agree": true
+  },
+  "interventions": {
+   "total": 9,
+   "per_hour": 84.95374740419105,
+   "by_cause": {
+    "price_used": 2,
+    "order:price_changed->CONFIRM_SENT": 1,
+    "order:variant->CONFIRM_SENT": 5,
+    "order:discount->CONFIRM_SENT": 1
+   },
+   "core_c5": 9,
+   "ask_customer_messages": 1,
+   "rows": [
+    {
+     "event_id": "card_ea7b839b10da45eb928a",
+     "loop": 1,
+     "kind": "card",
+     "took_ms": 4514,
+     "cause": [
+      "price"
+     ]
+    },
+    {
+     "event_id": "mi.m-rescore-paid-1031-1615-c5-1-m01.o-c5-1-006.reply.o-c5-1-006.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": 17701,
+     "cause": [
+      "price"
+     ]
+    },
+    {
+     "event_id": "attv-0b9d6f28afebfc64ac90d671a665c0da7f06be4f56352487.o-c5-1-016.decide.o-c5-1-016.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "attv-edf31642a718c500a92187f1f7b7585b8487debce6248049.o-c5-1-024.decide.o-c5-1-024.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "attv-9ab83a517ac1caabd5db6458b17530587b5b232cc57bf797.o-c5-1-041.decide.o-c5-1-041.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "card_a46eb0ce17e740009197",
+     "loop": 1,
+     "kind": "card",
+     "took_ms": 4475,
+     "cause": [
+      "price"
+     ]
+    },
+    {
+     "event_id": "attv-8bfce6300e2d8d47bc5963fbb4ec217532379ba89a7c70d8.o-c5-1-055.decide.o-c5-1-055.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": 19707,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "attv-6ff2a90ce6aeff28607ffc66f4b1ef1e76a442462d076bc7.o-c5-1-056.decide.o-c5-1-056.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "stock"
+     ]
+    },
+    {
+     "event_id": "attv-c8e9d26b0b663e0ca3f1a4244b7fb7bc164542513380339f.o-c5-1-062.decide.o-c5-1-062.approve",
+     "loop": 1,
+     "kind": "order",
+     "took_ms": null,
+     "cause": [
+      "price"
+     ]
+    }
+   ]
+  },
+  "situations": {
+   "1": {
+    "status": "PASS",
+    "triggered": 10,
+    "passed": 10,
+    "event_id": "card_c1536af8e7f440558845",
+    "note": "items with a card per loop out of 10",
+    "code": {
+     "files": [
+      "tests/test_card.py",
+      "tests/test_card_handoff.py",
+      "tests/test_store_sse.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "2": {
+    "status": "PASS",
+    "triggered": 2,
+    "passed": 2,
+    "event_id": "card_ea7b839b10da45eb928a",
+    "note": "proposals on a card that already had a price",
+    "other": [],
+    "code": {
+     "files": [
+      "tests/test_price_route.py",
+      "tests/test_price_proposal.py",
+      "tests/test_orders_price_proposal.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "3": {
+    "status": "FAIL",
+    "triggered": 28,
+    "passed": 15,
+    "event_id": "rescore-paid-1031-1615.c5-1-029",
+    "note": "accuracy 0.5357142857142857 on n=28 (target 0.9 on >= 50); previous_card 2/4; no card 13",
+    "code": {
+     "files": [
+      "tests/test_labels.py",
+      "tests/test_measure.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "4": {
+    "status": "FAIL",
+    "triggered": 4,
+    "passed": 1,
+    "event_id": "rescore-paid-1031-1615.c5-1-021",
+    "note": "ask_variant <= 5 s; stock_question answered 0/13",
+    "code": {
+     "files": [
+      "tests/test_orders_ask_variant.py",
+      "tests/test_replay_ask_variant.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "5": {
+    "status": "FAIL",
+    "triggered": 2,
+    "passed": 1,
+    "event_id": "rescore-paid-1031-1615.c5-1-035",
+    "note": "late comments tied to the card shown when they were written",
+    "code": {
+     "files": [
+      "tests/test_labels.py",
+      "tests/test_store_sse.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "6": {
+    "status": "PASS",
+    "triggered": 1,
+    "passed": 1,
+    "event_id": "speech_72c13671febd41ac9fbb",
+    "note": "a price wait happened (lines per loop, deduped); existence only",
+    "code": {
+     "files": [
+      "tests/test_card_window.py",
+      "tests/test_price_proposal.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "7": {
+    "status": "PASS",
+    "triggered": 1,
+    "passed": 1,
+    "event_id": "rescore-paid-1031-1615.c5-1-063",
+    "note": "a 'do not cancel' comment leaves the order open",
+    "code": {
+     "files": [
+      "tests/test_orders_cancel.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "8": {
+    "status": "NOT_TRIGGERED",
+    "triggered": 0,
+    "passed": 0,
+    "event_id": null,
+    "note": "CANCEL quick reply -> CANCELLED",
+    "code": {
+     "files": [
+      "tests/test_orders_cancel.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "9": {
+    "status": "PASS",
+    "triggered": 4,
+    "passed": 4,
+    "event_id": "rescore-paid-1031-1615.c5-1-002",
+    "note": "spelled-out phone hidden within 5 s",
+    "code": {
+     "files": [
+      "tests/test_labels.py",
+      "tests/test_measure.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "10": {
+    "status": "PASS",
+    "triggered": 1,
+    "passed": 1,
+    "event_id": "mi.m-rescore-paid-1031-1615-c5-1-m01.o-c5-1-006.reply.o-c5-1-006.approve",
+    "note": "'ok' after the card changed -> NEEDS_SELLER, confirm again",
+    "code": {
+     "files": [
+      "tests/test_orders_ok_after_card_change.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "11": {
+    "status": "TEST_ONLY",
+    "triggered": 0,
+    "passed": 0,
+    "event_id": null,
+    "note": "schema / 429: tests only",
+    "code": {
+     "files": [
+      "tests/test_meta.py",
+      "tests/test_worker.py"
+     ],
+     "status": "PASS"
+    }
+   },
+   "12": {
+    "status": "PASS",
+    "triggered": 1,
+    "passed": 1,
+    "event_id": "mi.m-rescore-paid-1031-1615-c5-1-m02.o-c5-1-016.reply",
+    "note": "CONFIRMED with the receipt at the confirmed version",
+    "code": {
+     "files": [
+      "tests/test_orders_flow.py",
+      "tests/test_measure.py"
+     ],
+     "status": "PASS"
+    }
+   }
+  },
+  "per_loop": [
+   {
+    "loop": 1,
+    "t0_ms": 1793438159298,
+    "end_ms": 1793438542535,
+    "comments": 100,
+    "orders": 14,
+    "confirmed": 1,
+    "cancelled": 0,
+    "needs_seller": 7,
+    "would_be": 6,
+    "interventions": 9,
+    "proposals": 2,
+    "right_card": 2,
+    "right_price": 2,
+    "both": 2,
+    "waits": 1,
+    "missed": 13,
+    "items_with_card": 10,
+    "items": 10,
+    "stopped": null
+   }
+  ],
+  "estimate": {
+   "label": "ước tính theo giả định",
+   "assumptions": {
+    "manual_s_per_order": 60,
+    "manual_s_per_question": 20,
+    "tap_s": 4,
+    "tap_s_used": 4.4945,
+    "tap_s_source": "measured median"
+   },
+   "rows": [
+    {
+     "what": "shop actions",
+     "without": 43,
+     "with": 9
+    },
+    {
+     "what": "shop minutes",
+     "without": 34.3,
+     "with": 0.7
+    },
+    {
+     "what": "orders not taken up in 60 s",
+     "without": "không ước tính",
+     "with": 13
+    }
+   ]
+  }
+ }
+}
