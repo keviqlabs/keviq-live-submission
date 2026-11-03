@@ -5,8 +5,8 @@ The README ("Run it yourself") has the short version. This file gives each step 
 ## 0. Clone and install
 
 ```bash
-git clone https://github.com/keviqlabs/keviq-live-event.git
-cd keviq-live-event
+git clone https://github.com/keviqlabs/keviq-live-submission.git
+cd keviq-live-submission
 uv sync
 ```
 
