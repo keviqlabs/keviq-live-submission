@@ -48,5 +48,5 @@ appears under the card. The hide button is browser-local: it does not change any
 
 ## Tests
 
-`node --test tests/console_*_ui.mjs` runs all five console test files against a simulated DOM
+`node --test tests/console_*_ui.mjs` runs all six console test files against a simulated DOM
 (`tests/console_harness.mjs` loads the three console scripts into one context).

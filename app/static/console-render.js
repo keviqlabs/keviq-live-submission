@@ -339,7 +339,7 @@ function renderRecentOrders(list = [...orders.values()].sort((a, b) => b.ts_ms -
   $("orders-filter").innerHTML = filters.map(([value, key]) =>
     `<button type="button" class="btn small" data-act="order-filter" data-order-filter="${value}" aria-pressed="${orderFilter === value}">${esc(t(key))}</button>`).join("");
   const listShown = list.filter((o) => o.state !== "NEEDS_SELLER" && matchesOrderFilter(o));
-  $("orders").innerHTML = listShown.length ? listShown.map(orderRowHtml).join("") : emptyHtml("…", "orders.empty.title", "orders.empty.body");
+  $("orders").innerHTML = listShown.length ? listShown.map(orderRowHtml).join("") : emptyHtml("…", "orders.empty.title", orderFilter === "all" ? "orders.empty.none" : "orders.empty.body");
 }
 
 function renderOrders() {

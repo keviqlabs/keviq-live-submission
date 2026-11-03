@@ -148,3 +148,25 @@ test("unresolved comments do not inflate order counts and filters do not cap the
   assert.equal(ui.rows()[0], "extra-204");
   assert.deepEqual(ui.requests, []);
 });
+
+
+test("All with no listable orders shows a waiting hint in both languages", async () => {
+  const ui = setup();
+  assert.match(ui.html("orders"), /Orders appear here as the session creates them\./);
+  assert.doesNotMatch(ui.html("orders"), /Choose another status/);
+  await ui.click({ lang: "vi" });
+  assert.match(ui.html("orders"), /Đơn sẽ hiện ở đây khi phiên tạo đơn\./);
+  assert.doesNotMatch(ui.html("orders"), /Chọn trạng thái khác/);
+  ui.emit("approval", "NEEDS_SELLER", 2070000);
+  assert.match(ui.html("orders"), /Đơn sẽ hiện ở đây khi phiên tạo đơn\./);
+  assert.match(ui.html("queue"), /data-order-id="approval"/);
+  await ui.click({ lang: "en" });
+  assert.match(ui.html("orders"), /Orders appear here as the session creates them\./);
+  await ui.click({ act: "order-filter", orderFilter: "confirmed" });
+  assert.match(ui.html("orders"), /Choose another status to view the session's orders\./);
+  await ui.click({ lang: "vi" });
+  assert.match(ui.html("orders"), /Chọn trạng thái khác để xem các đơn của phiên\./);
+  await ui.click({ act: "order-filter", orderFilter: "all" });
+  assert.match(ui.html("orders"), /Đơn sẽ hiện ở đây khi phiên tạo đơn\./);
+  assert.doesNotMatch(ui.html("orders"), /Chọn trạng thái khác/);
+});
