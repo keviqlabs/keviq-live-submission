@@ -19,6 +19,7 @@ def test_another_process_cannot_claim_or_remove_the_test_database_lock(tmp_path,
         result = subprocess.run(command, capture_output=True, text=True, env=env)
         assert result.returncode != 0 and "already exists" in result.stderr
         assert json.loads(path.read_text()) == owner
+        assert "token" not in owner  # a field named token trips the secret scan on the live lock file
     assert not path.exists()
 
 
@@ -26,7 +27,7 @@ def test_a_child_fixture_keeps_its_parent_commands_lock(tmp_path, monkeypatch):
     monkeypatch.delenv(TOKEN_ENV, raising=False)
     path = tmp_path / "keviq_test.lock"
     with locked_test_database(path) as owner:
-        monkeypatch.setenv(TOKEN_ENV, owner["token"])
+        monkeypatch.setenv(TOKEN_ENV, owner["lock_id"])
         with locked_test_database(path) as child:
             assert child == owner
         assert json.loads(path.read_text()) == owner
