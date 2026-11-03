@@ -77,3 +77,36 @@ test("once an order exists, only its explicit candidate approve/reject controls 
   await ui.click({ act: "choose-order", oid: "different-id-encoding", choice: "a" });
   assert.deepEqual(ui.requests[0].body, { decision: "approve", card_id: "a" });
 });
+
+test("unresolved order comments appear in the seller queue without invented actions", () => {
+  const ui = setup();
+  ui.run(`handlers.comment({ event_id: "cm-1", comment_id: "cm", user_ref: "buyer", ts_ms: 1, text: "this one" });
+    handlers.comment_labeled({ comment_id: "cm", label: "order", order_draft: { reference_kind: "unresolved", qty: 1, variant: null } });`);
+  assert.match(ui.nodes.get("unresolved").innerHTML, /this one/);
+  assert.match(ui.nodes.get("unresolved").innerHTML, /No item selection available/);
+  assert.doesNotMatch(ui.nodes.get("unresolved").innerHTML, /attachment-select/);
+  assert.equal(ui.nodes.get("queue-count").textContent, "1");
+});
+
+test("an expired attachment offers only its frozen candidates and disappears after an order", () => {
+  const ui = setup();
+  expired(ui);
+  ui.run(`handlers.comment_labeled({ comment_id: "intent", label: "order", order_draft: { reference_kind: "unresolved", qty: 1, variant: null } });`);
+  assert.match(ui.nodes.get("unresolved").innerHTML, /data-choice="a"/);
+  assert.match(ui.nodes.get("unresolved").innerHTML, /data-choice="b"/);
+  ui.run(`handlers.order({ type: "order", order_id: "order", state: "NEEDS_SELLER", ts_ms: 30,
+    customer_ref: "buyer", reason: "choice", amount: 150000, caused_by: ["comment-event"],
+    lines: [{ card_id: "a", card_version: 1, sku: "A", qty: 1, unit_price: 150000 }] });`);
+  assert.equal(ui.nodes.get("unresolved").innerHTML, "");
+  assert.match(ui.nodes.get("comments").innerHTML, /data-act="open-order"/);
+});
+
+test("a pending comment does not display an empty-queue message and keeps its menu on unrelated events", () => {
+  const ui = setup();
+  expired(ui);
+  ui.run(`handlers.comment_labeled({ comment_id: "intent", label: "order", order_draft: { reference_kind: "unresolved", qty: 1, variant: null } });`);
+  assert.equal(ui.nodes.get("queue").innerHTML, "");
+  ui.nodes.get("unresolved").innerHTML = "opened controls intact";
+  ui.run(`handlers.comment({ event_id: "unrelated", comment_id: "other", user_ref: "buyer", text: "hello", ts_ms: 50 });`);
+  assert.equal(ui.nodes.get("unresolved").innerHTML, "opened controls intact");
+});

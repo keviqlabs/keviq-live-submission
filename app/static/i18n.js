@@ -3,6 +3,14 @@
 // text) is never translated. Default language when nothing is stored: English.
 const I18N = {
   en: {
+    "comment.statusUnknown": "Status not available",
+    "comment.expired": "Item matching expired",
+    "comment.unresolvedQueue": "Unresolved item",
+    "comment.noSelection": "No item selection available for this comment yet.",
+    "comment.openOrder": "Open order",
+    "queue.proposedTotal": "Total at entered unit price",
+    "queue.unresolved": "Unresolved comments",
+    "comment.more": "More actions",
     "status.localTime": "local time",
     "source.replay": "replay",
     "source.sim": "sim",
@@ -185,6 +193,14 @@ const I18N = {
     "overlay.show": "Show card",
   },
   vi: {
+    "comment.statusUnknown": "Chưa có trạng thái",
+    "comment.expired": "Hết hạn gắn món",
+    "comment.unresolvedQueue": "Chưa xác định được món",
+    "comment.noSelection": "Chưa có cách chọn món cho bình luận này.",
+    "comment.openOrder": "Mở đơn",
+    "queue.proposedTotal": "Tổng theo đơn giá nhập",
+    "queue.unresolved": "Bình luận chưa giải quyết",
+    "comment.more": "Thao tác khác",
     "status.localTime": "giờ máy",
     "source.replay": "phát lại",
     "source.sim": "mô phỏng",
