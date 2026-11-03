@@ -30,7 +30,7 @@ AI coding assistants were used as tools. The entrant is the author, working alon
 
 Hosted demo: when one is running, the submission form gives its link and login. It replays sample data and makes no Model API calls.
 
-`make check` on a fresh clone skips 7 tests that need the local test1 files in `data/local/test1/` (not in this repository; five in `tests/test_vn_test1.py`, one in `tests/test_c5_catalog.py`, one in `tests/test_c5_streams.py`). On 2 November `make check` gave `1934 passed, 7 skipped` at `ae4bbdd`, the head of PR #103, whose tree is the same as main `31e7d8a` (PR #103 description). With the folder present nothing is skipped: on 31 October at `4c53e72` the run gave `1489 passed` (`docs/evidence/2026-10-31/e2e-A-1031-0755-make-check.log`, line 30).
+`make check` on a fresh clone skips 7 tests that need the local test1 files in `data/local/test1/` (not in this repository; five in `tests/test_vn_test1.py`, one in `tests/test_c5_catalog.py`, one in `tests/test_c5_streams.py`). On 3 November `make check` gave `2005 passed, 7 skipped` (`docs/evidence/2026-11-03/make-check-1103.log`, which records the tree it ran on). With the folder present nothing is skipped: on 31 October at `4c53e72` the run gave `1489 passed` (`docs/evidence/2026-10-31/e2e-A-1031-0755-make-check.log`, line 30).
 
 Everything below runs on one machine from a fresh clone, in three modes. Modes 1 and 2 need no Meta account and no API key, and call no model. Mode 3 calls the Meta models and needs a Model API key. `docs/RUN.md` has every step with the output to expect, how to run a second copy on other ports, and the paid test1 run.
 
