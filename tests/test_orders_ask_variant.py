@@ -479,7 +479,7 @@ async def test_the_label_has_a_consequence_and_the_log_shows_the_question(c019):
         ("mau den nha", "đen", True),
         ("đến tối mình lấy", "đen", False),
         ("size 39 nha", "39", True),
-        ("sđt 0939123456", "39", False),
+        ("sđt 0900000039", "39", False),
         ("size M", "M", True),
         ("mình lấy", "M", False),
     ],

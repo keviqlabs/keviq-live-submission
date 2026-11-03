@@ -1,0 +1,106 @@
+# 3 November 2026. DATABASE_URL pointed at an empty PostgreSQL 17 container on 127.0.0.1, migrated with `uv run python -m app.migrate` before the run.
+$ git rev-parse HEAD^{tree}
+fbe2df92e9af4e3b59f54d714a39207c804e7f11
+$ make check
+uv run ruff check .
+All checks passed!
+uv run ruff format --check .
+248 files already formatted
+bash scripts/hygiene.sh
+hygiene: checked 2 commit(s) in eb81ec6..833657c
+hygiene: clean
+node --test tests/console_adapter_ui.mjs tests/console_attachment_ui.mjs tests/console_decision_ui.mjs tests/console_i18n_ui.mjs tests/console_item_ui.mjs tests/console_orders_ui.mjs
+✔ the stream opens at cursor 0 and the resume cursor follows the event id (22.084375ms)
+✔ comments, labels and orders render from events alone; the approval queue counts only NEEDS_SELLER (2.963584ms)
+✔ model status shows only measured calls: dot from the last result, p50 with n, dashes before any call (1.446166ms)
+✔ the paint timestamp survives a later render of the card list (2.270083ms)
+✔ a returning item stays current after the previous item's later seller edit (21.2615ms)
+✔ pre-order selection sends only explicit identity and expected attachment version (2.55875ms)
+✔ an empty snapshot has keep/reject controls without an invented selection (1.222542ms)
+✔ once an order exists, only its explicit candidate approve/reject controls remain (2.658458ms)
+✔ unresolved order comments appear in the seller queue without invented actions (1.297292ms)
+✔ an expired attachment offers only its frozen candidates and disappears after an order (1.733084ms)
+✔ a pending comment does not display an empty-queue message and keeps its menu on unrelated events (1.217333ms)
+✔ approving with a typed unit price posts approve + unit_price (22.596375ms)
+✔ keeping the card price posts a bare approve; reject posts reject (1.528125ms)
+✔ an invalid unit price is refused locally with a banner and no request (1.0385ms)
+✔ the queue buttons are the design's primary/danger actions and the source log is read-only (1.945125ms)
+✔ known approval reasons translate and format amounts without changing the stored reason (2.244208ms)
+✔ complete known reasons are localized while unknown details remain escaped and lossless (2.360208ms)
+✔ recent orders use the pinned item name and keep reason, activity and money separate (1.269208ms)
+✔ proposed total uses entered unit price and every line quantity (1.472291ms)
+✔ new comments do not rebuild the order queue while the seller is deciding (1.383917ms)
+✔ en and vi hold the same keys and no empty string (4.068167ms)
+✔ every key used by the scripts and the pages exists in the dictionary (1.467708ms)
+✔ the console renders the same events in English by default and fully in Vietnamese after one switch (24.486125ms)
+✔ one language click updates static headings, current language and dynamic content synchronously (3.043584ms)
+✔ the current source translates on receipt and language changes, while unknown data stays unchanged (2.339375ms)
+✔ seller and customer waiting states have consistent display labels without changing their values (0.627875ms)
+✔ selection sends the exact typed SKU and latest visible card version to the item route only (21.590541ms)
+✔ keeping identity unresolved uses null on the current version and no order or price route (1.273459ms)
+✔ unknown drafts expose identity controls before price; known and legacy cards cannot use them (1.045583ms)
+✔ a stale response preserves the typed code and shows an escaped card-local error (0.979042ms)
+✔ blank selection and an ineligible card produce no request (1.660292ms)
+✔ missing and simulated photos show an explicitly labeled illustration (1.196167ms)
+✔ a broken or already-failed photo reveals the honest fallback without another image request (0.959208ms)
+✔ seller-facing drafts use names while identifiers stay in collapsed source details (1.801042ms)
+✔ summary counts every order and only confirmed amounts; the queue stays separate (22.786ms)
+✔ confirmed and cancelled filters change only the recent list and keep full-session totals (2.152792ms)
+✔ switching language preserves the filter and translates the summary and buttons (3.096875ms)
+✔ latest states replace prior totals, closed joins confirmed, and draft counts are conditional (2.728209ms)
+✔ opening an order hidden by a filter reveals it before scrolling without a request (2.419042ms)
+✔ an empty filter shows a translated empty state and zero confirmed value (1.581334ms)
+✔ unresolved comments do not inflate order counts and filters do not cap the list (626.811875ms)
+✔ All with no listable orders shows a waiting hint in both languages (1.753042ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 42
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 765.009625
+uv run python -m tests.db_lock -- pytest -q
+........................................................................ [  3%]
+........................................................................ [  7%]
+........................................................................ [ 10%]
+........................................................................ [ 14%]
+........................................................................ [ 17%]
+.........................................s.............................. [ 21%]
+........................................................................ [ 25%]
+...............................s........................................ [ 28%]
+........................................................................ [ 32%]
+........................................................................ [ 35%]
+........................................................................ [ 39%]
+........................................................................ [ 42%]
+........................................................................ [ 46%]
+........................................................................ [ 50%]
+........................................................................ [ 53%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 64%]
+........................................................................ [ 67%]
+........................................sssss........................... [ 71%]
+........................................................................ [ 75%]
+........................................................................ [ 78%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 89%]
+........................................................................ [ 93%]
+........................................................................ [ 96%]
+....................................................................     [100%]
+2005 passed, 7 skipped in 197.78s (0:03:17)
+uv run python -m measure --events-file data/sessions/demo1/events.jsonl --gold data/sessions/demo1/gold.json --no-write
+events: 69  (hand-written fx- fixtures: 46; numbers over fixtures are not model results)
+C1 consequence within 5000 ms: 15/15  missing=[]
+C3 referenced_card_id accuracy: 1.000 on n=7 (target >= 0.9 on 50)
+C5 order recall: 1.000 on n=7 (target >= 0.9)
+C5 seller interventions: 0 in 1.03 min = 0.0/h (target <= 10/h)
+C5 phone visible max: 1.5 s on n=1 (target <= 5 s)
+C5 receipts with image and version price: 2/2 (target 100%)
+labels micro-F1: 1.000 (14/14 labeled)
+C8 latency ms (p50 / p95, n):
+  no events with timing yet (fixtures carry none; worker output does)
+cost by day and model:
+  no model_call events
+make_check_rc=0
