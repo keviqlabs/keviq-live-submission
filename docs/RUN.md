@@ -144,7 +144,7 @@ The measured paid run (`docs/evidence/2026-10-31/rescore-paid-1031-NOTE.md`) pla
 - `data/local/test1/vi-2026-10-27.mp4`: the recording, 5 min 51 s with sound;
 - `data/local/test1/labels.json`: its local price labels, which the scorer reads.
 
-Where they can be downloaded and their checksums: `data/judge/README.md`.
+The recording is not published; the checksums of both files are in `data/judge/README.md`.
 
 To watch it without scoring: in `.env` set `CATALOG_PATH=data/comments/c5/catalog.json` (the ten items of the recording) and the key, restart `make app` and `make worker`, then, the second right after the first:
 

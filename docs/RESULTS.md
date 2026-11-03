@@ -88,8 +88,7 @@ Notes on the table:
   card on either side matches. The by-item count (6 of 7, then 7 of 7) is a hand count in the judge1 NOTE, line 252.
   Rerun offline with no key: `results-1103-NOTE.md`, "Offline measure".
 - **Simulated parties.** The seller and the customers of the C5 runs are scripts; the comments are synthetic; the
-  test1 recording is not in this repository, and where to download it is not given yet (`data/judge/README.md`,
-  line 22, "TO FILL").
+  test1 recording is not in this repository and is not published (`data/judge/README.md`, line 22).
 
 ## Clean clone
 

@@ -19,7 +19,7 @@ judge1 is the hand-written session `data/sessions/demo1` with product pictures d
 
 The test1 recording is a seller showing ten items, recorded on 27 October 2026. It is not in this repository.
 
-Download location: TO FILL.
+Download location: none; the recording is not published.
 
 | Input | File | What it is | sha256 |
 |---|---|---|---|
