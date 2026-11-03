@@ -28,7 +28,7 @@ AI coding assistants were used as tools. The entrant is the author, working alon
 
 ## Run it yourself
 
-Hosted demo: optional; include a link and access instructions only if deployed.
+Hosted demo: when one is running, the submission form gives its link and login. It replays sample data and makes no Model API calls.
 
 `make check` on a fresh clone skips 7 tests that need the local test1 files in `data/local/test1/` (not in this repository; five in `tests/test_vn_test1.py`, one in `tests/test_c5_catalog.py`, one in `tests/test_c5_streams.py`). On 2 November `make check` gave `1934 passed, 7 skipped` at `ae4bbdd`, the head of PR #103, whose tree is the same as main `31e7d8a` (PR #103 description). With the folder present nothing is skipped: on 31 October at `4c53e72` the run gave `1489 passed` (`docs/evidence/2026-10-31/e2e-A-1031-0755-make-check.log`, line 30).
 
@@ -53,8 +53,8 @@ The app listens on 127.0.0.1:8000 and PostgreSQL on 127.0.0.1:55433; if a port i
 ### Mode 1: replay judge1, no API key (about 1.3 minutes, measured once)
 
 ```bash
-git clone https://github.com/keviqlabs/keviq-live-event.git
-cd keviq-live-event
+git clone https://github.com/keviqlabs/keviq-live-submission.git
+cd keviq-live-submission
 uv sync                       # the first run downloads Python 3.12 and the packages
 make infra-up                 # PostgreSQL 17 in Docker on 127.0.0.1:55433, migrations applied
 make app                      # terminal 1: the app on http://127.0.0.1:8000; keep it open
