@@ -113,14 +113,15 @@ judge1 events on their own 61.8 s clock.
 
 ## Work in progress
 
-The published work-in-progress branches, none of them merged into `main` on 3 November. None of them is part of the
-results above, and nothing here claims they work. Other unmerged branches of the working repository belong to closed or
-superseded pull requests and are not part of this work. Three other branches are not published because their changes,
-apart from comment rewording, are already on `main`: `measure-first-hide` through PR #9 (27 October),
-`test/sku-ambiguity` and `test/written-phone-shield` through PR #60 (28 October). "Last commit" is the date of the
-branch's tip; on `returning-card-current` that tip, of 3 November, only rewords comments, docstrings and notes.
+The published work-in-progress branch, not merged into `main` on 3 November. It is not part of the results above, and
+nothing here claims it works. Other unmerged branches of the working repository belong to closed or superseded pull
+requests and are not part of this work. Four other branches are not published because what they add is already on
+`main`. Three of them carry the same changes, apart from comment rewording: `measure-first-hide` through PR #9
+(27 October), `test/sku-ambiguity` and `test/written-phone-shield` through PR #60 (28 October). The fourth,
+`returning-card-current`, makes a product shown again the current card again; `main` has done that since PR #61
+(29 October), which builds it differently, and the branch's own test passes on `main`. "Last commit" is the date of the
+branch's tip.
 
 | Branch | Last commit | What it changes |
 |---|---|---|
-| `returning-card-current` | 3 November (wording only; code and test of 28 October) | `worker/brain/labels.py`: the current card is the live card shown last, so a product shown again becomes current again; a test in `tests/test_labels.py`; reworded comments in `worker/brain/card.py` and `tests/test_catalog_path.py`, and reworded D-026 text in `docs/DECISIONS.md` |
 | `speech-leads-prep` | 27 October | `docs/speech-leads-prep.md`: a preparation draft, not a decision, for letting a spoken product switch trigger a one-frame vision check before a new card opens |
