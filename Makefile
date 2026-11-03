@@ -40,8 +40,10 @@ fmt:
 test:
 	uv run python -m tests.db_lock -- pytest -q
 
+UI_TESTS := $(sort $(wildcard tests/console_*_ui.mjs))
 ui-test:
-	node --test tests/console_*_ui.mjs
+	@test -n "$(UI_TESTS)" || { echo "ui-test: no suites match tests/console_*_ui.mjs" >&2; exit 1; }
+	node --test $(UI_TESTS)
 
 measure-quick:
 	uv run python -m measure --events-file data/sessions/demo1/events.jsonl --gold data/sessions/demo1/gold.json --no-write
