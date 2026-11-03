@@ -312,13 +312,43 @@ function updateQueueCount() {
   if (!ordersWaiting) $("queue").innerHTML = unresolved ? "" : emptyHtml("✓", "queue.empty.title", "queue.empty.body");
 }
 
+function matchesOrderFilter(o) {
+  if (orderFilter === "all") return true;
+  if (orderFilter === "confirmed") return o.state === "CONFIRMED" || o.state === "CLOSED";
+  return o.state === (orderFilter === "waiting" ? "CONFIRM_SENT" : "CANCELLED");
+}
+
+function orderSummaryHtml(list) {
+  const counts = { NEEDS_SELLER: 0, CONFIRM_SENT: 0, CONFIRMED: 0, CANCELLED: 0, DRAFT: 0 };
+  let confirmedValue = 0;
+  for (const o of list) {
+    const state = o.state === "CLOSED" ? "CONFIRMED" : o.state;
+    if (Object.hasOwn(counts, state)) counts[state]++;
+    if (state === "CONFIRMED") confirmedValue += o.amount;
+  }
+  const tones = { NEEDS_SELLER: "warning", CONFIRM_SENT: "warning", CONFIRMED: "live", CANCELLED: "danger" };
+  const groups = Object.entries(counts).filter(([state, n]) => state !== "DRAFT" || n > 0);
+  return `<div class="order-summary-counts">${groups.map(([state, n]) =>
+    `<span class="pill ${tones[state] || ""}" data-order-state="${state}">${esc(tEnum("order.state", state))} <strong>${n}</strong></span>`).join("")}</div>
+    <div class="order-summary-value"><span>${esc(t("orders.confirmedValue"))}:</span> <strong class="money">${esc(vnd(confirmedValue))}</strong></div>`;
+}
+
+function renderRecentOrders(list = [...orders.values()].sort((a, b) => b.ts_ms - a.ts_ms)) {
+  $("orders-summary").innerHTML = orderSummaryHtml(list);
+  const filters = [["all", "orders.all"], ["confirmed", "order.state.CONFIRMED"], ["waiting", "order.state.CONFIRM_SENT"], ["cancelled", "order.state.CANCELLED"]];
+  $("orders-filter").innerHTML = filters.map(([value, key]) =>
+    `<button type="button" class="btn small" data-act="order-filter" data-order-filter="${value}" aria-pressed="${orderFilter === value}">${esc(t(key))}</button>`).join("");
+  const listShown = list.filter((o) => o.state !== "NEEDS_SELLER" && matchesOrderFilter(o));
+  $("orders").innerHTML = listShown.length ? listShown.map(orderRowHtml).join("") : emptyHtml("…", "orders.empty.title", "orders.empty.body");
+}
+
 function renderOrders() {
   const focused = document.activeElement?.dataset?.price;
   const list = [...orders.values()].sort((a, b) => b.ts_ms - a.ts_ms);
-  const queue = list.filter((o) => o.state === "NEEDS_SELLER"), rest = list.filter((o) => o.state !== "NEEDS_SELLER");
+  const queue = list.filter((o) => o.state === "NEEDS_SELLER");
   $("queue").innerHTML = queue.length ? queue.map(approvalHtml).join("") : emptyHtml("✓", "queue.empty.title", "queue.empty.body");
   updateQueueCount();
-  $("orders").innerHTML = rest.map(orderRowHtml).join("");
+  renderRecentOrders(list);
   renderLog();
   focusBack("data-price", focused);
 }
