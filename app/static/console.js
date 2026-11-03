@@ -16,6 +16,7 @@ const itemCodes = new Map(); // card_id -> catalog code typed by the seller
 const itemNotes = new Map(); // card_id -> item selection result
 const comments = new Map();  // comment_id -> {comment, labeled}
 const orders = new Map();    // order_id -> latest order event
+let orderFilter = "all";
 const orderComments = new Map(); // order_id -> real source comment identity
 const attachments = new Map(); // attachment_id -> latest immutable decision version
 const logs = new Map();      // order_id -> source log (C6) from /orders/{id}/log
@@ -166,6 +167,13 @@ document.addEventListener("click", async (ev) => {
   if (b.dataset.lang) { setLang(b.dataset.lang, rerender); return; }
   const oid = b.dataset.oid, act = b.dataset.act;
   if (!act) return;
+  if (act === "order-filter") {
+    if (!["all", "confirmed", "waiting", "cancelled"].includes(b.dataset.orderFilter)) return;
+    orderFilter = b.dataset.orderFilter;
+    renderRecentOrders();
+    focusBack("data-order-filter", orderFilter);
+    return;
+  }
   if (act.startsWith("attachment-")) {
     const attachment = attachments.get(b.dataset.aid);
     if (!attachment) return;
@@ -196,6 +204,11 @@ document.addEventListener("click", async (ev) => {
     return;
   }
   if (act === "open-order") {
+    const target = orders.get(oid);
+    if (target && target.state !== "NEEDS_SELLER" && !matchesOrderFilter(target)) {
+      orderFilter = "all";
+      renderRecentOrders();
+    }
     document.querySelector(`[data-order-id="${CSS.escape(oid)}"]`)?.scrollIntoView?.({ behavior: "smooth", block: "center" });
     return;
   }
