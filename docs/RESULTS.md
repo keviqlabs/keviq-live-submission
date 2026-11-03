@@ -115,13 +115,12 @@ judge1 events on their own 61.8 s clock.
 
 The published work-in-progress branches, none of them merged into `main` on 3 November. None of them is part of the
 results above, and nothing here claims they work. Other unmerged branches of the working repository belong to closed or
-superseded pull requests and are not part of this work. "Last commit" is the date of the branch's tip; on three
-branches that tip, of 3 November, only rewords comments, docstrings and notes.
+superseded pull requests and are not part of this work. Three other branches are not published because their changes,
+apart from comment rewording, are already on `main`: `measure-first-hide` through PR #9 (27 October),
+`test/sku-ambiguity` and `test/written-phone-shield` through PR #60 (28 October). "Last commit" is the date of the
+branch's tip; on `returning-card-current` that tip, of 3 November, only rewords comments, docstrings and notes.
 
 | Branch | Last commit | What it changes |
 |---|---|---|
-| `measure-first-hide` | 27 October | `measure/core.py`: the C5 phone-visible time ends at the comment's first hide, not its latest label; `measure/labels.py`: the report line says "measured at the first hide"; a test in `tests/test_measure.py` |
 | `returning-card-current` | 3 November (wording only; code and test of 28 October) | `worker/brain/labels.py`: the current card is the live card shown last, so a product shown again becomes current again; a test in `tests/test_labels.py`; reworded comments in `worker/brain/card.py` and `tests/test_catalog_path.py`, and reworded D-026 text in `docs/DECISIONS.md` |
-| `test/sku-ambiguity` | 3 November (wording only; tests, specs and note of 28 October) | Tests, specs and an evidence note for ambiguous catalog matches and card separation, including a deliberately failing reproduction of a priced card reused after a changed observation; no runtime change. The 3 November commit rewords comments and docstrings in `measure/`, tests, `worker/brain/card.py`, earlier evidence notes and scripts, and `docs/DECISIONS.md` |
-| `test/written-phone-shield` | 3 November (wording only; tests, spec and note of 28 October) | Acceptance tests, a spec and an evidence note for phone numbers written in words, with dots or in mixed forms; no change to the shield. The acceptance tests fail on purpose (39 failed, 514 passed on `650fe39`, by its note) and the branch is not to be merged alone. The 3 November commit rewords the same files as on `test/sku-ambiguity` |
 | `speech-leads-prep` | 27 October | `docs/speech-leads-prep.md`: a preparation draft, not a decision, for letting a spoken product switch trigger a one-frame vision check before a new card opens |
