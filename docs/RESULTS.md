@@ -114,12 +114,12 @@ judge1 events on their own 61.8 s clock.
 ## Work in progress
 
 The published work-in-progress branch, not merged into `main` on 3 November. It is not part of the results above, and
-nothing here claims it works. Other unmerged branches of the working repository belong to closed or superseded pull
-requests and are not part of this work. Four other branches are not published because what they add is already on
-`main`. Three of them carry the same changes, apart from comment rewording: `measure-first-hide` through PR #9
-(27 October), `test/sku-ambiguity` and `test/written-phone-shield` through PR #60 (28 October). The fourth,
-`returning-card-current`, makes a product shown again the current card again; `main` has done that since PR #61
-(29 October), which builds it differently, and the branch's own test passes on `main`. "Last commit" is the date of the
+nothing here claims it works. Other unmerged branches of the working repository belong to merged, closed or superseded
+pull requests and are not part of this work. Four other branches are not published because what they add is already on
+`main`. Three of them carry the same changes, apart from comment rewording: `measure-first-hide` through PR #9 (27
+October), `test/sku-ambiguity` and `test/written-phone-shield` through PR #60 (28 October). The fourth,
+`returning-card-current`, makes a product shown again the current card again; `main` has done that since PR #61 (29
+October), which builds it differently, and the branch's own test passes on `main`. "Last commit" is the date of the
 branch's tip.
 
 | Branch | Last commit | What it changes |
