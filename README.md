@@ -4,7 +4,7 @@
 
 Built by [KeviqLabs](https://keviqlabs.com/vi/company/), a Vietnamese startup. Sell on camera. Stay in control.
 
-[Watch the demo](https://www.youtube.com/watch?v=UCFd-lKgkVM) · [Try the sample](docs/RUN.md#3-mode-1-replay-judge1-no-key-0-usd) · [Architecture](docs/architecture.md) · [Measured results](docs/RESULTS.md)
+[Watch the demo](https://www.youtube.com/watch?v=ULxu41f3wio) · [Try the sample](docs/RUN.md#3-mode-1-replay-judge1-no-key-0-usd) · [Architecture](docs/architecture.md) · [Measured results](docs/RESULTS.md)
 
 ![KEVIQ LIVE sample console: product card, comments and seller approval queue](docs/assets/keviq-live-console.png)
 
@@ -71,7 +71,11 @@ The [recorded 3 November check](docs/evidence/2026-11-03/make-check-1103.log) re
 
 This is a hackathon prototype using recorded video, synthetic comments and simulated Messenger. It does not demonstrate a live camera/RTMP input or production messaging. The separate read-only Facebook connector has received one comment from an ended live video; it has not been tested on a broadcast in progress. Difficult product references and latency remain improvement areas; published stress runs have not met every internal target. [Measurements and limitations](docs/RESULTS.md#what-limits-these-numbers).
 
-The event pipeline, model integration, order workflow, console, tests and replay tools in this repository were authored during the hackathon, starting 26 October 2026 at 23:24 ICT. One entrant built the submission using AI coding assistants. Earlier planning, private prototypes and the development/history disclosures are recorded in the [development record](docs/DEVELOPMENT-RECORD.md#built-during-the-hackathon) and the disclosure below. A voice co-host is future integration work, not a demonstrated capability here.
+The event pipeline, model integration, order workflow, console, tests and replay tools in this repository were authored during the hackathon, starting 26 October 2026 at 23:24 ICT. One entrant built the submission using AI coding assistants. Earlier planning, private prototypes and the development/history disclosures are recorded in the [development record](docs/DEVELOPMENT-RECORD.md#built-during-the-hackathon) and the disclosure below.
+
+## What comes next
+
+Planned next: an AI co-host for product questions while the seller stays on camera. Our longer-term vision is an AI operations partner for independent Facebook Live sellers, from show preparation to after-sales follow-up—with sellers retaining control over prices and orders.
 
 Apache-2.0 · [License](LICENSE)
 
