@@ -4,7 +4,7 @@
 
 Built by [KeviqLabs](https://keviqlabs.com/vi/company/), a Vietnamese startup. Sell on camera. Stay in control.
 
-[Watch the demo](https://www.youtube.com/watch?v=ULxu41f3wio) · [Try the sample](docs/RUN.md#3-mode-1-replay-judge1-no-key-0-usd) · [Architecture](docs/architecture.md) · [Measured results](docs/RESULTS.md)
+[Watch the demo](https://www.youtube.com/watch?v=ULxu41f3wio) · [Open the hosted demo](https://livedemo.keviq.ai/) · [Run locally](docs/RUN.md#3-mode-1-replay-judge1-no-key-0-usd) · [Architecture](docs/architecture.md) · [Measured results](docs/RESULTS.md)
 
 ![KEVIQ LIVE sample console: product card, comments and seller approval queue](docs/assets/keviq-live-console.png)
 
@@ -46,7 +46,9 @@ The video includes real Spark and SAM calls; its seller price lines are typed. V
 
 ## Try the working prototype
 
-The [hosted sample](https://livedemo.keviq.ai/) is available while the demo service runs and requires a separately supplied login. It replays sample events without calling models. The same sample runs locally without a Meta account or API key:
+The [hosted sample](https://livedemo.keviq.ai/) is available while the demo service runs. Sign in using the demo credentials provided to you. Up to three browser sessions can run at once, with a 30-minute limit per session. If all places are occupied, use **Check again** on the login page; sign out when finished to free a place for another visitor.
+
+The hosted demo replays sample events without calling models. The same sample runs locally without a Meta account or API key:
 
 ```bash
 git clone https://github.com/keviqlabs/keviq-live-submission.git
